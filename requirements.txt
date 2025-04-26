@@ -1,0 +1,8 @@
+# requirements.txt
+
+flask
+werkzeug
+numpy
+librosa
+tqdm
+Pillow
