@@ -397,7 +397,7 @@ def create_spectrum_analyzer(audio_file,
                 artist_text_width=artist_bbox[2]-artist_bbox[0]; artist_text_height=artist_bbox[3]-artist_bbox[1]
                 title_text_width=title_bbox[2]-title_bbox[0]
                 artist_text_x=width//2; artist_text_y=viz_bottom+20 + artist_text_height // 2
-                title_text_x=width//2; title_text_y = artist_text_y + artist_text_height // 2 + 10 + (title_bbox[3]-title_bbox[1]) // 2
+                title_text_x=width//2; title_text_y = artist_text_y + artist_text_height // 2 + 25 + (title_bbox[3]-title_bbox[1]) // 2
                 if artist_name:
                     draw_text.text((artist_text_x, artist_text_y), artist_name, fill=ARTIST_COLOR_RGB, font=artist_font, anchor=anchor_artist)
                 if track_title:
