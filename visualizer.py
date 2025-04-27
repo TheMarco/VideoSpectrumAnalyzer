@@ -43,12 +43,14 @@ def create_spectrum_analyzer(
     Create a spectrum analyzer visualization for an audio file,
     optionally with a static image or looping video background.
     """
-    # --- Default Config and Processing (Mostly Unchanged) ---
+    # --- Default Configuration ---
     default_config = {
         "n_bars": 40,
         "bar_width": 25,
         "bar_gap": 2,
-        "bar_color": "#FFFFFF",
+        # ****** ADDED bar_color DEFAULT ******
+        "bar_color": "#FFFFFF",  # Default base color for bars
+        # ****** END ADD ******
         "background_color": (0, 0, 0),
         "artist_color": "#FFFFFF",
         "title_color": "#FFFFFF",
@@ -77,8 +79,8 @@ def create_spectrum_analyzer(
         "gradient_bottom_color": (255, 255, 255),
         "gradient_exponent": 0.7,
     }
+    # --- Config Processing ---
     if config and isinstance(config, dict):
-        # (Config processing logic remains the same - omitted for brevity)
         bool_keys = ["always_on_bottom", "use_gradient"]
         float_keys = [
             "amplitude_scale",
@@ -116,7 +118,11 @@ def create_spectrum_analyzer(
             "gradient_bottom_color",
             "background_color",
         ]
-        color_hex_keys = ["bar_color", "artist_color", "title_color"]
+        color_hex_keys = [
+            "bar_color",
+            "artist_color",
+            "title_color",
+        ]  # bar_color is already here!
         processed_config = {}
         for key, value in config.items():
             if key in default_config:
@@ -152,7 +158,9 @@ def create_spectrum_analyzer(
                         else:
                             processed_config[key] = default_config[key]
                     elif key in color_hex_keys:
-                        processed_config[key] = str(value)
+                        processed_config[key] = str(
+                            value
+                        )  # Correctly handles bar_color
                     else:
                         processed_config[key] = value
                 except (ValueError, TypeError):
@@ -160,10 +168,10 @@ def create_spectrum_analyzer(
         default_config.update(processed_config)
         if "gradient_exponent" not in processed_config:
             default_config["gradient_exponent"] = 0.7
+    # --- End Config Processing ---
 
     conf = default_config
-    # --- Extract Config Variables (Mostly Unchanged) ---
-    # (Extraction logic remains the same - omitted for brevity)
+    # --- Extract and Process Configuration ---
     N_BARS = conf["n_bars"]
     BAR_WIDTH = conf["bar_width"]
     BAR_GAP = conf["bar_gap"]
@@ -200,13 +208,15 @@ def create_spectrum_analyzer(
         else (255, 255, 255)
     )
     GRADIENT_EXPONENT = conf["gradient_exponent"]
+    # ****** THIS LINE NOW CORRECTLY USES THE CONFIGURED BAR COLOR ******
     BAR_COLOR_RGB = hex_to_rgb(conf.get("bar_color", "#FFFFFF"))
+    # ****** END CHANGE ******
     ARTIST_COLOR_RGB = hex_to_rgb(conf.get("artist_color", "#FFFFFF"))
     TITLE_COLOR_RGB = hex_to_rgb(conf.get("title_color", "#FFFFFF"))
     EFFECTIVE_AMPLITUDE_SCALE = AMPLITUDE_SCALE * SENSITIVITY
     PIL_ALPHA = int(ANALYZER_ALPHA * 255)
 
-    # --- Load Audio (Unchanged) ---
+    # --- Load Audio ---
     if progress_callback:
         progress_callback(5)
         print("Loading audio file...")
@@ -303,7 +313,7 @@ def create_spectrum_analyzer(
             )
             background_pil = None
 
-    # --- Audio Analysis (Unchanged) ---
+    # --- Audio Analysis ---
     total_frames = int(duration * fps)
     hop_length = max(1, int(len(y) / total_frames))
     n_fft = 2048
@@ -356,8 +366,7 @@ def create_spectrum_analyzer(
     if actual_frames == 0:
         raise ValueError("Audio analysis resulted in 0 frames.")
 
-    # --- Setup Visualization (Font loading - Unchanged) ---
-    # (Font loading logic remains the same - omitted for brevity)
+    # --- Setup Visualization (Font loading) ---
     print("--- FONT LOADING ---")
     font_size_artist = 72
     font_size_title = 36
@@ -403,7 +412,7 @@ def create_spectrum_analyzer(
         title_font = ImageFont.load_default()
     print("--- FONT LOADING COMPLETE ---")
 
-    # --- Visualization Variables (Unchanged) ---
+    # --- Visualization Variables ---
     smoothed_spectrum = np.zeros((N_BARS,))
     peak_values = np.zeros((N_BARS,))
     peak_hold_counters = np.zeros((N_BARS,), dtype=int)
@@ -421,7 +430,7 @@ def create_spectrum_analyzer(
     )
     corner_radius = max(0, corner_radius)  # Ensure non-negative
 
-    # --- Setup FFmpeg Process for Piping (Unchanged) ---
+    # --- Setup FFmpeg Process for Piping ---
     temp_video_file = tempfile.NamedTemporaryFile(suffix=".mp4", delete=False)
     temp_video_path = temp_video_file.name
     temp_video_file.close()
@@ -480,7 +489,7 @@ def create_spectrum_analyzer(
 
     # Main loop
     for frame_idx in tqdm(range(actual_frames), desc="Generating Frames"):
-        # --- Update spectrum and peaks (Unchanged) ---
+        # --- Update spectrum and peaks ---
         current_spectrum = mel_spec_norm[:, frame_idx].copy()
         if frame_idx < len(normalized_frame_energy):
             is_silent = normalized_frame_energy[frame_idx] < SILENCE_THRESHOLD
@@ -580,15 +589,18 @@ def create_spectrum_analyzer(
 
         # --- Draw Visualizer on top of the background ---
         image = current_bg_frame_pil  # Start with the background
-        # (Analyzer Drawing Logic - UNCHANGED)
+        # ================================================================
+        # --- DRAWING LOGIC ---
         # ================================================================
         for i in range(N_BARS):
             bar_x = start_x + i * total_bar_width_gap
             signal = smoothed_spectrum[i]
             peak_signal = peak_values[i]
+            # --- Static Bottom Segment ---
             if ALWAYS_ON_BOTTOM_FLAG and max_segments >= 1:
                 static_bottom_y = viz_bottom - SEGMENT_HEIGHT
                 static_dest_xy = (int(bar_x), int(static_bottom_y))
+                # ****** Correctly uses BAR_COLOR_RGB when gradient is off ******
                 static_color_rgb = (
                     GRADIENT_BOTTOM_COLOR if USE_GRADIENT else BAR_COLOR_RGB
                 )
@@ -607,9 +619,9 @@ def create_spectrum_analyzer(
                         radius=corner_radius,
                         fill=static_color_rgba,
                     )
-                image.alpha_composite(
-                    static_seg_img, static_dest_xy
-                )  # Composite ONTO background
+                image.alpha_composite(static_seg_img, static_dest_xy)
+
+            # --- Dynamic Segments and Peak ---
             num_segments_available_above = (
                 max(0, max_segments - 1) if ALWAYS_ON_BOTTOM_FLAG else max_segments
             )
@@ -621,10 +633,12 @@ def create_spectrum_analyzer(
                 num_dynamic_segments_to_draw = min(
                     int(np.ceil(dynamic_segments_float)), num_segments_available_above
                 )
+
             for k in range(num_dynamic_segments_to_draw):
                 j = k + 1 if ALWAYS_ON_BOTTOM_FLAG else k
                 segment_y = viz_bottom - (j + 1) * SEGMENT_HEIGHT - j * SEGMENT_GAP
                 dest_xy = (int(bar_x), int(segment_y))
+                # ****** Correctly uses BAR_COLOR_RGB when gradient is off ******
                 segment_color_rgb = BAR_COLOR_RGB
                 if USE_GRADIENT:
                     gradient_factor_raw = j / max(1, max_segments - 1)
@@ -660,7 +674,8 @@ def create_spectrum_analyzer(
                         radius=corner_radius,
                         fill=segment_color_rgba,
                     )
-                image.alpha_composite(segment_img, dest_xy)  # Composite ONTO background
+                image.alpha_composite(segment_img, dest_xy)
+
             peak_segment_index_abs = -1
             if peak_signal > NOISE_GATE:
                 peak_total_segments_float = (
@@ -691,6 +706,7 @@ def create_spectrum_analyzer(
                         - peak_j * SEGMENT_GAP
                     )
                     peak_dest_xy = (int(bar_x), int(peak_y))
+                    # ****** Correctly uses BAR_COLOR_RGB when gradient is off ******
                     peak_color_rgb = BAR_COLOR_RGB
                     if USE_GRADIENT:
                         gradient_factor_raw = peak_j / max(1, max_segments - 1)
@@ -726,12 +742,12 @@ def create_spectrum_analyzer(
                             radius=corner_radius,
                             fill=peak_color_rgba,
                         )
-                    image.alpha_composite(
-                        peak_img, peak_dest_xy
-                    )  # Composite ONTO background
+                    image.alpha_composite(peak_img, peak_dest_xy)
+        # ================================================================
+        # --- END: DRAWING LOGIC ---
         # ================================================================
 
-        # Add Text (Unchanged)
+        # Add Text
         draw_text = ImageDraw.Draw(image)
         if artist_font and title_font:
             try:
@@ -796,13 +812,11 @@ def create_spectrum_analyzer(
                 pass
             process.wait()
             print(f"FFmpeg exit code (pipe error): {process.returncode}")
-            # ****** FIX IS HERE ******
             if os.path.exists(temp_video_path):
                 try:
                     os.remove(temp_video_path)
                 except OSError as rem_e:
                     print(f"Warn: Could not remove temp file: {rem_e}")
-            # ****** END FIX ******
             raise RuntimeError(f"FFmpeg pipe error: {e}") from e
         except Exception as e:
             print(f"\nUnexpected error during frame piping: {e}")
@@ -815,21 +829,19 @@ def create_spectrum_analyzer(
             if process.returncode is None:
                 process.terminate()
                 process.wait(timeout=5)
-            # ****** FIX IS HERE ******
             if os.path.exists(temp_video_path):
                 try:
                     os.remove(temp_video_path)
                 except OSError:
                     pass  # Ignore error if removal fails
-            # ****** END FIX ******
             raise
 
-        # Update progress callback (Unchanged)
+        # Update progress callback
         if progress_callback and frame_idx % 5 == 0:
             progress = int(20 + (frame_idx / max(1, actual_frames)) * 70)
             progress_callback(progress)
 
-    # --- Finalize FFmpeg Video (Unchanged) ---
+    # --- Finalize FFmpeg Video ---
     end_time = time.time()
     print(f"\nFrame generation completed in {end_time - start_time:.2f} seconds")
     print("Closing FFmpeg stdin and waiting for video process...")
@@ -849,7 +861,7 @@ def create_spectrum_analyzer(
     if progress_callback:
         progress_callback(90)
 
-    # --- Add Audio (Unchanged) ---
+    # --- Add Audio ---
     print("Adding audio to the video...")
     final_ffmpeg_cmd = [
         "ffmpeg",
@@ -884,31 +896,23 @@ def create_spectrum_analyzer(
         print(
             f"ERROR: FFmpeg audio merge failed (code {e.returncode})\nStderr:\n{e.stderr}\nTemp video: {temp_video_path}"
         )
-        # ****** FIX IS HERE ******
-        # No 'raise' needed here as we want to report the error but might still want to clean up
-        pass  # Allow cleanup to proceed
-        # ****** END FIX ******
-        # Keep the original raise if you *want* it to stop immediately
-        raise
+        # Allow cleanup to proceed even if merge fails
+        # raise # Uncomment if you want to stop execution here
     except FileNotFoundError:
         print("ERROR: ffmpeg not found for audio merge.")
-        # ****** FIX IS HERE ******
         if os.path.exists(temp_video_path):
             try:
                 os.remove(temp_video_path)
             except OSError:
-                pass  # Ignore error if removal fails
-        # ****** END FIX ******
+                pass
         raise
     except Exception as e:
         print(f"ERROR: Unexpected audio merge error: {e}")
-        # ****** FIX IS HERE ******
         if os.path.exists(temp_video_path):
             try:
                 os.remove(temp_video_path)
             except OSError:
-                pass  # Ignore error if removal fails
-        # ****** END FIX ******
+                pass
         raise
 
     # --- Cleanup ---
