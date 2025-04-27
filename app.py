@@ -7,6 +7,7 @@ from flask import Flask, request, render_template, jsonify, send_from_directory,
 import subprocess
 import threading
 from werkzeug.utils import secure_filename
+import traceback # Keep for debugging
 
 # Import your visualizer script - make sure this file is in the same directory
 from visualizer import create_spectrum_analyzer
@@ -14,7 +15,7 @@ from visualizer import create_spectrum_analyzer
 app = Flask(__name__, static_folder='static') # Explicitly define static folder
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['OUTPUT_FOLDER'] = 'outputs'
-app.config['MAX_CONTENT_LENGTH'] = 600 * 1024 * 1024  # Increased slightly for image + audio
+app.config['MAX_CONTENT_LENGTH'] = 1600 * 1024 * 1024  # Increased significantly for video
 
 # Create necessary directories
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -46,10 +47,13 @@ def upload_file():
     if audio_file.filename == '':
         return jsonify({'error': 'No selected audio file'}), 400
 
-    # Handle background image upload (optional)
+    # Determine background type and handle upload
     background_image_file = request.files.get('background_image')
+    background_video_file = request.files.get('background_video') # <-- New video file input
     background_image_path = None
     background_image_filename = None
+    background_video_path = None
+    background_video_filename = None
 
     # Generate unique ID for this job
     job_id = str(uuid.uuid4())
@@ -59,8 +63,32 @@ def upload_file():
     audio_file_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{job_id}_{audio_filename}")
     audio_file.save(audio_file_path)
 
-    # Save the background image if provided
-    if background_image_file and background_image_file.filename != '':
+    # Prioritize video if both are somehow sent, otherwise save the provided background
+    if background_video_file and background_video_file.filename != '':
+        # Add size validation for video (e.g., 1GB limit)
+        # Note: Flask/Werkzeug might struggle streaming very large files directly.
+        # Consider chunked uploads or external storage for production with huge files.
+        # A basic check here:
+        if background_video_file.content_length > 1000 * 1024 * 1024: # 1GB Limit example
+             return jsonify({'error': 'Background video file is too large (max 1GB)'}), 400
+
+        ext = os.path.splitext(background_video_file.filename)[1].lower()
+        # Add common video extensions
+        if ext not in ['.mp4', '.mov', '.avi', '.webm', '.mkv']:
+             return jsonify({'error': 'Invalid background video format (use MP4, MOV, AVI, WEBM, MKV)'}), 400
+
+        background_video_filename = f"{job_id}_background{ext}"
+        background_video_path = os.path.join(app.config['UPLOAD_FOLDER'], background_video_filename)
+        try:
+            background_video_file.save(background_video_path)
+            print(f"Saved background video to: {background_video_path}")
+        except Exception as e:
+             print(f"Error saving background video: {e}")
+             return jsonify({'error': f'Failed to save background video: {e}'}), 500
+        background_image_path = None # Ensure only video path is used if video provided
+
+    elif background_image_file and background_image_file.filename != '':
+        # Keep existing image validation
         if background_image_file.content_length > 50 * 1024 * 1024: # 50MB limit for background image
              return jsonify({'error': 'Background image file is too large (max 50MB)'}), 400
         ext = os.path.splitext(background_image_file.filename)[1].lower()
@@ -70,30 +98,18 @@ def upload_file():
         background_image_filename = f"{job_id}_background{ext}"
         background_image_path = os.path.join(app.config['UPLOAD_FOLDER'], background_image_filename)
         background_image_file.save(background_image_path)
+        print(f"Saved background image to: {background_image_path}")
+        background_video_path = None # Ensure only image path is used
 
-
-    # +++ START DEBUG PRINT +++
-    print("\n--- DEBUG: Form Data Received ---")
-    # Print the specific value received for 'always_on_bottom'
-    raw_value = request.form.get('always_on_bottom')
-    print(f"Raw value for 'always_on_bottom': {raw_value} (Type: {type(raw_value)})")
-    # Also print the result of the check we use
-    boolean_check_result = (raw_value == 'on')
-    print(f"Result of (raw_value == 'on'): {boolean_check_result}")
-    # Optionally, print the entire form data to see everything
-    # print("Full request.form content:")
-    # pprint.pprint(request.form) # You might need to import pprint
-    print("--- END DEBUG ---\n")
-    # +++ END DEBUG PRINT +++
+    # --- Rest of the config parsing is mostly the same ---
+    # (Removed debug prints for brevity)
 
     # Get configuration from form
     config = {
-        # Use get with a default of empty string for text fields with placeholders
         'artist_name': request.form.get('artist_name', ''),
         'track_title': request.form.get('track_title', ''),
         'artist_color': request.form.get('artist_color', '#FFFFFF'),
         'title_color': request.form.get('title_color', '#FFFFFF'),
-        # Update defaults here to match visualizer.py and HTML
         'n_bars': int(request.form.get('n_bars', 20)),
         'bar_width': int(request.form.get('bar_width', 40)),
         'bar_gap': int(request.form.get('bar_gap', 2)),
@@ -120,37 +136,46 @@ def upload_file():
         'fps': int(request.form.get('fps', 30)),
         'width': int(request.form.get('width', 1280)),
         'height': int(request.form.get('height', 720)),
-        # Fetch boolean for checkbox correctly
         'always_on_bottom': str(request.form.get('always_on_bottom')).lower() in ('on', 'true'),
-        'use_gradient': request.form.get('use_gradient') == 'on', # HTML sends 'on' if checked
-        'gradient_top_color': (200, 200, 255), # These could be form inputs too eventually
+        'use_gradient': request.form.get('use_gradient') == 'on',
+        'gradient_top_color': (200, 200, 255),
         'gradient_bottom_color': (255, 255, 255),
-        'gradient_exponent': float(request.form.get('gradient_exponent', 0.7)), # Fetch exponent
-        'background_color': (0, 0, 0) # Fallback if no image
+        'gradient_exponent': float(request.form.get('gradient_exponent', 0.7)),
+        'background_color': (0, 0, 0)
     }
 
     # Save configuration
     with open(os.path.join(app.config['UPLOAD_FOLDER'], f"{job_id}_config.json"), 'w') as f:
          json.dump(config, f, default=lambda x: list(x) if isinstance(x, tuple) else str(x))
 
-    # Set initial job status
+    # Set initial job status, now including both background paths potentially
     output_filename = f"{job_id}_output.mp4"
     output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
     jobs[job_id] = {
         'status': 'queued', 'progress': 0,
         'input_file': audio_file_path,
-        'background_file': background_image_path,
+        'background_image_file': background_image_path, # Store image path
+        'background_video_file': background_video_path, # Store video path
         'output_file': output_path, 'config': config
     }
 
     # Start processing in a background thread
-    thread = threading.Thread(target=process_video, args=(job_id, audio_file_path, background_image_path, output_path, config))
-    thread.daemon = True; thread.start()
+    # Pass both background paths to the processing function
+    thread = threading.Thread(target=process_video, args=(
+        job_id,
+        audio_file_path,
+        background_image_path,
+        background_video_path, # <-- Pass video path
+        output_path,
+        config
+    ))
+    thread.daemon = True
+    thread.start()
 
     return jsonify({ 'job_id': job_id, 'status': 'queued', 'message': 'File uploaded and processing started' })
 
-# Updated function signature (Unchanged from recent versions)
-def process_video(job_id, input_file, background_file, output_file, config):
+# Updated function signature to accept video path
+def process_video(job_id, input_file, background_image_file, background_video_file, output_file, config):
     try:
         jobs[job_id]['status'] = 'processing'
 
@@ -158,10 +183,11 @@ def process_video(job_id, input_file, background_file, output_file, config):
         def update_progress(progress):
             jobs[job_id]['progress'] = progress
 
-        # Call visualizer function
+        # Call visualizer function, passing both background paths
         create_spectrum_analyzer(
             audio_file=input_file,
-            background_image_path=background_file,
+            background_image_path=background_image_file, # Pass image path
+            background_video_path=background_video_file, # Pass video path
             output_file=output_file,
             artist_name=config['artist_name'],
             track_title=config['track_title'],
@@ -177,7 +203,6 @@ def process_video(job_id, input_file, background_file, output_file, config):
         jobs[job_id]['progress'] = 100
     except Exception as e:
         jobs[job_id]['status'] = 'failed'
-        import traceback
         jobs[job_id]['error'] = f"{str(e)}\n{traceback.format_exc()}"
         print(f"Error processing job {job_id}: {e}")
         traceback.print_exc()
@@ -186,7 +211,13 @@ def process_video(job_id, input_file, background_file, output_file, config):
 def job_status(job_id):
     if job_id not in jobs:
         return jsonify({'error': 'Job not found'}), 404
-    return jsonify(jobs[job_id].copy())
+    job_data = jobs[job_id].copy()
+    # Avoid sending full file paths back to the client if desired
+    # job_data.pop('input_file', None)
+    # job_data.pop('background_image_file', None)
+    # job_data.pop('background_video_file', None)
+    # job_data.pop('output_file', None)
+    return jsonify(job_data)
 
 @app.route('/download/<job_id>', methods=['GET'])
 def download_file(job_id):
@@ -197,10 +228,9 @@ def download_file(job_id):
     filename = os.path.basename(jobs[job_id]['output_file'])
 
     # Optional cleanup could go here
+    # Be careful cleaning inputs if multiple jobs might share them (though UUIDs make this unlikely)
 
     return send_from_directory(directory, filename, as_attachment=True)
-
-# Presets route removed
 
 if __name__ == '__main__':
     # Use waitress or gunicorn for production instead of Flask's debug server

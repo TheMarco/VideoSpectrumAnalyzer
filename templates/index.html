@@ -18,19 +18,44 @@
             <div class="card-body">
                 <form id="upload-form" enctype="multipart/form-data">
 
-                    <!-- Row 1: File Uploads -->
+                    <!-- Row 1: Audio File -->
                     <div class="row mb-3">
-                        <div class="col-md-6">
+                        <div class="col-12">
                             <label for="file" class="form-label">1. Audio File*</label>
                             <input type="file" class="form-control" id="file" name="file" accept="audio/*" required>
                         </div>
-                        <div class="col-md-6">
-                            <label for="background_image" class="form-label">2. Background Image (Optional)</label>
-                            <input type="file" class="form-control" id="background_image" name="background_image" accept="image/png, image/jpeg, image/webp">
+                    </div>
+
+                    <!-- Row 2: Background Media Selection -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                             <label class="form-label">2. Background Media (Optional)</label>
+                             <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="background_type" id="bg_type_image" value="image" checked>
+                                <label class="form-check-label" for="bg_type_image">Image</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="background_type" id="bg_type_video" value="video">
+                                <label class="form-check-label" for="bg_type_video">Looping Video</label>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Row 2: Artist Info -->
+                     <!-- Background File Inputs (Show/Hide based on radio) -->
+                     <div class="row mb-3">
+                        <div class="col-12" id="background_image_input_group">
+                             <label for="background_image" class="form-label visually-hidden">Background Image File</label> <!-- Hide label initially, shown via JS maybe -->
+                            <input type="file" class="form-control" id="background_image" name="background_image" accept="image/png, image/jpeg, image/webp">
+                             <small class="form-text text-muted">Recommended: PNG, JPG, WEBP (Max 50MB)</small>
+                        </div>
+                         <div class="col-12" id="background_video_input_group" style="display: none;">
+                             <label for="background_video" class="form-label visually-hidden">Background Video File</label> <!-- Hide label initially -->
+                            <input type="file" class="form-control" id="background_video" name="background_video" accept="video/mp4, video/webm, video/quicktime, video/x-msvideo, video/x-matroska">
+                             <small class="form-text text-muted">Recommended: MP4, WEBM, MOV (Max 1GB, loops automatically)</small>
+                        </div>
+                    </div>
+
+                    <!-- Row 3 & 4: Artist/Track Info (Unchanged) -->
                     <div class="row mb-3 align-items-end">
                         <div class="col-md-9">
                             <label for="artist_name" class="form-label">Artist Name</label>
@@ -41,8 +66,6 @@
                             <input type="color" class="form-control form-control-color w-100" id="artist_color" name="artist_color" value="#FFFFFF" title="Choose artist name color">
                         </div>
                     </div>
-
-                    <!-- Row 3: Track Info -->
                      <div class="row mb-4 align-items-end">
                         <div class="col-md-9">
                             <label for="track_title" class="form-label">Track Title</label>
@@ -54,11 +77,10 @@
                         </div>
                     </div>
 
-                    <!-- Separator -->
+                    <!-- Separator & Visualizer Appearance (Unchanged) -->
                     <hr class="my-4">
-
-                    <!-- Section: Visualizer Appearance -->
                     <h5 class="mb-3">Visualizer Appearance</h5>
+                    <!-- ... (n_bars, bar_width, bar_gap etc. - unchanged) ... -->
                     <div class="row mb-3">
                         <div class="col-md-4">
                             <label for="n_bars" class="form-label">Number of Bars</label>
@@ -111,153 +133,72 @@
                         </div>
                      </div>
 
-                     <!-- Separator -->
-                     <hr class="my-4">
-
-                     <!-- Advanced Settings Toggle -->
+                    <!-- Advanced Settings (Unchanged) -->
+                    <hr class="my-4">
                     <div class="mb-3">
                          <button type="button" class="btn btn-outline-secondary" id="show-advanced">Show/Hide Advanced Settings</button>
                     </div>
-
-                    <!-- Advanced Settings Section -->
                     <div id="advanced-settings" class="mb-3" style="display: none;">
                         <div class="card">
-                            <div class="card-header">
-                                <h6>Advanced Settings</h6>
-                            </div>
+                            <div class="card-header"><h6>Advanced Settings</h6></div>
                             <div class="card-body">
+                                <!-- ... (All advanced settings inputs - unchanged) ... -->
                                 <!-- Reactivity Settings -->
                                  <h5 class="mb-3 mt-2">Reactivity Settings</h5>
                                  <div class="row mb-3">
-                                    <div class="col-md-4">
-                                        <label for="sensitivity" class="form-label">Overall Sensitivity</label>
-                                        <input type="range" class="form-range" id="sensitivity" name="sensitivity" value="1.0" min="0.2" max="3.0" step="0.1">
-                                        <small class="form-text text-muted">Adjusts overall bar height.</small>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="amplitude_scale" class="form-label">Amplitude Scale (Internal)</label>
-                                        <input type="number" class="form-control" id="amplitude_scale" name="amplitude_scale" value="0.6" min="0.1" max="2" step="0.1">
-                                        <small class="form-text text-muted">Base scaling before sensitivity.</small>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="threshold_factor" class="form-label">Threshold Factor</label>
-                                        <input type="number" class="form-control" id="threshold_factor" name="threshold_factor" value="0.3" min="0.05" max="0.5" step="0.05">
-                                         <small class="form-text text-muted">Lower = more reactive.</small>
-                                    </div>
+                                    <div class="col-md-4"><label for="sensitivity" class="form-label">Overall Sensitivity</label><input type="range" class="form-range" id="sensitivity" name="sensitivity" value="1.0" min="0.2" max="3.0" step="0.1"><small class="form-text text-muted">Adjusts overall bar height.</small></div>
+                                    <div class="col-md-4"><label for="amplitude_scale" class="form-label">Amplitude Scale (Internal)</label><input type="number" class="form-control" id="amplitude_scale" name="amplitude_scale" value="0.6" min="0.1" max="2" step="0.1"><small class="form-text text-muted">Base scaling before sensitivity.</small></div>
+                                    <div class="col-md-4"><label for="threshold_factor" class="form-label">Threshold Factor</label><input type="number" class="form-control" id="threshold_factor" name="threshold_factor" value="0.3" min="0.05" max="0.5" step="0.05"><small class="form-text text-muted">Lower = more reactive.</small></div>
                                 </div>
                                 <div class="row mb-3">
-                                     <div class="col-md-4">
-                                        <label for="attack_speed" class="form-label">Attack Speed</label>
-                                        <input type="number" class="form-control" id="attack_speed" name="attack_speed" value="0.95" min="0.5" max="0.99" step="0.01">
-                                        <small class="form-text text-muted">How quickly bars rise.</small>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="decay_speed" class="form-label">Decay Speed</label>
-                                        <input type="number" class="form-control" id="decay_speed" name="decay_speed" value="0.25" min="0.05" max="0.5" step="0.05">
-                                         <small class="form-text text-muted">How quickly bars fall.</small>
-                                    </div>
-                                     <div class="col-md-4">
-                                        <label for="noise_gate" class="form-label">Noise Gate</label>
-                                        <input type="number" class="form-control" id="noise_gate" name="noise_gate" value="0.08" min="0.0" max="0.2" step="0.01">
-                                        <small class="form-text text-muted">Level below which bars zero out.</small>
-                                    </div>
+                                     <div class="col-md-4"><label for="attack_speed" class="form-label">Attack Speed</label><input type="number" class="form-control" id="attack_speed" name="attack_speed" value="0.95" min="0.5" max="0.99" step="0.01"><small class="form-text text-muted">How quickly bars rise.</small></div>
+                                     <div class="col-md-4"><label for="decay_speed" class="form-label">Decay Speed</label><input type="number" class="form-control" id="decay_speed" name="decay_speed" value="0.25" min="0.05" max="0.5" step="0.05"><small class="form-text text-muted">How quickly bars fall.</small></div>
+                                     <div class="col-md-4"><label for="noise_gate" class="form-label">Noise Gate</label><input type="number" class="form-control" id="noise_gate" name="noise_gate" value="0.08" min="0.0" max="0.2" step="0.01"><small class="form-text text-muted">Level below which bars zero out.</small></div>
                                 </div>
-
                                 <!-- Peak Settings -->
                                 <h5 class="mb-3 mt-4">Peak Settings</h5>
                                  <div class="row mb-3">
-                                    <div class="col-md-6">
-                                        <label for="peak_hold_frames" class="form-label">Peak Hold Frames</label>
-                                        <input type="number" class="form-control" id="peak_hold_frames" name="peak_hold_frames" value="5" min="0" max="60">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="peak_decay_speed" class="form-label">Peak Decay Speed</label>
-                                        <input type="number" class="form-control" id="peak_decay_speed" name="peak_decay_speed" value="0.15" min="0.01" max="0.5" step="0.01">
-                                         <small class="form-text text-muted">How quickly peaks fall after hold.</small>
-                                    </div>
+                                    <div class="col-md-6"><label for="peak_hold_frames" class="form-label">Peak Hold Frames</label><input type="number" class="form-control" id="peak_hold_frames" name="peak_hold_frames" value="5" min="0" max="60"></div>
+                                    <div class="col-md-6"><label for="peak_decay_speed" class="form-label">Peak Decay Speed</label><input type="number" class="form-control" id="peak_decay_speed" name="peak_decay_speed" value="0.15" min="0.01" max="0.5" step="0.01"><small class="form-text text-muted">How quickly peaks fall after hold.</small></div>
                                 </div>
-
                                 <!-- Frequency & Threshold Adjustments -->
                                 <h5 class="mb-3 mt-4">Frequency & Threshold Adjustments</h5>
                                 <div class="row mb-3">
-                                     <div class="col-md-6">
-                                        <label for="min_freq" class="form-label">Min Frequency (Hz)</label>
-                                        <input type="number" class="form-control" id="min_freq" name="min_freq" value="30" min="20" max="500">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="max_freq" class="form-label">Max Frequency (Hz)</label>
-                                        <input type="number" class="form-control" id="max_freq" name="max_freq" value="16000" min="5000" max="22050">
-                                    </div>
+                                     <div class="col-md-6"><label for="min_freq" class="form-label">Min Frequency (Hz)</label><input type="number" class="form-control" id="min_freq" name="min_freq" value="30" min="20" max="500"></div>
+                                     <div class="col-md-6"><label for="max_freq" class="form-label">Max Frequency (Hz)</label><input type="number" class="form-control" id="max_freq" name="max_freq" value="16000" min="5000" max="22050"></div>
                                 </div>
                                 <div class="row mb-3">
-                                    <div class="col-md-4">
-                                        <label for="bass_threshold_adjust" class="form-label">Bass Threshold Adj.</label>
-                                        <input type="number" class="form-control" id="bass_threshold_adjust" name="bass_threshold_adjust" value="1.2" min="0.5" max="2" step="0.1">
-                                        <small class="form-text text-muted">Adjusts bass reactivity.</small>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="mid_threshold_adjust" class="form-label">Mid Threshold Adj.</label>
-                                        <input type="number" class="form-control" id="mid_threshold_adjust" name="mid_threshold_adjust" value="1.0" min="0.5" max="2" step="0.1">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="high_threshold_adjust" class="form-label">High Threshold Adj.</label>
-                                        <input type="number" class="form-control" id="high_threshold_adjust" name="high_threshold_adjust" value="0.9" min="0.5" max="2" step="0.1">
-                                    </div>
+                                    <div class="col-md-4"><label for="bass_threshold_adjust" class="form-label">Bass Threshold Adj.</label><input type="number" class="form-control" id="bass_threshold_adjust" name="bass_threshold_adjust" value="1.2" min="0.5" max="2" step="0.1"><small class="form-text text-muted">Adjusts bass reactivity.</small></div>
+                                    <div class="col-md-4"><label for="mid_threshold_adjust" class="form-label">Mid Threshold Adj.</label><input type="number" class="form-control" id="mid_threshold_adjust" name="mid_threshold_adjust" value="1.0" min="0.5" max="2" step="0.1"></div>
+                                    <div class="col-md-4"><label for="high_threshold_adjust" class="form-label">High Threshold Adj.</label><input type="number" class="form-control" id="high_threshold_adjust" name="high_threshold_adjust" value="0.9" min="0.5" max="2" step="0.1"></div>
                                 </div>
-
                                 <!-- Silence Handling -->
                                 <h5 class="mb-3 mt-4">Silence Handling</h5>
                                  <div class="row mb-3">
-                                    <div class="col-md-6">
-                                        <label for="silence_threshold" class="form-label">Silence Threshold</label>
-                                        <input type="number" class="form-control" id="silence_threshold" name="silence_threshold" value="0.04" min="0.01" max="0.2" step="0.01">
-                                        <small class="form-text text-muted">Global energy considered silence.</small>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="silence_decay_factor" class="form-label">Silence Decay Factor</label>
-                                        <input type="number" class="form-control" id="silence_decay_factor" name="silence_decay_factor" value="0.5" min="0.1" max="0.9" step="0.1">
-                                        <small class="form-text text-muted">How quickly bars drop in silence.</small>
-                                    </div>
+                                    <div class="col-md-6"><label for="silence_threshold" class="form-label">Silence Threshold</label><input type="number" class="form-control" id="silence_threshold" name="silence_threshold" value="0.04" min="0.01" max="0.2" step="0.01"><small class="form-text text-muted">Global energy considered silence.</small></div>
+                                    <div class="col-md-6"><label for="silence_decay_factor" class="form-label">Silence Decay Factor</label><input type="number" class="form-control" id="silence_decay_factor" name="silence_decay_factor" value="0.5" min="0.1" max="0.9" step="0.1"><small class="form-text text-muted">How quickly bars drop in silence.</small></div>
                                 </div>
-
                                 <!-- Gradient Detail -->
                                 <h5 class="mb-3 mt-4">Gradient Detail</h5>
                                 <div class="row mb-3">
-                                    <div class="col-md-6">
-                                        <label for="gradient_exponent" class="form-label">Gradient Curve Exponent</label>
-                                        <input type="number" class="form-control" id="gradient_exponent" name="gradient_exponent" value="0.7" min="0.1" max="3.0" step="0.1">
-                                        <small class="form-text text-muted">Adjusts gradient transition (1=linear, <1=faster bottom, >1=faster top).</small>
-                                    </div>
+                                    <div class="col-md-6"><label for="gradient_exponent" class="form-label">Gradient Curve Exponent</label><input type="number" class="form-control" id="gradient_exponent" name="gradient_exponent" value="0.7" min="0.1" max="3.0" step="0.1"><small class="form-text text-muted">Adjusts gradient transition (1=linear, <1=faster bottom, >1=faster top).</small></div>
                                 </div>
-
                                 <!-- Video Output Settings -->
                                 <h5 class="mb-3 mt-4">Video Output Settings</h5>
                                  <div class="row mb-3">
-                                    <div class="col-md-4">
-                                        <label for="duration" class="form-label">Duration (sec, 0=full)</label>
-                                        <input type="number" class="form-control" id="duration" name="duration" value="0" min="0" step="1">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="fps" class="form-label">FPS</label>
-                                        <input type="number" class="form-control" id="fps" name="fps" value="30" min="15" max="60">
-                                    </div>
+                                    <div class="col-md-4"><label for="duration" class="form-label">Duration (sec, 0=full)</label><input type="number" class="form-control" id="duration" name="duration" value="0" min="0" step="1"></div>
+                                    <div class="col-md-4"><label for="fps" class="form-label">FPS</label><input type="number" class="form-control" id="fps" name="fps" value="30" min="15" max="60"></div>
                                     <div class="col-md-4"></div>
                                 </div>
                                 <div class="row mb-3">
-                                    <div class="col-md-6">
-                                        <label for="width" class="form-label">Video Width (px)</label>
-                                        <input type="number" class="form-control" id="width" name="width" value="1280" min="640" max="3840" step="10">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="height" class="form-label">Video Height (px)</label>
-                                        <input type="number" class="form-control" id="height" name="height" value="720" min="360" max="2160" step="10">
-                                    </div>
+                                    <div class="col-md-6"><label for="width" class="form-label">Video Width (px)</label><input type="number" class="form-control" id="width" name="width" value="1280" min="640" max="3840" step="10"></div>
+                                    <div class="col-md-6"><label for="height" class="form-label">Video Height (px)</label><input type="number" class="form-control" id="height" name="height" value="720" min="360" max="2160" step="10"></div>
                                 </div>
-                            </div> <!-- End Advanced Card Body -->
-                        </div> <!-- End Advanced Card -->
-                    </div> <!-- End Advanced Settings Div -->
+                            </div>
+                        </div>
+                    </div>
 
-                    <!-- Submit Button -->
+                    <!-- Submit Button (Unchanged) -->
                     <div class="d-grid mt-4">
                         <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">Generate Visualization</button>
                     </div>
@@ -265,8 +206,8 @@
             </div> <!-- End Main Card Body -->
         </div> <!-- End Main Card -->
 
-        <!-- Processing Card -->
-        <div id="processing-card" class="card mb-4" style="display: none;">
+        <!-- Processing & Error Cards (Unchanged) -->
+         <div id="processing-card" class="card mb-4" style="display: none;">
              <div class="card-header"><h5>Processing</h5></div>
              <div class="card-body">
                  <div class="progress mb-3" style="height: 30px;">
@@ -280,23 +221,55 @@
                  </div>
              </div>
         </div>
-
-        <!-- Error Card -->
         <div id="error-card" class="card mb-4" style="display: none;">
             <div class="card-header bg-danger text-white"><h5>Error</h5></div>
             <div class="card-body">
                 <p><strong>An error occurred during processing:</strong></p>
-                <pre id="error-message" style="white-space: pre-wrap; word-wrap: break-word; max-height: 300px; overflow-y: auto; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 10px; border-radius: 5px;"></pre>
+                <pre id="error-message" class="error-pre"></pre> <!-- Use class for styling -->
                 <div class="d-grid">
-                    <!-- ****** FIX IS HERE ****** -->
                     <button type="button" class="btn btn-outline-secondary" id="back-btn">Back to Form</button>
-                    <!-- ****** END FIX ****** -->
                 </div>
             </div>
         </div>
+
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    <!-- Inline script to handle background type toggle -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const imageRadio = document.getElementById('bg_type_image');
+            const videoRadio = document.getElementById('bg_type_video');
+            const imageInputGroup = document.getElementById('background_image_input_group');
+            const videoInputGroup = document.getElementById('background_video_input_group');
+            const imageInput = document.getElementById('background_image');
+            const videoInput = document.getElementById('background_video');
+
+            function toggleBackgroundInput() {
+                if (imageRadio.checked) {
+                    imageInputGroup.style.display = 'block';
+                    videoInputGroup.style.display = 'none';
+                    videoInput.value = ''; // Clear the other input field
+                    // Optional: make image input required if needed, but it's optional overall
+                    // imageInput.required = true;
+                    // videoInput.required = false;
+                } else {
+                    imageInputGroup.style.display = 'none';
+                    videoInputGroup.style.display = 'block';
+                    imageInput.value = ''; // Clear the other input field
+                    // imageInput.required = false;
+                    // videoInput.required = true; // Optional
+                }
+            }
+
+            imageRadio.addEventListener('change', toggleBackgroundInput);
+            videoRadio.addEventListener('change', toggleBackgroundInput);
+
+            // Initial state
+            toggleBackgroundInput();
+        });
+    </script>
 </body>
 </html>
