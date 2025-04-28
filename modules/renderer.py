@@ -124,8 +124,9 @@ class SpectrumRenderer:
 
         # Apply glow effect first (underneath content) if enabled
         if glow_shapes_layer:
-            # Increase blur radius for better glow effect
-            glow_layer_blurred = glow_shapes_layer.filter(ImageFilter.GaussianBlur(self.glow_blur_radius * 2))
+            # Apply blur for glow effect - use a moderate blur radius
+            # Too much blur will make text unreadable, too little won't show the glow
+            glow_layer_blurred = glow_shapes_layer.filter(ImageFilter.GaussianBlur(self.glow_blur_radius * 1.5))
 
             # Make sure white glow is actually white by using the glow color directly
             if self.glow_effect == "white":
@@ -382,7 +383,8 @@ class SpectrumRenderer:
 
     def _draw_text_mask(self, image, artist_name, track_title):
         """
-        Draw artist name and track title as a white mask for glow effect.
+        Draw artist name and track title as a mask for glow effect.
+        Uses exactly the same font and positioning as the regular text.
 
         Args:
             image (PIL.Image): Image to draw on
@@ -394,7 +396,7 @@ class SpectrumRenderer:
 
         draw = ImageDraw.Draw(image)
 
-        # Use white color with full opacity for the glow mask
+        # Use the glow color with full opacity for the mask
         glow_color = self.glow_color_rgb + (255,) if self.glow_color_rgb else (255, 255, 255, 255)
 
         # Draw artist name
@@ -408,19 +410,8 @@ class SpectrumRenderer:
             artist_x = (self.width - artist_text_width) // 2
             artist_y = int(self.height * 0.75)
 
-            # Use a slightly larger font size for the glow to make it more visible
-            # We'll create a temporary font with 10% larger size
-            try:
-                glow_font_size = int(self.artist_font.size * 1.1)
-                if hasattr(self.artist_font, "path"):
-                    glow_font = ImageFont.truetype(self.artist_font.path, glow_font_size)
-                    draw.text((artist_x, artist_y), artist_name, fill=glow_color, font=glow_font)
-                else:
-                    # Fallback to regular font if we can't create a larger one
-                    draw.text((artist_x, artist_y), artist_name, fill=glow_color, font=self.artist_font)
-            except Exception:
-                # If anything goes wrong, use the regular font
-                draw.text((artist_x, artist_y), artist_name, fill=glow_color, font=self.artist_font)
+            # Use exactly the same font as the regular text
+            draw.text((artist_x, artist_y), artist_name, fill=glow_color, font=self.artist_font)
 
         # Draw track title
         if track_title and self.title_font:
@@ -433,15 +424,5 @@ class SpectrumRenderer:
             title_x = (self.width - title_text_width) // 2
             title_y = int(self.height * 0.85)
 
-            # Use a slightly larger font size for the glow to make it more visible
-            try:
-                glow_font_size = int(self.title_font.size * 1.1)
-                if hasattr(self.title_font, "path"):
-                    glow_font = ImageFont.truetype(self.title_font.path, glow_font_size)
-                    draw.text((title_x, title_y), track_title, fill=glow_color, font=glow_font)
-                else:
-                    # Fallback to regular font if we can't create a larger one
-                    draw.text((title_x, title_y), track_title, fill=glow_color, font=self.title_font)
-            except Exception:
-                # If anything goes wrong, use the regular font
-                draw.text((title_x, title_y), track_title, fill=glow_color, font=self.title_font)
+            # Use exactly the same font as the regular text
+            draw.text((title_x, title_y), track_title, fill=glow_color, font=self.title_font)
