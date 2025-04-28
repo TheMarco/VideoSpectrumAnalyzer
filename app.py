@@ -110,6 +110,9 @@ def upload_file():
         "bar_color": request.form.get(
             "bar_color", "#FFFFFF"
         ),  # Fetch the new bar color
+        "glow_effect": request.form.get(
+            "glow_effect", "off"
+        ),
         # ****** END ADD ******
         "use_gradient": request.form.get("use_gradient") == "on",
         "always_on_bottom": str(request.form.get("always_on_bottom")).lower()
