@@ -1,7 +1,7 @@
 """
 Rendering functions for the spectrum analyzer.
 """
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 import numpy as np
 
 class SpectrumRenderer:
@@ -100,6 +100,7 @@ class SpectrumRenderer:
 
         # Create separate layers for content and glow
         content_layer = Image.new("RGBA", (self.width, self.height), (0, 0, 0, 0))
+        text_layer = Image.new("RGBA", (self.width, self.height), (0, 0, 0, 0))
         glow_shapes_layer = None
 
         if self.glow_effect != "off" and self.glow_color_rgb:
@@ -108,19 +109,45 @@ class SpectrumRenderer:
         # Draw bars to both content and glow layers
         self._draw_bars(content_layer, glow_shapes_layer, smoothed_spectrum, peak_values)
 
+        # Draw text on text layer
+        self._draw_text(text_layer, artist_name, track_title)
+
+        # Add text to glow layer if enabled
+        if glow_shapes_layer:
+            # Create a white mask of the text for the glow
+            text_mask_for_glow = Image.new("RGBA", (self.width, self.height), (0, 0, 0, 0))
+            self._draw_text_mask(text_mask_for_glow, artist_name, track_title)
+            glow_shapes_layer = Image.alpha_composite(glow_shapes_layer, text_mask_for_glow)
+
         # Final composite image (starts with base image)
         final_image = base_image.copy()
 
         # Apply glow effect first (underneath content) if enabled
         if glow_shapes_layer:
-            glow_layer_blurred = glow_shapes_layer.filter(ImageFilter.GaussianBlur(self.glow_blur_radius))
+            # Increase blur radius for better glow effect
+            glow_layer_blurred = glow_shapes_layer.filter(ImageFilter.GaussianBlur(self.glow_blur_radius * 2))
+
+            # Make sure white glow is actually white by using the glow color directly
+            if self.glow_effect == "white":
+                # For white glow, we'll create a new white layer with the alpha from the blurred glow
+
+                # Get alpha channel from blurred glow
+                alpha_mask = glow_layer_blurred.getchannel('A')
+
+                # Create a white layer with the same alpha
+                white_layer = Image.new("RGBA", (self.width, self.height), (255, 255, 255, 0))
+                white_layer.putalpha(alpha_mask)
+
+                # Use the white layer instead
+                glow_layer_blurred = white_layer
+
             final_image = Image.alpha_composite(final_image, glow_layer_blurred)
 
         # Then apply content on top of the glow
         final_image = Image.alpha_composite(final_image, content_layer)
 
-        # Draw text on top of everything
-        self._draw_text(final_image, artist_name, track_title)
+        # Finally, add the text on top of everything
+        final_image = Image.alpha_composite(final_image, text_layer)
 
         return final_image
 
@@ -352,3 +379,69 @@ class SpectrumRenderer:
             title_x = (self.width - title_text_width) // 2
             title_y = int(self.height * 0.85)
             draw.text((title_x, title_y), track_title, fill=title_color_rgba, font=self.title_font)
+
+    def _draw_text_mask(self, image, artist_name, track_title):
+        """
+        Draw artist name and track title as a white mask for glow effect.
+
+        Args:
+            image (PIL.Image): Image to draw on
+            artist_name (str): Artist name to display
+            track_title (str): Track title to display
+        """
+        if not artist_name and not track_title:
+            return
+
+        draw = ImageDraw.Draw(image)
+
+        # Use white color with full opacity for the glow mask
+        glow_color = self.glow_color_rgb + (255,) if self.glow_color_rgb else (255, 255, 255, 255)
+
+        # Draw artist name
+        if artist_name and self.artist_font:
+            try:
+                # For newer PIL versions
+                artist_text_width = draw.textlength(artist_name, font=self.artist_font)
+            except AttributeError:
+                # For older PIL versions
+                artist_text_width = self.artist_font.getlength(artist_name)
+            artist_x = (self.width - artist_text_width) // 2
+            artist_y = int(self.height * 0.75)
+
+            # Use a slightly larger font size for the glow to make it more visible
+            # We'll create a temporary font with 10% larger size
+            try:
+                glow_font_size = int(self.artist_font.size * 1.1)
+                if hasattr(self.artist_font, "path"):
+                    glow_font = ImageFont.truetype(self.artist_font.path, glow_font_size)
+                    draw.text((artist_x, artist_y), artist_name, fill=glow_color, font=glow_font)
+                else:
+                    # Fallback to regular font if we can't create a larger one
+                    draw.text((artist_x, artist_y), artist_name, fill=glow_color, font=self.artist_font)
+            except Exception:
+                # If anything goes wrong, use the regular font
+                draw.text((artist_x, artist_y), artist_name, fill=glow_color, font=self.artist_font)
+
+        # Draw track title
+        if track_title and self.title_font:
+            try:
+                # For newer PIL versions
+                title_text_width = draw.textlength(track_title, font=self.title_font)
+            except AttributeError:
+                # For older PIL versions
+                title_text_width = self.title_font.getlength(track_title)
+            title_x = (self.width - title_text_width) // 2
+            title_y = int(self.height * 0.85)
+
+            # Use a slightly larger font size for the glow to make it more visible
+            try:
+                glow_font_size = int(self.title_font.size * 1.1)
+                if hasattr(self.title_font, "path"):
+                    glow_font = ImageFont.truetype(self.title_font.path, glow_font_size)
+                    draw.text((title_x, title_y), track_title, fill=glow_color, font=glow_font)
+                else:
+                    # Fallback to regular font if we can't create a larger one
+                    draw.text((title_x, title_y), track_title, fill=glow_color, font=self.title_font)
+            except Exception:
+                # If anything goes wrong, use the regular font
+                draw.text((title_x, title_y), track_title, fill=glow_color, font=self.title_font)
