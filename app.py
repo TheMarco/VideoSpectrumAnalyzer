@@ -12,17 +12,22 @@ from visualizer import create_spectrum_analyzer
 app = Flask(__name__, static_folder="static")
 app.config["UPLOAD_FOLDER"] = "uploads"
 app.config["OUTPUT_FOLDER"] = "outputs"
-app.config["MAX_CONTENT_LENGTH"] = 1600 * 1024 * 1024
+app.config["MAX_CONTENT_LENGTH"] = 1600 * 1024 * 1024 # 1.6 GB total request size limit
 
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 os.makedirs(app.config["OUTPUT_FOLDER"], exist_ok=True)
 
 jobs = {}
 
+# Allowed extensions (adjust as needed)
+ALLOWED_IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.webp'}
+ALLOWED_VIDEO_EXTENSIONS = {'.mp4', '.mov', '.avi', '.webm', '.mkv'}
+MAX_IMAGE_SIZE = 50 * 1024 * 1024 # 50 MB
+MAX_VIDEO_SIZE = 1000 * 1024 * 1024 # 1 GB (1000 MB)
+
 
 # (parse_hex_color helper remains unchanged)
 def parse_hex_color(hex_color, default=(255, 255, 255)):
-    # ... (implementation unchanged) ...
     hex_color = hex_color.lstrip("#")
     if len(hex_color) == 6:
         try:
@@ -39,59 +44,73 @@ def index():
 
 @app.route("/upload", methods=["POST"])
 def upload_file():
-    # --- File Handling (Audio, Background Image/Video) ---
-    # ... (This part remains unchanged from the previous version) ...
+    # --- Basic File Handling (Audio) ---
     if "file" not in request.files:
         return jsonify({"error": "No audio file part"}), 400
     audio_file = request.files["file"]
     if audio_file.filename == "":
         return jsonify({"error": "No selected audio file"}), 400
-    background_image_file = request.files.get("background_image")
-    background_video_file = request.files.get("background_video")
-    background_image_path = None
-    background_video_path = None
+
     job_id = str(uuid.uuid4())
     audio_filename = secure_filename(audio_file.filename)
-    audio_file_path = os.path.join(
-        app.config["UPLOAD_FOLDER"], f"{job_id}_{audio_filename}"
-    )
-    audio_file.save(audio_file_path)
-    if background_video_file and background_video_file.filename != "":
-        if background_video_file.content_length > 1000 * 1024 * 1024:
-            return (
-                jsonify({"error": "Background video file is too large (max 1GB)"}),
-                400,
-            )
-        ext = os.path.splitext(background_video_file.filename)[1].lower()
-        if ext not in [".mp4", ".mov", ".avi", ".webm", ".mkv"]:
-            return jsonify({"error": "Invalid background video format"}), 400
-        background_video_filename = f"{job_id}_background{ext}"
-        background_video_path = os.path.join(
-            app.config["UPLOAD_FOLDER"], background_video_filename
-        )
-        try:
-            background_video_file.save(background_video_path)
-            print(f"Saved background video: {background_video_path}")
-        except Exception as e:
-            print(f"Error saving background video: {e}")
-            return jsonify({"error": f"Failed to save background video: {e}"}), 500
-        background_image_path = None
-    elif background_image_file and background_image_file.filename != "":
-        if background_image_file.content_length > 50 * 1024 * 1024:
-            return jsonify({"error": "Background image file too large (max 50MB)"}), 400
-        ext = os.path.splitext(background_image_file.filename)[1].lower()
-        if ext not in [".png", ".jpg", ".jpeg", ".webp"]:
-            return jsonify({"error": "Invalid background image format"}), 400
-        background_image_filename = f"{job_id}_background{ext}"
-        background_image_path = os.path.join(
-            app.config["UPLOAD_FOLDER"], background_image_filename
-        )
-        background_image_file.save(background_image_path)
-        print(f"Saved background image: {background_image_path}")
-        background_video_path = None
-    # --- End File Handling ---
+    audio_file_path = os.path.join(app.config["UPLOAD_FOLDER"], f"{job_id}_{audio_filename}")
+    try:
+        audio_file.save(audio_file_path)
+    except Exception as e:
+         print(f"Error saving audio file: {e}")
+         return jsonify({"error": f"Failed to save audio file: {e}"}), 500
 
-    # --- Get Configuration ---
+    # --- Unified Background Media Handling ---
+    background_media_file = request.files.get("background_media")
+    background_image_path = None
+    background_video_path = None
+
+    if background_media_file and background_media_file.filename != "":
+        filename = secure_filename(background_media_file.filename)
+        ext = os.path.splitext(filename)[1].lower()
+        temp_path = os.path.join(app.config["UPLOAD_FOLDER"], f"{job_id}_temp_background{ext}") # Save temporarily first
+
+        try:
+            background_media_file.save(temp_path)
+            file_size = os.path.getsize(temp_path)
+
+            if ext in ALLOWED_VIDEO_EXTENSIONS:
+                if file_size > MAX_VIDEO_SIZE:
+                    os.remove(temp_path) # Clean up oversized file
+                    return jsonify({"error": f"Background video file is too large (max {MAX_VIDEO_SIZE // (1024*1024)}MB)"}), 400
+                # Rename to final video path
+                background_video_filename = f"{job_id}_background{ext}"
+                background_video_path = os.path.join(app.config["UPLOAD_FOLDER"], background_video_filename)
+                os.rename(temp_path, background_video_path)
+                print(f"Saved background video: {background_video_path}")
+                background_image_path = None # Ensure image path is None
+
+            elif ext in ALLOWED_IMAGE_EXTENSIONS:
+                if file_size > MAX_IMAGE_SIZE:
+                     os.remove(temp_path) # Clean up oversized file
+                     return jsonify({"error": f"Background image file is too large (max {MAX_IMAGE_SIZE // (1024*1024)}MB)"}), 400
+                # Rename to final image path
+                background_image_filename = f"{job_id}_background{ext}"
+                background_image_path = os.path.join(app.config["UPLOAD_FOLDER"], background_image_filename)
+                os.rename(temp_path, background_image_path)
+                print(f"Saved background image: {background_image_path}")
+                background_video_path = None # Ensure video path is None
+
+            else:
+                os.remove(temp_path) # Clean up invalid file
+                return jsonify({"error": "Invalid background file format. Use common image or video types."}), 400
+
+        except Exception as e:
+            print(f"Error saving/processing background media: {e}")
+            # Clean up temp file if it exists on error
+            if os.path.exists(temp_path):
+                try: os.remove(temp_path)
+                except OSError: pass
+            return jsonify({"error": f"Failed to save or process background media: {e}"}), 500
+    # --- End Background Media Handling ---
+
+
+    # --- Get Configuration (No changes needed here for background) ---
     config = {
         # Basic Info
         "artist_name": request.form.get("artist_name", ""),
@@ -104,19 +123,12 @@ def upload_file():
         "bar_gap": int(request.form.get("bar_gap", 2)),
         "segment_height": int(request.form.get("segment_height", 6)),
         "segment_gap": int(request.form.get("segment_gap", 6)),
-        "corner_radius": int(request.form.get("corner_radius", 4)),
+        "corner_radius": int(request.form.get("corner_radius", 2)), # Default updated
         "analyzer_alpha": float(request.form.get("analyzer_alpha", 1.0)),
-        # ****** ADDED BAR COLOR FETCH ******
-        "bar_color": request.form.get(
-            "bar_color", "#FFFFFF"
-        ),  # Fetch the new bar color
-        "glow_effect": request.form.get(
-            "glow_effect", "off"
-        ),
-        # ****** END ADD ******
+        "bar_color": request.form.get("bar_color", "#FFFFFF"),
+        "glow_effect": request.form.get("glow_effect", "off"),
         "use_gradient": request.form.get("use_gradient") == "on",
-        "always_on_bottom": str(request.form.get("always_on_bottom")).lower()
-        in ("on", "true"),
+        "always_on_bottom": str(request.form.get("always_on_bottom")).lower() in ("on", "true"),
         # Advanced: Reactivity
         "amplitude_scale": float(request.form.get("amplitude_scale", 0.6)),
         "sensitivity": float(request.form.get("sensitivity", 1.0)),
@@ -136,30 +148,20 @@ def upload_file():
         # Advanced: Silence
         "silence_threshold": float(request.form.get("silence_threshold", 0.04)),
         "silence_decay_factor": float(request.form.get("silence_decay_factor", 0.5)),
-        # Advanced: Gradient
-        "gradient_top_color": (
-            200,
-            200,
-            255,
-        ),  # Could make these configurable too eventually
-        "gradient_bottom_color": (255, 255, 255),
-        "gradient_exponent": float(request.form.get("gradient_exponent", 0.7)),
         # Video Output
         "duration": float(request.form.get("duration", 0)) or None,
         "fps": int(request.form.get("fps", 30)),
         "width": int(request.form.get("width", 1280)),
         "height": int(request.form.get("height", 720)),
         # Other
-        "background_color": (0, 0, 0),  # Fallback solid color
+        "background_color": (0, 0, 0), # Fallback solid color
     }
     # --- End Configuration ---
 
     # Save configuration
     config_path = os.path.join(app.config["UPLOAD_FOLDER"], f"{job_id}_config.json")
     with open(config_path, "w") as f:
-        json.dump(
-            config, f, default=lambda x: list(x) if isinstance(x, tuple) else str(x)
-        )
+        json.dump(config, f, default=lambda x: list(x) if isinstance(x, tuple) else str(x))
     print(f"Saved config to: {config_path}")
 
     # Set initial job status
@@ -169,10 +171,11 @@ def upload_file():
         "status": "queued",
         "progress": 0,
         "input_file": audio_file_path,
+        # Pass the determined paths (one will be None)
         "background_image_file": background_image_path,
         "background_video_file": background_video_path,
         "output_file": output_path,
-        "config": config,  # Config dict is stored here
+        "config": config,
     }
 
     # Start processing in a background thread
@@ -181,8 +184,8 @@ def upload_file():
         args=(
             job_id,
             audio_file_path,
-            background_image_path,
-            background_video_path,
+            background_image_path, # Pass the potentially None path
+            background_video_path, # Pass the potentially None path
             output_path,
             config,
         ),
@@ -203,8 +206,8 @@ def upload_file():
 def process_video(
     job_id,
     input_file,
-    background_image_file,
-    background_video_file,
+    background_image_file, # Receives image path or None
+    background_video_file, # Receives video path or None
     output_file,
     config,
 ):
@@ -216,8 +219,8 @@ def process_video(
 
         create_spectrum_analyzer(
             audio_file=input_file,
-            background_image_path=background_image_file,
-            background_video_path=background_video_file,
+            background_image_path=background_image_file, # Pass along
+            background_video_path=background_video_file, # Pass along
             output_file=output_file,
             artist_name=config["artist_name"],
             track_title=config["track_title"],
@@ -225,7 +228,7 @@ def process_video(
             fps=config["fps"],
             height=config["height"],
             width=config["width"],
-            config=config,  # Pass the whole config dict
+            config=config,
             progress_callback=update_progress,
         )
         jobs[job_id]["status"] = "completed"
@@ -242,6 +245,7 @@ def job_status(job_id):
     if job_id not in jobs:
         return jsonify({"error": "Job not found"}), 404
     job_data = jobs[job_id].copy()
+    # Ensure sensitive paths aren't sent to client if needed, but okay for now
     return jsonify(job_data)
 
 
@@ -255,4 +259,5 @@ def download_file(job_id):
 
 
 if __name__ == "__main__":
+    # Use host='0.0.0.0' for accessibility on network, debug=False for production
     app.run(debug=True, host="0.0.0.0", port=8080)

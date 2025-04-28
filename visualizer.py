@@ -1,5 +1,3 @@
-# visualizer.py
-
 import numpy as np
 import librosa
 import os
@@ -55,37 +53,39 @@ def create_spectrum_analyzer(
         "decay_speed": 0.25, "always_on_bottom": True, "peak_hold_frames": 5,
         "peak_decay_speed": 0.15, "bass_threshold_adjust": 1.2, "mid_threshold_adjust": 1.0,
         "high_threshold_adjust": 0.9, "silence_threshold": 0.04, "silence_decay_factor": 0.5,
-        "noise_gate": 0.08, "use_gradient": False, "gradient_top_color": (200, 200, 255),
-        "gradient_bottom_color": (255, 255, 255), "gradient_exponent": 0.7,
+        "noise_gate": 0.08,
+        # Gradient options removed
     }
     # --- Config Processing ---
     if config and isinstance(config, dict):
-        bool_keys = ["always_on_bottom", "use_gradient"]
+        bool_keys = ["always_on_bottom"] # Removed 'use_gradient'
         float_keys = [
             "amplitude_scale", "sensitivity", "analyzer_alpha", "threshold_factor",
             "attack_speed", "decay_speed", "peak_decay_speed", "bass_threshold_adjust",
             "mid_threshold_adjust", "high_threshold_adjust", "silence_threshold",
-            "silence_decay_factor", "noise_gate", "gradient_exponent", "duration",
+            "silence_decay_factor", "noise_gate", "duration",
+            # Removed 'gradient_exponent'
         ]
         int_keys = [
             "n_bars", "bar_width", "bar_gap", "segment_height", "segment_gap",
             "corner_radius", "min_freq", "max_freq", "peak_hold_frames", "fps",
             "height", "width",
         ]
-        color_tuple_keys = ["gradient_top_color", "gradient_bottom_color", "background_color"]
+        color_tuple_keys = ["background_color"] # Removed gradient colors
         color_hex_keys = ["bar_color", "artist_color", "title_color"]
         processed_config = {}
+        # Check against the updated default_config which no longer has gradient keys
         for key, value in config.items():
             if key in default_config:
                 try:
                     if key in bool_keys:
                         processed_config[key] = str(value).lower() in ("true", "1", "on", "yes")
                     elif key in float_keys:
-                        if key == "duration" and value is not None and float(value) == 0:
+                         if key == "duration" and value is not None and float(value) == 0:
                              processed_config[key] = None
-                        elif value is not None:
+                         elif value is not None:
                              processed_config[key] = float(value)
-                        else:
+                         else:
                              processed_config[key] = default_config[key]
                     elif key in int_keys:
                         processed_config[key] = int(value)
@@ -98,14 +98,16 @@ def create_spectrum_analyzer(
                         processed_config[key] = str(value)
                     elif key == "glow_effect":
                          processed_config[key] = str(value).lower()
-                    else:
+                    else: # Catch-all for others like artist_name
                         processed_config[key] = value
                 except (ValueError, TypeError):
-                    print(f"Warning: Invalid value '{value}' for config key '{key}'. Using default '{default_config[key]}'.")
-                    processed_config[key] = default_config[key]
+                    # Use .get() for safety in case key somehow disappears mid-loop (unlikely)
+                    print(f"Warning: Invalid value '{value}' for config key '{key}'. Using default '{default_config.get(key)}'.")
+                    processed_config[key] = default_config.get(key)
+            # else: Silently ignore keys not in default_config (like removed gradient keys)
+
         default_config.update(processed_config)
-        if "gradient_exponent" not in processed_config:
-            default_config["gradient_exponent"] = 0.7
+        # No gradient_exponent default check needed
     # --- End Config Processing ---
 
     conf = default_config
@@ -121,10 +123,7 @@ def create_spectrum_analyzer(
     BASS_THRESHOLD_ADJUST = conf["bass_threshold_adjust"]; MID_THRESHOLD_ADJUST = conf["mid_threshold_adjust"]
     HIGH_THRESHOLD_ADJUST = conf["high_threshold_adjust"]; SILENCE_THRESHOLD = conf["silence_threshold"]
     SILENCE_DECAY_FACTOR = conf["silence_decay_factor"]; NOISE_GATE = conf["noise_gate"]
-    USE_GRADIENT = conf.get("use_gradient", False)
-    GRADIENT_TOP_COLOR = tuple(conf["gradient_top_color"]) if isinstance(conf["gradient_top_color"], (list, tuple)) else (200, 200, 255)
-    GRADIENT_BOTTOM_COLOR = tuple(conf["gradient_bottom_color"]) if isinstance(conf["gradient_bottom_color"], (list, tuple)) else (255, 255, 255)
-    GRADIENT_EXPONENT = conf["gradient_exponent"]
+    # Gradient config extraction removed
     BAR_COLOR_RGB = hex_to_rgb(conf.get("bar_color", "#FFFFFF"))
     ARTIST_COLOR_RGB = hex_to_rgb(conf.get("artist_color", "#FFFFFF"))
     TITLE_COLOR_RGB = hex_to_rgb(conf.get("title_color", "#FFFFFF"))
@@ -503,7 +502,8 @@ def create_spectrum_analyzer(
             if ALWAYS_ON_BOTTOM_FLAG and max_segments >= 1:
                 static_bottom_y = viz_bottom - SEGMENT_HEIGHT
                 static_dest_xy = (int(bar_x), int(static_bottom_y))
-                static_color_rgb = GRADIENT_BOTTOM_COLOR if USE_GRADIENT else BAR_COLOR_RGB
+                # Always use BAR_COLOR_RGB for static bottom
+                static_color_rgb = BAR_COLOR_RGB
                 static_color_rgba = static_color_rgb + (PIL_ALPHA,)
                 static_seg_img = Image.new("RGBA", (seg_width, seg_height), (0, 0, 0, 0))
                 static_seg_draw = ImageDraw.Draw(static_seg_img)
@@ -522,15 +522,8 @@ def create_spectrum_analyzer(
                 j = k + 1 if ALWAYS_ON_BOTTOM_FLAG else k
                 segment_y = viz_bottom - (j + 1) * SEGMENT_HEIGHT - j * SEGMENT_GAP
                 dest_xy = (int(bar_x), int(segment_y))
+                # Always use BAR_COLOR_RGB for dynamic segments
                 segment_color_rgb = BAR_COLOR_RGB
-                if USE_GRADIENT:
-                    gradient_factor_raw = j / max(1, max_segments - 1)
-                    gradient_factor_raw = min(1.0, max(0.0, gradient_factor_raw))
-                    gradient_factor = gradient_factor_raw**GRADIENT_EXPONENT
-                    r = int(GRADIENT_BOTTOM_COLOR[0] * (1 - gradient_factor) + GRADIENT_TOP_COLOR[0] * gradient_factor)
-                    g = int(GRADIENT_BOTTOM_COLOR[1] * (1 - gradient_factor) + GRADIENT_TOP_COLOR[1] * gradient_factor)
-                    b = int(GRADIENT_BOTTOM_COLOR[2] * (1 - gradient_factor) + GRADIENT_TOP_COLOR[2] * gradient_factor)
-                    segment_color_rgb = (max(0, min(r, 255)), max(0, min(g, 255)), max(0, min(b, 255)))
                 segment_color_rgba = segment_color_rgb + (PIL_ALPHA,)
                 segment_img = Image.new("RGBA", (seg_width, seg_height), (0, 0, 0, 0))
                 segment_draw_alpha = ImageDraw.Draw(segment_img)
@@ -550,15 +543,8 @@ def create_spectrum_analyzer(
                     peak_j = peak_segment_index_abs
                     peak_y = viz_bottom - (peak_j + 1) * SEGMENT_HEIGHT - peak_j * SEGMENT_GAP
                     peak_dest_xy = (int(bar_x), int(peak_y))
+                    # Always use BAR_COLOR_RGB for peak segments
                     peak_color_rgb = BAR_COLOR_RGB
-                    if USE_GRADIENT:
-                        gradient_factor_raw = peak_j / max(1, max_segments - 1)
-                        gradient_factor_raw = min(1.0, max(0.0, gradient_factor_raw))
-                        gradient_factor = gradient_factor_raw**GRADIENT_EXPONENT
-                        r = int(GRADIENT_BOTTOM_COLOR[0] * (1 - gradient_factor) + GRADIENT_TOP_COLOR[0] * gradient_factor)
-                        g = int(GRADIENT_BOTTOM_COLOR[1] * (1 - gradient_factor) + GRADIENT_TOP_COLOR[1] * gradient_factor)
-                        b = int(GRADIENT_BOTTOM_COLOR[2] * (1 - gradient_factor) + GRADIENT_TOP_COLOR[2] * gradient_factor)
-                        peak_color_rgb = (max(0, min(r, 255)), max(0, min(g, 255)), max(0, min(b, 255)))
                     peak_color_rgba = peak_color_rgb + (PIL_ALPHA,)
                     peak_img = Image.new("RGBA", (seg_width, seg_height), (0, 0, 0, 0))
                     peak_draw = ImageDraw.Draw(peak_img)
@@ -595,14 +581,13 @@ def create_spectrum_analyzer(
             frame_bytes = image.tobytes()
             process.stdin.write(frame_bytes)
         except (BrokenPipeError, OSError) as e:
-            # ** FIXED THIS BLOCK **
             print(f"\nError writing frame {frame_idx} to FFmpeg: {e}")
-            try: # Add inner try/except for closing stdin, as it might already be closed
+            try:
                 if process.stdin:
                      process.stdin.close()
             except OSError:
                 print(f"Warning: Error closing stdin for frame {frame_idx}, might already be closed.")
-            process.wait() # Wait for ffmpeg to exit after pipe error
+            process.wait()
             print(f"FFmpeg exit code (pipe error): {process.returncode}")
             if os.path.exists(temp_video_path):
                 try:
@@ -612,22 +597,21 @@ def create_spectrum_analyzer(
                     print(f"Warning: Could not remove temp file after pipe error: {rem_e}")
             raise RuntimeError(f"FFmpeg pipe error on frame {frame_idx}: {e}") from e
         except Exception as e:
-            # ** FIXED THIS BLOCK **
             print(f"\nUnexpected error during frame piping for frame {frame_idx}: {e}")
             if process.stdin:
                 try:
                     process.stdin.close()
                 except Exception:
-                    pass # Ignore errors closing potentially broken pipe
-            process.poll() # Check if process terminated
-            if process.returncode is None: # If not terminated, try to kill it
+                    pass
+            process.poll()
+            if process.returncode is None:
                 try:
                     process.terminate()
-                    process.wait(timeout=5) # Wait a bit for termination
+                    process.wait(timeout=5)
                 except Exception as term_e:
                     print(f"Warning: Error terminating ffmpeg process: {term_e}")
                     try:
-                        process.kill() # Force kill if terminate fails
+                        process.kill()
                         process.wait(timeout=2)
                     except Exception as kill_e:
                          print(f"Warning: Error killing ffmpeg process: {kill_e}")
@@ -636,8 +620,8 @@ def create_spectrum_analyzer(
                 try:
                     os.remove(temp_video_path)
                 except OSError:
-                    pass # Ignore error if removal fails
-            raise # Re-raise the original exception
+                    pass
+            raise
 
         # Update progress callback
         if progress_callback and frame_idx % 5 == 0:
@@ -654,10 +638,9 @@ def create_spectrum_analyzer(
         except (OSError, BrokenPipeError) as e:
              print(f"Warning: Error closing ffmpeg stdin (might be already closed): {e}")
 
-    process.wait() # Wait for ffmpeg to finish encoding
+    process.wait()
 
     if process.returncode != 0:
-        # ** FIXED THIS BLOCK **
         print(f"ERROR: FFmpeg video encoding failed (code {process.returncode})")
         if os.path.exists(temp_video_path):
             try:
@@ -684,7 +667,6 @@ def create_spectrum_analyzer(
         print(f"ERROR: FFmpeg audio merge failed (code {e.returncode})\nStderr:\n{e.stderr}\nTemp video: {temp_video_path}")
         # Keep temp file for debugging if merge fails
     except FileNotFoundError:
-        # ** FIXED THIS BLOCK **
         print("ERROR: ffmpeg not found for audio merge.")
         if os.path.exists(temp_video_path):
             try:
@@ -693,7 +675,6 @@ def create_spectrum_analyzer(
                 pass
         raise
     except Exception as e:
-        # ** FIXED THIS BLOCK **
         print(f"ERROR: Unexpected audio merge error: {e}")
         if os.path.exists(temp_video_path):
             try:

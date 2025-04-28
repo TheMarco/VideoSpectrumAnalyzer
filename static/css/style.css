@@ -1,17 +1,19 @@
 /* --- START OF FILE style.css --- */
 
-/* Remove explicit light background for body, let Bootstrap handle it */
+/* Body padding */
 body {
-    padding-bottom: 50px; /* Add padding at bottom */
+    padding-bottom: 50px;
 }
 
 .container {
     max-width: 960px;
 }
 
-/* Card shadow might need adjustment for dark theme, but let's see default first */
+/* Card shadow (optional adjustment for dark theme) */
 .card {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Keep for now */
+    /* Slightly softer shadow for dark mode */
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--bs-border-color-translucent); /* Use Bootstrap variable */
 }
 
 .progress {
@@ -19,18 +21,8 @@ body {
     font-size: 1rem;
 }
 
-/* Remove specific background/border for advanced settings card, let Bootstrap handle it */
-#advanced-settings .card {
-    box-shadow: none;
-    /* Use Bootstrap's border color variable or a subtle dark theme border */
-    border: 1px solid var(--bs-border-color-translucent);
-    /* background-color: #fdfdfd; */ /* REMOVED */
-}
-
-/* Remove specific background for advanced settings header */
-#advanced-settings .card-header {
-    /* background-color: rgba(0, 0, 0, 0.03); */ /* REMOVED */
-}
+/* Remove specific background/border for advanced settings card */
+/* #advanced-settings .card { ... } */ /* No longer needed with tabs */
 
 .form-label {
     font-weight: 500;
@@ -41,30 +33,54 @@ body {
     padding: 0.375rem;
 }
 
-/* ****** MODIFIED Error message styling for Dark Theme ****** */
+/* Help Icon Styling */
+.help-icon {
+    cursor: help;
+    color: var(--bs-secondary-color); /* Use Bootstrap's secondary text color */
+    font-size: 0.9em; /* Slightly smaller */
+    vertical-align: super; /* Align nicely with label text */
+    margin-left: 4px;
+}
+
+/* Error message styling for Dark Theme */
 #error-message, .error-pre {
      white-space: pre-wrap;
      word-wrap: break-word;
      max-height: 400px;
      overflow-y: auto;
-     /* Darker, desaturated red background */
-     background-color: #4d1a20; /* Example dark red */
-     /* Slightly lighter border */
-     border: 1px solid #8c2d38; /* Example border */
+     background-color: #4d1a20;
+     border: 1px solid #8c2d38;
      padding: 15px;
      border-radius: 5px;
      font-family: monospace;
-     /* Light text color for contrast */
-     color: #f8d7da; /* Example light pink/red */
+     color: #f8d7da;
      font-size: 0.9em;
 }
-/* ****** END MOD ****** */
+
+/* Footer styling */
+footer {
+    font-size: 0.9em;
+}
+
+/* Ensure tabs look okay */
+.nav-tabs .nav-link {
+    margin-bottom: -1px; /* Align with card border */
+}
+
+/* Add some padding inside tab panes */
+.tab-pane .card-body {
+    padding-top: 1.5rem;
+}
 
 
 @media (max-width: 768px) {
     .container {
         max-width: 100%;
         padding: 10px;
+    }
+    .nav-tabs.nav-fill .nav-item,
+    .nav-tabs.nav-fill .nav-link {
+        width: 100%; /* Stack tabs vertically on small screens */
     }
 }
 

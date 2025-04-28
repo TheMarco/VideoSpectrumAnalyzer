@@ -10,30 +10,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const downloadSection = document.getElementById('download-section');
     const downloadLink = document.getElementById('download-link');
     const backBtn = document.getElementById('back-btn');
-    const showAdvancedBtn = document.getElementById('show-advanced');
-    const advancedSettings = document.getElementById('advanced-settings');
+    // const showAdvancedBtn = document.getElementById('show-advanced'); // No longer needed
+    // const advancedSettings = document.getElementById('advanced-settings'); // No longer needed
 
-    // Background Type Elements
-    const imageRadio = document.getElementById('bg_type_image');
-    const videoRadio = document.getElementById('bg_type_video');
-    const imageInput = document.getElementById('background_image');
-    const videoInput = document.getElementById('background_video');
-
+    // REMOVED: Background Type Elements and Toggle Logic
+    // const imageRadio = ...
+    // const videoRadio = ...
+    // const imageInput = ...
+    // const videoInput = ...
 
     let currentJobId = null;
     let progressInterval = null;
 
-    // Show/hide advanced settings (Unchanged)
-    showAdvancedBtn.addEventListener('click', function() {
-        if (advancedSettings.style.display === 'none' || advancedSettings.style.display === '') {
-            advancedSettings.style.display = 'block';
-            showAdvancedBtn.textContent = 'Hide Advanced Settings';
-        } else {
-            advancedSettings.style.display = 'none';
-            showAdvancedBtn.textContent = 'Show Advanced Settings';
-        }
-    });
-
+    // REMOVED: Show/hide advanced settings logic
+    // showAdvancedBtn.addEventListener(...)
 
     // Handle form submission
     uploadForm.addEventListener('submit', function(e) {
@@ -43,8 +33,12 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.disabled = true;
         submitBtn.textContent = 'Processing...';
 
-        // Show processing card
-        uploadForm.style.display = 'none';
+        // Hide form sections, show processing
+        const configTabsContent = document.getElementById('configTabsContent');
+        const configTabs = document.getElementById('configTabs');
+        if (configTabs) configTabs.style.display = 'none';
+        if (configTabsContent) configTabsContent.style.display = 'none';
+
         processingCard.style.display = 'block';
         errorCard.style.display = 'none';
         downloadSection.style.display = 'none';
@@ -54,62 +48,62 @@ document.addEventListener('DOMContentLoaded', function() {
         progressBar.classList.add('progress-bar-animated');
         statusMessage.textContent = 'Uploading files...';
 
-        // --- Create FormData and Append Background File ---
-        const formData = new FormData(); // Create empty FormData
+        const formData = new FormData();
 
         // Append all non-file fields from the form
         const formElements = uploadForm.elements;
         for (let i = 0; i < formElements.length; i++) {
             const element = formElements[i];
-            if (element.name && element.type !== 'file' && element.type !== 'submit' && element.type !== 'radio' && element.type !== 'checkbox') {
-                 formData.append(element.name, element.value);
+            // Skip files, submit, radio (handled separately or not needed)
+            if (element.name && element.type !== 'file' && element.type !== 'submit' && element.type !== 'radio') {
+                 // Handle checkboxes correctly
+                if (element.type === 'checkbox') {
+                    formData.append(element.name, element.checked ? 'on' : 'off');
+                } else {
+                    formData.append(element.name, element.value);
+                }
             }
-             // Handle checkboxes correctly
-            else if (element.type === 'checkbox' && element.name) {
-                formData.append(element.name, element.checked ? 'on' : 'off'); // Send 'on' or 'off' consistently
-            }
-             // Radio buttons for background_type are handled implicitly by checking which file input is active
         }
 
          // Append the main audio file
         const audioFileInput = document.getElementById('file');
-        if (audioFileInput.files.length > 0) {
+        if (audioFileInput && audioFileInput.files.length > 0) {
             formData.append('file', audioFileInput.files[0]);
         } else {
              showError('Please select an audio file.');
+             // Re-enable form for correction
+             if (configTabs) configTabs.style.display = 'flex'; // or 'block' depending on layout needs
+             if (configTabsContent) configTabsContent.style.display = 'block';
+             processingCard.style.display = 'none';
              submitBtn.disabled = false;
              submitBtn.textContent = 'Generate Visualization';
              return; // Stop submission
         }
 
-
-        // Append the correct background file based on radio selection
-        if (imageRadio.checked && imageInput.files.length > 0) {
-            formData.append('background_image', imageInput.files[0]);
-            console.log("Appending background image:", imageInput.files[0].name);
-        } else if (videoRadio.checked && videoInput.files.length > 0) {
-            formData.append('background_video', videoInput.files[0]);
-            console.log("Appending background video:", videoInput.files[0].name);
+        // Append the unified background media file (if selected)
+        const backgroundMediaInput = document.getElementById('background_media');
+        if (backgroundMediaInput && backgroundMediaInput.files.length > 0) {
+            formData.append('background_media', backgroundMediaInput.files[0]);
+            console.log("Appending background media:", backgroundMediaInput.files[0].name);
         } else {
-            console.log("No background media selected or file missing.");
+            console.log("No background media selected.");
         }
-        // --- End FormData Creation ---
 
         // --- Fetch Request (Unchanged) ---
         fetch('/upload', {
             method: 'POST',
-            body: formData // Send the manually constructed FormData
+            body: formData
         })
         .then(response => response.json().then(data => ({ status: response.status, body: data })))
         .then(({ status, body }) => {
              if (status >= 400) {
                 showError(body.error || `Server error: ${status}`);
-                submitBtn.disabled = false; submitBtn.textContent = 'Generate Visualization';
+                // Don't re-enable submit button here, use Back button
                 return;
             }
             if (body.error) {
                 showError(body.error);
-                 submitBtn.disabled = false; submitBtn.textContent = 'Generate Visualization';
+                // Don't re-enable submit button here, use Back button
                 return;
             }
 
@@ -119,14 +113,19 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => {
             showError('An error occurred during upload: ' + error.message);
-             submitBtn.disabled = false; submitBtn.textContent = 'Generate Visualization';
+             // Don't re-enable submit button here, use Back button
         });
     });
 
-    // Back button (Unchanged)
+    // Back button
     backBtn.addEventListener('click', function() {
         errorCard.style.display = 'none';
-        uploadForm.style.display = 'block';
+        // Show form sections again
+        const configTabsContent = document.getElementById('configTabsContent');
+        const configTabs = document.getElementById('configTabs');
+        if (configTabs) configTabs.style.display = 'flex'; // or 'block'
+        if (configTabsContent) configTabsContent.style.display = 'block';
+
         const submitBtn = document.getElementById('submit-btn');
         submitBtn.disabled = false;
         submitBtn.textContent = 'Generate Visualization';
@@ -143,17 +142,21 @@ document.addEventListener('DOMContentLoaded', function() {
             fetch(`/job_status/${jobId}`)
                 .then(response => response.json())
                 .then(data => {
-                    if (data.error) { showError(data.error); clearInterval(progressInterval); return; }
+                    if (data.error) {
+                        showError(data.error);
+                        clearInterval(progressInterval);
+                        return;
+                    }
                     updateProgress(data);
                     if (data.status === 'completed' || data.status === 'failed') {
                         clearInterval(progressInterval);
-                        if (data.status !== 'completed') {
-                            const submitBtn = document.getElementById('submit-btn');
-                            submitBtn.disabled = false; submitBtn.textContent = 'Generate Visualization';
-                        }
+                        // No need to touch submit button state here anymore
                     }
                 })
-                .catch(error => { console.error('Error polling job status:', error); });
+                .catch(error => {
+                    showError('Error polling job status: ' + error.message); // Show polling errors
+                    clearInterval(progressInterval);
+                 });
         }, 1500);
     }
 
@@ -172,8 +175,9 @@ document.addEventListener('DOMContentLoaded', function() {
             downloadLink.href = `/download/${currentJobId}`;
             progressBar.classList.remove('progress-bar-animated');
             progressBar.classList.add('bg-success');
+            // Keep submit button disabled, user should use Back button to restart
             const submitBtn = document.getElementById('submit-btn');
-             submitBtn.disabled = true; submitBtn.textContent = 'Completed!';
+             if(submitBtn) submitBtn.textContent = 'Completed!';
         } else if (data.status === 'failed') {
             showError(data.error || 'An unknown error occurred during processing.');
             progressBar.classList.remove('progress-bar-animated');
@@ -182,17 +186,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Show error message (Unchanged)
+    // Show error message
     function showError(message) {
         console.error("Error displayed:", message);
-        uploadForm.style.display = 'none';
-        processingCard.style.display = 'none';
-        errorCard.style.display = 'block';
+        // Hide form sections
+        const configTabsContent = document.getElementById('configTabsContent');
+        const configTabs = document.getElementById('configTabs');
+        if (configTabs) configTabs.style.display = 'none';
+        if (configTabsContent) configTabsContent.style.display = 'none';
+
+        processingCard.style.display = 'none'; // Hide processing card
+        errorCard.style.display = 'block'; // Show error card
         errorMessage.textContent = message; // Use textContent for safety
         if (progressInterval) clearInterval(progressInterval);
-         // Ensure back button allows retry
+         // Back button is now the primary way to retry
          const submitBtn = document.getElementById('submit-btn');
-         if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Generate Visualization'; }
+         if (submitBtn) {
+            submitBtn.disabled = true; // Keep disabled until Back is clicked
+            submitBtn.textContent = 'Error Occurred';
+         }
     }
 
 });
