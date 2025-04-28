@@ -1,59 +1,64 @@
 /* --- START OF FILE style.css --- */
 
+/* Remove explicit light background for body, let Bootstrap handle it */
 body {
-    background-color: #f8f9fa;
     padding-bottom: 50px; /* Add padding at bottom */
 }
 
 .container {
-    max-width: 960px; /* Slightly wider container for more options */
+    max-width: 960px;
 }
 
+/* Card shadow might need adjustment for dark theme, but let's see default first */
 .card {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Keep for now */
 }
 
 .progress {
-    height: 30px; /* Match HTML */
-    font-size: 1rem; /* Make progress text readable */
+    height: 30px;
+    font-size: 1rem;
 }
 
-/* Preset button style removed */
-/* .preset-btn { ... } */
-
+/* Remove specific background/border for advanced settings card, let Bootstrap handle it */
 #advanced-settings .card {
     box-shadow: none;
-    border: 1px solid rgba(0, 0, 0, 0.125);
-    background-color: #fdfdfd; /* Slightly different background for advanced */
+    /* Use Bootstrap's border color variable or a subtle dark theme border */
+    border: 1px solid var(--bs-border-color-translucent);
+    /* background-color: #fdfdfd; */ /* REMOVED */
 }
 
+/* Remove specific background for advanced settings header */
 #advanced-settings .card-header {
-    background-color: rgba(0, 0, 0, 0.03);
+    /* background-color: rgba(0, 0, 0, 0.03); */ /* REMOVED */
 }
 
 .form-label {
     font-weight: 500;
 }
 
-/* Style color inputs */
 .form-control-color {
-    min-height: calc(1.5em + 0.75rem + 2px); /* Match text input height */
-    padding: 0.375rem; /* Add some padding */
+    min-height: calc(1.5em + 0.75rem + 2px);
+    padding: 0.375rem;
 }
 
-/* Error message styling */
-#error-message {
+/* ****** MODIFIED Error message styling for Dark Theme ****** */
+#error-message, .error-pre {
      white-space: pre-wrap;
      word-wrap: break-word;
-     max-height: 300px;
+     max-height: 400px;
      overflow-y: auto;
-     background-color: #f8d7da;
-     border: 1px solid #f5c6cb;
-     padding: 15px; /* More padding */
+     /* Darker, desaturated red background */
+     background-color: #4d1a20; /* Example dark red */
+     /* Slightly lighter border */
+     border: 1px solid #8c2d38; /* Example border */
+     padding: 15px;
      border-radius: 5px;
-     font-family: monospace; /* Better for tracebacks */
-     color: #721c24; /* Darker red text */
+     font-family: monospace;
+     /* Light text color for contrast */
+     color: #f8d7da; /* Example light pink/red */
+     font-size: 0.9em;
 }
+/* ****** END MOD ****** */
 
 
 @media (max-width: 768px) {
@@ -61,21 +66,6 @@ body {
         max-width: 100%;
         padding: 10px;
     }
-}
-
-/* Error message styling */
-#error-message, .error-pre { /* Apply to ID or class */
-     white-space: pre-wrap;
-     word-wrap: break-word;
-     max-height: 400px; /* Slightly more height */
-     overflow-y: auto;
-     background-color: #f8d7da;
-     border: 1px solid #f5c6cb;
-     padding: 15px;
-     border-radius: 5px;
-     font-family: monospace;
-     color: #721c24;
-     font-size: 0.9em; /* Slightly smaller font for stack traces */
 }
 
 /* --- END OF FILE style.css --- */

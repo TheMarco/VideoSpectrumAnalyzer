@@ -1,16 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark"> <!-- Apply dark theme -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Audio Visualizer</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Use a Bootstrap version supporting dark mode -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <div class="container mt-5">
         <h1 class="text-center mb-4">Audio Visualizer</h1>
 
+        <!-- Main Configuration Card -->
         <div class="card mb-4">
             <div class="card-header">
                 <h5>Configure Visualization</h5>
@@ -23,6 +25,7 @@
                         <div class="col-12">
                             <label for="file" class="form-label">1. Audio File*</label>
                             <input type="file" class="form-control" id="file" name="file" accept="audio/*" required>
+                            <small class="form-text text-muted">Max audio size: 1.6GB</small>
                         </div>
                     </div>
 
@@ -41,29 +44,43 @@
                         </div>
                     </div>
 
-                     <!-- Background File Inputs -->
+                     <!-- Background File Inputs (Conditional Display) -->
                      <div class="row mb-3">
+                        <!-- Image Input Group -->
                         <div class="col-12" id="background_image_input_group">
                              <label for="background_image" class="form-label visually-hidden">Background Image File</label>
                             <input type="file" class="form-control" id="background_image" name="background_image" accept="image/png, image/jpeg, image/webp">
                              <small class="form-text text-muted">Recommended: PNG, JPG, WEBP (Max 50MB)</small>
                         </div>
+                        <!-- Video Input Group (Initially Hidden) -->
                          <div class="col-12" id="background_video_input_group" style="display: none;">
                              <label for="background_video" class="form-label visually-hidden">Background Video File</label>
                             <input type="file" class="form-control" id="background_video" name="background_video" accept="video/mp4, video/webm, video/quicktime, video/x-msvideo, video/x-matroska">
                              <small class="form-text text-muted">Recommended: MP4, WEBM, MOV (Max 1GB, loops automatically)</small>
                         </div>
-                    </div>
+                    </div> <!-- End Background File Inputs Row -->
 
-                    <!-- Row 3 & 4: Artist/Track Info (Unchanged) -->
+                    <!-- Row 3 & 4: Artist/Track Info -->
                     <div class="row mb-3 align-items-end">
-                        <div class="col-md-9"> <label for="artist_name" class="form-label">Artist Name</label> <input type="text" class="form-control" id="artist_name" name="artist_name" placeholder="Enter Artist Name (Optional)"> </div>
-                         <div class="col-md-3"> <label for="artist_color" class="form-label">Color</label> <input type="color" class="form-control form-control-color w-100" id="artist_color" name="artist_color" value="#FFFFFF" title="Choose artist name color"> </div>
+                        <div class="col-md-9">
+                            <label for="artist_name" class="form-label">Artist Name</label>
+                            <input type="text" class="form-control" id="artist_name" name="artist_name" placeholder="Enter Artist Name (Optional)">
+                        </div>
+                         <div class="col-md-3">
+                            <label for="artist_color" class="form-label">Color</label>
+                            <input type="color" class="form-control form-control-color w-100" id="artist_color" name="artist_color" value="#FFFFFF" title="Choose artist name color">
+                        </div>
                     </div>
                      <div class="row mb-4 align-items-end">
-                        <div class="col-md-9"> <label for="track_title" class="form-label">Track Title</label> <input type="text" class="form-control" id="track_title" name="track_title" placeholder="Enter Track Title (Optional)"> </div>
-                         <div class="col-md-3"> <label for="title_color" class="form-label">Color</label> <input type="color" class="form-control form-control-color w-100" id="title_color" name="title_color" value="#FFFFFF" title="Choose track title color"> </div>
-                    </div>
+                        <div class="col-md-9">
+                            <label for="track_title" class="form-label">Track Title</label>
+                            <input type="text" class="form-control" id="track_title" name="track_title" placeholder="Enter Track Title (Optional)">
+                        </div>
+                         <div class="col-md-3">
+                            <label for="title_color" class="form-label">Color</label>
+                            <input type="color" class="form-control form-control-color w-100" id="title_color" name="title_color" value="#FFFFFF" title="Choose track title color">
+                        </div>
+                    </div> <!-- End Artist/Track Info Row -->
 
                     <!-- Separator -->
                     <hr class="my-4">
@@ -71,34 +88,38 @@
                     <!-- Section: Visualizer Appearance -->
                     <h5 class="mb-3">Visualizer Appearance</h5>
                     <div class="row mb-3">
-                        <div class="col-md-4"> <label for="n_bars" class="form-label">Number of Bars</label> <input type="number" class="form-control" id="n_bars" name="n_bars" value="20" min="10" max="100"> </div>
-                        <div class="col-md-4"> <label for="bar_width" class="form-label">Bar Width (px)</label> <input type="number" class="form-control" id="bar_width" name="bar_width" value="40" min="5" max="100"> </div>
-                        <div class="col-md-4"> <label for="bar_gap" class="form-label">Bar Gap (px)</label> <input type="number" class="form-control" id="bar_gap" name="bar_gap" value="2" min="0" max="20"> </div>
-                    </div>
-                     <div class="row mb-3">
                         <div class="col-md-4">
-                            <label for="glow_effect" class="form-label">Outer Glow Effect</label>
-                            <select class="form-select" id="glow_effect" name="glow_effect">
-                                <option value="off" selected>Off (Default)</option>
-                                <option value="white">White Glow</option>
-                                <option value="black">Black Glow</option>
-                            </select>
-                            <small class="form-text text-muted">Adds a subtle glow behind bars/text.</small>
+                            <label for="n_bars" class="form-label">Number of Bars</label>
+                            <input type="number" class="form-control" id="n_bars" name="n_bars" value="20" min="10" max="100">
                         </div>
-                        <div class="col-md-8">
-                            <!-- Placeholder for future options or alignment -->
+                        <div class="col-md-4">
+                            <label for="bar_width" class="form-label">Bar Width (px)</label>
+                            <input type="number" class="form-control" id="bar_width" name="bar_width" value="40" min="5" max="100">
                         </div>
-                     </div>
-                    <div class="row mb-3">
-                         <div class="col-md-4"> <label for="segment_height" class="form-label">Segment Height (px)</label> <input type="number" class="form-control" id="segment_height" name="segment_height" value="6" min="2" max="20"> </div>
-                        <div class="col-md-4"> <label for="segment_gap" class="form-label">Segment Gap (px)</label> <input type="number" class="form-control" id="segment_gap" name="segment_gap" value="6" min="0" max="20"> </div>
-                         <div class="col-md-4"> <label for="corner_radius" class="form-label">Corner Radius (px)</label> <input type="number" class="form-control" id="corner_radius" name="corner_radius" value="4" min="0" max="20"> </div>
+                        <div class="col-md-4">
+                            <label for="bar_gap" class="form-label">Bar Gap (px)</label>
+                            <input type="number" class="form-control" id="bar_gap" name="bar_gap" value="2" min="0" max="20">
+                        </div>
                     </div>
-                     <div class="row mb-3 align-items-end"> 
+                    <div class="row mb-3">
+                         <div class="col-md-4">
+                            <label for="segment_height" class="form-label">Segment Height (px)</label>
+                            <input type="number" class="form-control" id="segment_height" name="segment_height" value="6" min="2" max="20">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="segment_gap" class="form-label">Segment Gap (px)</label>
+                            <input type="number" class="form-control" id="segment_gap" name="segment_gap" value="6" min="0" max="20">
+                        </div>
+                         <div class="col-md-4">
+                            <label for="corner_radius" class="form-label">Corner Radius (px)</label>
+                            <input type="number" class="form-control" id="corner_radius" name="corner_radius" value="2" min="0" max="20"> <!-- Default value set to 2 -->
+                        </div>
+                    </div>
+                     <div class="row mb-3 align-items-end">
                          <div class="col-md-3">
                             <label for="analyzer_alpha" class="form-label">Analyzer Transparency</label>
                             <input type="range" class="form-range" id="analyzer_alpha" name="analyzer_alpha" value="1.0" min="0.05" max="1.0" step="0.05">
-                            <small class="form-text text-muted" style="display: block; margin-top: -0.25rem;">Lower = more transparent</small> 
+                            <small class="form-text text-muted" style="display: block; margin-top: -0.25rem;">Lower = more transparent</small>
                         </div>
                          <div class="col-md-3">
                              <label for="bar_color" class="form-label">Bar Color (Base)</label>
@@ -121,36 +142,238 @@
                             </div>
                         </div>
                      </div>
+                     <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="glow_effect" class="form-label">Outer Glow Effect</label>
+                            <select class="form-select" id="glow_effect" name="glow_effect">
+                                <option value="off" selected>Off (Default)</option>
+                                <option value="white">White Glow</option>
+                                <option value="black">Black Glow</option>
+                            </select>
+                            <small class="form-text text-muted">Adds a subtle glow behind bars/text.</small>
+                        </div>
+                        <div class="col-md-8">
+                            <!-- Placeholder -->
+                        </div>
+                     </div> <!-- End Visualizer Appearance Row -->
 
-                     <!-- Separator & Advanced Settings (Unchanged) -->
+                     <!-- Separator & Advanced Settings -->
                      <hr class="my-4">
-                    <div class="mb-3"> <button type="button" class="btn btn-outline-secondary" id="show-advanced">Show/Hide Advanced Settings</button> </div>
-                    <div id="advanced-settings" class="mb-3" style="display: none;"> <div class="card"> <div class="card-header"><h6>Advanced Settings</h6></div> <div class="card-body">
-                        <!-- ... (All advanced settings inputs - unchanged) ... -->
-                        <h5 class="mb-3 mt-2">Reactivity Settings</h5> <div class="row mb-3"> <div class="col-md-4"><label for="sensitivity" class="form-label">Overall Sensitivity</label><input type="range" class="form-range" id="sensitivity" name="sensitivity" value="1.0" min="0.2" max="3.0" step="0.1"><small class="form-text text-muted">Adjusts overall bar height.</small></div> <div class="col-md-4"><label for="amplitude_scale" class="form-label">Amplitude Scale (Internal)</label><input type="number" class="form-control" id="amplitude_scale" name="amplitude_scale" value="0.6" min="0.1" max="2" step="0.1"><small class="form-text text-muted">Base scaling before sensitivity.</small></div> <div class="col-md-4"><label for="threshold_factor" class="form-label">Threshold Factor</label><input type="number" class="form-control" id="threshold_factor" name="threshold_factor" value="0.3" min="0.05" max="0.5" step="0.05"><small class="form-text text-muted">Lower = more reactive.</small></div> </div> <div class="row mb-3"> <div class="col-md-4"><label for="attack_speed" class="form-label">Attack Speed</label><input type="number" class="form-control" id="attack_speed" name="attack_speed" value="0.95" min="0.5" max="0.99" step="0.01"><small class="form-text text-muted">How quickly bars rise.</small></div> <div class="col-md-4"><label for="decay_speed" class="form-label">Decay Speed</label><input type="number" class="form-control" id="decay_speed" name="decay_speed" value="0.25" min="0.05" max="0.5" step="0.05"><small class="form-text text-muted">How quickly bars fall.</small></div> <div class="col-md-4"><label for="noise_gate" class="form-label">Noise Gate</label><input type="number" class="form-control" id="noise_gate" name="noise_gate" value="0.08" min="0.0" max="0.2" step="0.01"><small class="form-text text-muted">Level below which bars zero out.</small></div> </div>
-                        <h5 class="mb-3 mt-4">Peak Settings</h5> <div class="row mb-3"> <div class="col-md-6"><label for="peak_hold_frames" class="form-label">Peak Hold Frames</label><input type="number" class="form-control" id="peak_hold_frames" name="peak_hold_frames" value="5" min="0" max="60"></div> <div class="col-md-6"><label for="peak_decay_speed" class="form-label">Peak Decay Speed</label><input type="number" class="form-control" id="peak_decay_speed" name="peak_decay_speed" value="0.15" min="0.01" max="0.5" step="0.01"><small class="form-text text-muted">How quickly peaks fall after hold.</small></div> </div>
-                        <h5 class="mb-3 mt-4">Frequency & Threshold Adjustments</h5> <div class="row mb-3"> <div class="col-md-6"><label for="min_freq" class="form-label">Min Frequency (Hz)</label><input type="number" class="form-control" id="min_freq" name="min_freq" value="30" min="20" max="500"></div> <div class="col-md-6"><label for="max_freq" class="form-label">Max Frequency (Hz)</label><input type="number" class="form-control" id="max_freq" name="max_freq" value="16000" min="5000" max="22050"></div> </div> <div class="row mb-3"> <div class="col-md-4"><label for="bass_threshold_adjust" class="form-label">Bass Threshold Adj.</label><input type="number" class="form-control" id="bass_threshold_adjust" name="bass_threshold_adjust" value="1.2" min="0.5" max="2" step="0.1"><small class="form-text text-muted">Adjusts bass reactivity.</small></div> <div class="col-md-4"><label for="mid_threshold_adjust" class="form-label">Mid Threshold Adj.</label><input type="number" class="form-control" id="mid_threshold_adjust" name="mid_threshold_adjust" value="1.0" min="0.5" max="2" step="0.1"></div> <div class="col-md-4"><label for="high_threshold_adjust" class="form-label">High Threshold Adj.</label><input type="number" class="form-control" id="high_threshold_adjust" name="high_threshold_adjust" value="0.9" min="0.5" max="2" step="0.1"></div> </div>
-                        <h5 class="mb-3 mt-4">Silence Handling</h5> <div class="row mb-3"> <div class="col-md-6"><label for="silence_threshold" class="form-label">Silence Threshold</label><input type="number" class="form-control" id="silence_threshold" name="silence_threshold" value="0.04" min="0.01" max="0.2" step="0.01"><small class="form-text text-muted">Global energy considered silence.</small></div> <div class="col-md-6"><label for="silence_decay_factor" class="form-label">Silence Decay Factor</label><input type="number" class="form-control" id="silence_decay_factor" name="silence_decay_factor" value="0.5" min="0.1" max="0.9" step="0.1"><small class="form-text text-muted">How quickly bars drop in silence.</small></div> </div>
-                        <h5 class="mb-3 mt-4">Gradient Detail</h5> <div class="row mb-3"> <div class="col-md-6"><label for="gradient_exponent" class="form-label">Gradient Curve Exponent</label><input type="number" class="form-control" id="gradient_exponent" name="gradient_exponent" value="0.7" min="0.1" max="3.0" step="0.1"><small class="form-text text-muted">Adjusts gradient transition (1=linear, <1=faster bottom, >1=faster top).</small></div> </div>
-                        <h5 class="mb-3 mt-4">Video Output Settings</h5> <div class="row mb-3"> <div class="col-md-4"><label for="duration" class="form-label">Duration (sec, 0=full)</label><input type="number" class="form-control" id="duration" name="duration" value="0" min="0" step="1"></div> <div class="col-md-4"><label for="fps" class="form-label">FPS</label><input type="number" class="form-control" id="fps" name="fps" value="30" min="15" max="60"></div> <div class="col-md-4"></div> </div> <div class="row mb-3"> <div class="col-md-6"><label for="width" class="form-label">Video Width (px)</label><input type="number" class="form-control" id="width" name="width" value="1280" min="640" max="3840" step="10"></div> <div class="col-md-6"><label for="height" class="form-label">Video Height (px)</label><input type="number" class="form-control" id="height" name="height" value="720" min="360" max="2160" step="10"></div> </div>
-                    </div> </div> </div>
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-outline-secondary" id="show-advanced">Show/Hide Advanced Settings</button>
+                    </div>
+                    <div id="advanced-settings" class="mb-3" style="display: none;">
+                        <div class="card">
+                            <div class="card-header"><h6>Advanced Settings</h6></div>
+                            <div class="card-body">
+                                <!-- Reactivity Settings -->
+                                <h5 class="mb-3 mt-2">Reactivity Settings</h5>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label for="sensitivity" class="form-label">Overall Sensitivity</label>
+                                        <input type="range" class="form-range" id="sensitivity" name="sensitivity" value="1.0" min="0.2" max="3.0" step="0.1">
+                                        <small class="form-text text-muted">Adjusts overall bar height.</small>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="amplitude_scale" class="form-label">Amplitude Scale (Internal)</label>
+                                        <input type="number" class="form-control" id="amplitude_scale" name="amplitude_scale" value="0.6" min="0.1" max="2" step="0.1">
+                                        <small class="form-text text-muted">Base scaling before sensitivity.</small>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="threshold_factor" class="form-label">Threshold Factor</label>
+                                        <input type="number" class="form-control" id="threshold_factor" name="threshold_factor" value="0.3" min="0.05" max="0.5" step="0.05">
+                                        <small class="form-text text-muted">Lower = more reactive.</small>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label for="attack_speed" class="form-label">Attack Speed</label>
+                                        <input type="number" class="form-control" id="attack_speed" name="attack_speed" value="0.95" min="0.5" max="0.99" step="0.01">
+                                        <small class="form-text text-muted">How quickly bars rise.</small>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="decay_speed" class="form-label">Decay Speed</label>
+                                        <input type="number" class="form-control" id="decay_speed" name="decay_speed" value="0.25" min="0.05" max="0.5" step="0.05">
+                                        <small class="form-text text-muted">How quickly bars fall.</small>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="noise_gate" class="form-label">Noise Gate</label>
+                                        <input type="number" class="form-control" id="noise_gate" name="noise_gate" value="0.08" min="0.0" max="0.2" step="0.01">
+                                        <small class="form-text text-muted">Level below which bars zero out.</small>
+                                    </div>
+                                </div>
+                                <!-- Peak Settings -->
+                                <h5 class="mb-3 mt-4">Peak Settings</h5>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="peak_hold_frames" class="form-label">Peak Hold Frames</label>
+                                        <input type="number" class="form-control" id="peak_hold_frames" name="peak_hold_frames" value="5" min="0" max="60">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="peak_decay_speed" class="form-label">Peak Decay Speed</label>
+                                        <input type="number" class="form-control" id="peak_decay_speed" name="peak_decay_speed" value="0.15" min="0.01" max="0.5" step="0.01">
+                                        <small class="form-text text-muted">How quickly peaks fall after hold.</small>
+                                    </div>
+                                </div>
+                                <!-- Frequency & Threshold Adjustments -->
+                                <h5 class="mb-3 mt-4">Frequency & Threshold Adjustments</h5>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="min_freq" class="form-label">Min Frequency (Hz)</label>
+                                        <input type="number" class="form-control" id="min_freq" name="min_freq" value="30" min="20" max="500">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="max_freq" class="form-label">Max Frequency (Hz)</label>
+                                        <input type="number" class="form-control" id="max_freq" name="max_freq" value="16000" min="5000" max="22050">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label for="bass_threshold_adjust" class="form-label">Bass Threshold Adj.</label>
+                                        <input type="number" class="form-control" id="bass_threshold_adjust" name="bass_threshold_adjust" value="1.2" min="0.5" max="2" step="0.1">
+                                        <small class="form-text text-muted">Adjusts bass reactivity.</small>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="mid_threshold_adjust" class="form-label">Mid Threshold Adj.</label>
+                                        <input type="number" class="form-control" id="mid_threshold_adjust" name="mid_threshold_adjust" value="1.0" min="0.5" max="2" step="0.1">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="high_threshold_adjust" class="form-label">High Threshold Adj.</label>
+                                        <input type="number" class="form-control" id="high_threshold_adjust" name="high_threshold_adjust" value="0.9" min="0.5" max="2" step="0.1">
+                                    </div>
+                                </div>
+                                <!-- Silence Handling -->
+                                <h5 class="mb-3 mt-4">Silence Handling</h5>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="silence_threshold" class="form-label">Silence Threshold</label>
+                                        <input type="number" class="form-control" id="silence_threshold" name="silence_threshold" value="0.04" min="0.01" max="0.2" step="0.01">
+                                        <small class="form-text text-muted">Global energy considered silence.</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="silence_decay_factor" class="form-label">Silence Decay Factor</label>
+                                        <input type="number" class="form-control" id="silence_decay_factor" name="silence_decay_factor" value="0.5" min="0.1" max="0.9" step="0.1">
+                                        <small class="form-text text-muted">How quickly bars drop in silence.</small>
+                                    </div>
+                                </div>
+                                <!-- Gradient Detail -->
+                                <h5 class="mb-3 mt-4">Gradient Detail</h5>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="gradient_exponent" class="form-label">Gradient Curve Exponent</label>
+                                        <input type="number" class="form-control" id="gradient_exponent" name="gradient_exponent" value="0.7" min="0.1" max="3.0" step="0.1">
+                                        <small class="form-text text-muted">Adjusts gradient transition (1=linear, <1=faster bottom, >1=faster top).</small>
+                                    </div>
+                                    <!-- Placeholder column -->
+                                    <div class="col-md-6"></div>
+                                </div>
+                                <!-- Video Output Settings -->
+                                <h5 class="mb-3 mt-4">Video Output Settings</h5>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label for="duration" class="form-label">Duration (sec, 0=full)</label>
+                                        <input type="number" class="form-control" id="duration" name="duration" value="0" min="0" step="1">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="fps" class="form-label">FPS</label>
+                                        <input type="number" class="form-control" id="fps" name="fps" value="30" min="15" max="60">
+                                    </div>
+                                    <!-- Placeholder column -->
+                                    <div class="col-md-4"></div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="width" class="form-label">Video Width (px)</label>
+                                        <input type="number" class="form-control" id="width" name="width" value="1280" min="640" max="3840" step="10">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="height" class="form-label">Video Height (px)</label>
+                                        <input type="number" class="form-control" id="height" name="height" value="720" min="360" max="2160" step="10">
+                                    </div>
+                                </div>
+                            </div> <!-- End Advanced Settings Card Body -->
+                        </div> <!-- End Advanced Settings Card -->
+                    </div> <!-- End Advanced Settings Container Div -->
 
-                    <!-- Submit Button (Unchanged) -->
-                    <div class="d-grid mt-4"> <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">Generate Visualization</button> </div>
-                </form>
+                    <!-- Submit Button -->
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">Generate Visualization</button>
+                    </div>
+                </form> <!-- End Form -->
             </div> <!-- End Main Card Body -->
         </div> <!-- End Main Card -->
 
-        <!-- Processing & Error Cards (Unchanged) -->
-         <div id="processing-card" class="card mb-4" style="display: none;"> <div class="card-header"><h5>Processing</h5></div> <div class="card-body"> <div class="progress mb-3" style="height: 30px;"> <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated fs-6" role="progressbar" style="width: 0%"></div> </div> <p id="status-message" class="text-center">Processing your audio file...</p> <div id="download-section" style="display: none;"> <div class="d-grid"> <a id="download-link" href="#" class="btn btn-success btn-lg">Download Visualization</a> </div> </div> </div> </div>
-         <div id="error-card" class="card mb-4" style="display: none;"> <div class="card-header bg-danger text-white"><h5>Error</h5></div> <div class="card-body"> <p><strong>An error occurred during processing:</strong></p> <pre id="error-message" class="error-pre"></pre> <div class="d-grid"> <button type="button" class="btn btn-outline-secondary" id="back-btn">Back to Form</button> </div> </div> </div>
+        <!-- Processing Card -->
+         <div id="processing-card" class="card mb-4" style="display: none;">
+             <div class="card-header"><h5>Processing</h5></div>
+             <div class="card-body">
+                 <div class="progress mb-3" style="height: 30px;">
+                     <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated fs-6" role="progressbar" style="width: 0%"></div>
+                 </div>
+                 <p id="status-message" class="text-center">Processing your audio file...</p>
+                 <div id="download-section" style="display: none;">
+                     <div class="d-grid">
+                         <a id="download-link" href="#" class="btn btn-success btn-lg">Download Visualization</a>
+                     </div>
+                 </div>
+             </div>
+         </div> <!-- End Processing Card -->
 
-    </div>
+         <!-- Error Card -->
+         <div id="error-card" class="card mb-4" style="display: none;">
+             <div class="card-header bg-danger-subtle text-danger-emphasis"><h5>Error</h5></div>
+             <div class="card-body">
+                 <p><strong>An error occurred during processing:</strong></p>
+                 <pre id="error-message" class="error-pre"></pre>
+                 <div class="d-grid">
+                     <button type="button" class="btn btn-outline-secondary" id="back-btn">Back to Form</button>
+                 </div>
+             </div>
+         </div> <!-- End Error Card -->
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    </div> <!-- End Container -->
+
+    <!-- Footer -->
+    <footer class="container text-center text-muted mt-5 py-3">
+        <hr>
+        <p>Created by Marco van Hylckama Vlieg (<a href="https://x.com/AIandDesign" target="_blank" rel="noopener noreferrer" class="link-secondary">@AIandDesign on X</a>)</p>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    <script> /* Background Toggle Script (Unchanged) */
-        document.addEventListener('DOMContentLoaded', function() { const imageRadio = document.getElementById('bg_type_image'); const videoRadio = document.getElementById('bg_type_video'); const imageInputGroup = document.getElementById('background_image_input_group'); const videoInputGroup = document.getElementById('background_video_input_group'); const imageInput = document.getElementById('background_image'); const videoInput = document.getElementById('background_video'); function toggleBackgroundInput() { if (imageRadio.checked) { imageInputGroup.style.display = 'block'; videoInputGroup.style.display = 'none'; videoInput.value = ''; } else { imageInputGroup.style.display = 'none'; videoInputGroup.style.display = 'block'; imageInput.value = ''; } } imageRadio.addEventListener('change', toggleBackgroundInput); videoRadio.addEventListener('change', toggleBackgroundInput); toggleBackgroundInput(); });
+    <!-- Inline JS for Background Toggle -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const imageRadio = document.getElementById('bg_type_image');
+            const videoRadio = document.getElementById('bg_type_video');
+            const imageInputGroup = document.getElementById('background_image_input_group');
+            const videoInputGroup = document.getElementById('background_video_input_group');
+            const imageInput = document.getElementById('background_image');
+            const videoInput = document.getElementById('background_video');
+
+            function toggleBackgroundInput() {
+                if (imageRadio.checked) {
+                    imageInputGroup.style.display = 'block';
+                    videoInputGroup.style.display = 'none';
+                    // Clear the other input to prevent accidental submission
+                    if (videoInput) videoInput.value = '';
+                } else {
+                    imageInputGroup.style.display = 'none';
+                    videoInputGroup.style.display = 'block';
+                     // Clear the other input to prevent accidental submission
+                    if (imageInput) imageInput.value = '';
+                }
+            }
+
+            // Add event listeners only if elements exist
+            if (imageRadio) imageRadio.addEventListener('change', toggleBackgroundInput);
+            if (videoRadio) videoRadio.addEventListener('change', toggleBackgroundInput);
+
+            // Initial call to set the correct state on page load
+            toggleBackgroundInput();
+        });
     </script>
 </body>
 </html>

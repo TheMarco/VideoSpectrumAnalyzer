@@ -50,7 +50,7 @@ def create_spectrum_analyzer(
         "n_bars": 40, "bar_width": 25, "bar_gap": 2, "bar_color": "#FFFFFF",
         "glow_effect": "off", "background_color": (0, 0, 0), "artist_color": "#FFFFFF",
         "title_color": "#FFFFFF", "amplitude_scale": 0.6, "sensitivity": 1.0,
-        "analyzer_alpha": 1.0, "segment_height": 6, "segment_gap": 6, "corner_radius": 4,
+        "analyzer_alpha": 1.0, "segment_height": 6, "segment_gap": 6, "corner_radius": 2,
         "min_freq": 30, "max_freq": 16000, "threshold_factor": 0.3, "attack_speed": 0.95,
         "decay_speed": 0.25, "always_on_bottom": True, "peak_hold_frames": 5,
         "peak_decay_speed": 0.15, "bass_threshold_adjust": 1.2, "mid_threshold_adjust": 1.0,
