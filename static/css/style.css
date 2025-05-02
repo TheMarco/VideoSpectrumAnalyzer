@@ -84,4 +84,21 @@ footer {
     }
 }
 
+/* Add styling for invalid form fields */
+.is-invalid {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25) !important;
+}
+
+/* Add a shake animation for invalid fields */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.is-invalid {
+    animation: shake 0.6s ease-in-out;
+}
+
 /* --- END OF FILE style.css --- */

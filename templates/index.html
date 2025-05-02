@@ -43,38 +43,59 @@
                             <div class="row mb-3">
                                 <div class="col-12">
                                     <label for="file" class="form-label">Audio File* <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="right" title="Select the primary audio track (MP3, WAV, FLAC, etc.). Max 1.6GB."></i></label>
-                                    <input type="file" class="form-control" id="file" name="file" accept="audio/*" required>
+                                    <input type="file" class="form-control" id="file" name="file" accept="audio/*">
                                 </div>
                             </div>
-
-                            <!-- Unified Background Media -->
+                            
+                            <!-- Background Media -->
                             <div class="row mb-3">
                                 <div class="col-12">
-                                     <label for="background_media" class="form-label">Background Media (Optional) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="right" title="Select an image (PNG, JPG, WEBP - Max 50MB) or a video (MP4, WEBM, MOV - Max 1GB) to use as the background. Videos will loop automatically."></i></label>
-                                    <input type="file" class="form-control" id="background_media" name="background_media" accept="image/png, image/jpeg, image/webp, video/mp4, video/webm, video/quicktime, video/x-msvideo, video/x-matroska">
-                                    <small class="form-text text-muted">Accepts common image and video formats.</small>
+                                    <label for="background_media" class="form-label">Background Image/Video <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="right" title="Optional background image (JPG, PNG) or video (MP4). If not provided, a black background will be used."></i></label>
+                                    <input type="file" class="form-control" id="background_media" name="background_media" accept="image/*,video/*">
                                 </div>
                             </div>
-
-                            <!-- Artist/Track Info -->
-                            <div class="row mb-3 align-items-end">
-                                <div class="col-md-9">
-                                    <label for="artist_name" class="form-label">Artist Name <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Optional: Display the artist name below the visualizer."></i></label>
-                                    <input type="text" class="form-control" id="artist_name" name="artist_name" placeholder="Artist Name">
+                            
+                            <!-- Artist and Track Info -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="artist_name" class="form-label">Artist Name <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Artist name to display in the visualization."></i></label>
+                                    <input type="text" class="form-control" id="artist_name" name="artist_name" value="">
                                 </div>
-                                 <div class="col-md-3">
-                                    <label for="artist_color" class="form-label">Color</label>
-                                    <input type="color" class="form-control form-control-color w-100" id="artist_color" name="artist_color" value="#FFFFFF" title="Choose artist name color">
+                                <div class="col-md-6">
+                                    <label for="track_title" class="form-label">Track Title <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Track title to display in the visualization."></i></label>
+                                    <input type="text" class="form-control" id="track_title" name="track_title" value="">
                                 </div>
                             </div>
-                             <div class="row mb-3 align-items-end">
-                                <div class="col-md-9">
-                                    <label for="track_title" class="form-label">Track Title <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Optional: Display the track title below the artist name."></i></label>
-                                    <input type="text" class="form-control" id="track_title" name="track_title" placeholder="Track Title">
+                            
+                            <!-- Text Colors -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="artist_color" class="form-label">Artist Text Color <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Color for the artist name text."></i></label>
+                                    <input type="color" class="form-control form-control-color w-100" id="artist_color" name="artist_color" value="#FFFFFF">
                                 </div>
-                                 <div class="col-md-3">
-                                    <label for="title_color" class="form-label">Color</label>
-                                    <input type="color" class="form-control form-control-color w-100" id="title_color" name="title_color" value="#FFFFFF" title="Choose track title color">
+                                <div class="col-md-6">
+                                    <label for="title_color" class="form-label">Title Text Color <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Color for the track title text."></i></label>
+                                    <input type="color" class="form-control form-control-color w-100" id="title_color" name="title_color" value="#FFFFFF">
+                                </div>
+                            </div>
+                            
+                            <!-- Text Size -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="text_size" class="form-label">Text Size <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Size of the artist and title text."></i></label>
+                                    <select class="form-select" id="text_size" name="text_size">
+                                        <option value="small">Small</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="large" selected>Large</option>
+                                        <option value="x-large">Extra Large</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="visualizer_placement" class="form-label">Visualizer Placement <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Position of the visualizer bars on the screen."></i></label>
+                                    <select class="form-select" id="visualizer_placement" name="visualizer_placement">
+                                        <option value="standard" selected>Standard (Center)</option>
+                                        <option value="bottom">Bottom</option>
+                                    </select>
                                 </div>
                             </div>
                         </div> <!-- End Card Body -->
@@ -103,17 +124,17 @@
                                 </div>
                             </div>
                             <div class="row mb-3">
-                                 <div class="col-md-4">
+                                <div class="col-md-4">
+                                    <label for="segments_per_bar" class="form-label">Segments Per Bar <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Maximum number of segments to display in each bar."></i></label>
+                                    <input type="number" class="form-control" id="segments_per_bar" name="segments_per_bar" value="20" min="5" max="100">
+                                </div>
+                                <div class="col-md-4">
                                     <label for="segment_height" class="form-label">Segment Height (px) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Height of each lit segment within a bar."></i></label>
                                     <input type="number" class="form-control" id="segment_height" name="segment_height" value="6" min="2" max="20">
                                 </div>
                                 <div class="col-md-4">
                                     <label for="segment_gap" class="form-label">Segment Gap (px) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Vertical space between lit segments."></i></label>
                                     <input type="number" class="form-control" id="segment_gap" name="segment_gap" value="6" min="0" max="20">
-                                </div>
-                                 <div class="col-md-4">
-                                    <label for="corner_radius" class="form-label">Corner Radius (px) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="How rounded the corners of each segment are (0 = sharp)."></i></label>
-                                    <input type="number" class="form-control" id="corner_radius" name="corner_radius" value="2" min="0" max="20">
                                 </div>
                             </div>
                              <div class="row mb-3 align-items-center">

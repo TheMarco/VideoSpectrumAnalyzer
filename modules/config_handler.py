@@ -43,11 +43,19 @@ def process_config(config=None):
         "silence_threshold": 0.04, 
         "silence_decay_factor": 0.5,
         "noise_gate": 0.08,
+        "text_size": "large",  # Options: "small", "medium", "large"
+        "visualizer_placement": "standard",  # Options: "standard", "bottom"
     }
     
     # Merge user config with defaults
     conf = default_config.copy()
     if config and isinstance(config, dict):
+        # Process string values that should be preserved as-is
+        string_keys = ["text_size", "visualizer_placement", "glow_effect", "bar_color", "artist_color", "title_color"]
+        for key in string_keys:
+            if key in config:
+                conf[key] = config[key]
+        
         # Process boolean values
         bool_keys = ["always_on_bottom"]
         for key in bool_keys:
@@ -94,6 +102,9 @@ def process_config(config=None):
             conf["background_color"] = config["background_color"]
         if "glow_effect" in config:
             conf["glow_effect"] = config["glow_effect"]
+    
+    # Debug print to verify text_size is being preserved
+    print(f"Text size after config processing: {conf.get('text_size', 'not found')}")
     
     # Derived configuration values
     conf["bar_color_rgb"] = hex_to_rgb(conf.get("bar_color", "#FFFFFF"))

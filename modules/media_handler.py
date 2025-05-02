@@ -78,16 +78,31 @@ def load_background_media(background_image_path, background_video_path, width, h
     
     return background_pil, video_capture, bg_frame_count, bg_fps
 
-def load_fonts():
+def load_fonts(text_size="large"):
     """
     Load fonts for artist name and track title.
     
+    Args:
+        text_size (str): Size preset - "small", "medium", or "large"
+        
     Returns:
         tuple: (artist_font, title_font)
     """
     print("--- FONT LOADING ---")
-    font_size_artist = 72
-    font_size_title = 36
+    
+    # Define font sizes based on the text_size parameter - make them more distinct
+    if text_size == "small":
+        font_size_artist = 28  # Smaller
+        font_size_title = 16   # Smaller
+    elif text_size == "medium":
+        font_size_artist = 48  # Medium
+        font_size_title = 24   # Medium
+    else:  # "large" or any other value as fallback
+        font_size_artist = 72  # Current large size
+        font_size_title = 36   # Current large size
+    
+    print(f"   Using text size preset: {text_size} (Artist: {font_size_artist}px, Title: {font_size_title}px)")
+    
     artist_font = None
     title_font = None
     font_load_success = False
@@ -100,12 +115,13 @@ def load_fonts():
         ("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
     ]
     
+    # Try to load fonts with the specified sizes
     try:
         if os.path.exists(local_font_path_bold) and os.path.exists(local_font_path_regular):
             artist_font = ImageFont.truetype(local_font_path_bold, font_size_artist)
             title_font = ImageFont.truetype(local_font_path_regular, font_size_title)
             font_load_success = True
-            print("   Success loading local fonts.")
+            print(f"   Success loading local fonts with sizes: Artist {font_size_artist}px, Title {font_size_title}px")
         else:
             raise IOError("Local fonts not found")
     except Exception as e:
@@ -117,16 +133,19 @@ def load_fonts():
                 artist_font = ImageFont.truetype(bold_path, font_size_artist)
                 title_font = ImageFont.truetype(regular_path, font_size_title)
                 font_load_success = True
-                print(f"   Success loading fallback pair: {bold_path}, {regular_path}.")
+                print(f"   Success loading fallback pair: {bold_path}, {regular_path} with sizes: Artist {font_size_artist}px, Title {font_size_title}px")
                 break
-            except:
-                pass
+            except Exception as e:
+                print(f"   Failed to load font pair: {bold_path}, {regular_path}. Error: {e}")
     
     if not font_load_success:
         print("--- All font loading attempts failed. Falling back to default font. ---")
+        # Default font doesn't support custom sizes well, so we'll still have size issues
         artist_font = ImageFont.load_default()
         title_font = ImageFont.load_default()
     
+    # Verify the font sizes were applied correctly
+    print(f"   Final font sizes - Artist: {getattr(artist_font, 'size', 'unknown')}px, Title: {getattr(title_font, 'size', 'unknown')}px")
     print("--- FONT LOADING COMPLETE ---")
     
     return artist_font, title_font

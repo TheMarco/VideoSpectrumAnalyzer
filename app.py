@@ -117,6 +117,8 @@ def upload_file():
         "track_title": request.form.get("track_title", ""),
         "artist_color": request.form.get("artist_color", "#FFFFFF"),
         "title_color": request.form.get("title_color", "#FFFFFF"),
+        "text_size": request.form.get("text_size", "large"),  # Add text size option
+        "visualizer_placement": request.form.get("visualizer_placement", "standard"),  # Add placement option
         # Visualizer Appearance
         "n_bars": int(request.form.get("n_bars", 20)),
         "bar_width": int(request.form.get("bar_width", 40)),
@@ -157,6 +159,9 @@ def upload_file():
         "background_color": (0, 0, 0), # Fallback solid color
     }
     # --- End Configuration ---
+
+    # Debug print to verify text_size is being received
+    print(f"Text size from form: {request.form.get('text_size', 'not found')}")
 
     # Save configuration
     config_path = os.path.join(app.config["UPLOAD_FOLDER"], f"{job_id}_config.json")

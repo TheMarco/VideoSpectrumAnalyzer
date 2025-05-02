@@ -45,15 +45,42 @@ class SpectrumRenderer:
         self.glow_effect = config["glow_effect"]
         self.glow_blur_radius = config["glow_blur_radius"]
         self.glow_color_rgb = config["glow_color_rgb"]
+        self.visualizer_placement = config.get("visualizer_placement", "standard")
+        
+        # Add text spacing attribute
+        self.text_spacing = 20  # Distance between visualizer and text in pixels
 
-        # Calculate visualization dimensions
-        self.viz_bottom = int(height * 0.65)
-        self.total_bar_width_gap = self.bar_width + self.bar_gap
-        self.total_bars_width = self.n_bars * self.total_bar_width_gap - self.bar_gap
-        self.start_x = (width - self.total_bars_width) // 2
+        # Calculate total text height (if both artist and title are present)
+        # This is an estimate for layout calculations
+        self.artist_font_size = getattr(self.artist_font, 'size', 36)
+        self.title_font_size = getattr(self.title_font, 'size', 24)
+        self.text_spacing_between = 10  # Space between artist and title text
+        self.max_text_height = self.artist_font_size + self.title_font_size + self.text_spacing_between
+
+        # Calculate visualization dimensions based on placement
         self.segment_unit = self.segment_height + self.segment_gap
         self.max_viz_height = int(height * 0.6)
         self.max_segments = max(1, self.max_viz_height // self.segment_unit) if self.segment_unit > 0 else 1
+        self.visualizer_height = self.max_segments * self.segment_unit
+
+        if self.visualizer_placement == "bottom":
+            # For bottom placement:
+            # We need to position the visualizer so that the entire set
+            # (visualizer + text spacing + text) ends 20px from the bottom
+            
+            # Calculate from the bottom up:
+            # 20px from bottom + max text height + text spacing + visualizer height
+            bottom_margin = 20
+            
+            # Position the bottom of the visualizer
+            self.viz_bottom = height - bottom_margin - self.max_text_height - self.text_spacing
+        else:
+            # Standard placement (center)
+            self.viz_bottom = int(height * 0.65)
+            
+        self.total_bar_width_gap = self.bar_width + self.bar_gap
+        self.total_bars_width = self.n_bars * self.total_bar_width_gap - self.bar_gap
+        self.start_x = (width - self.total_bars_width) // 2
 
         # Segment dimensions
         self.seg_width = int(self.bar_width)
@@ -248,6 +275,8 @@ class SpectrumRenderer:
         # Draw each segment
         for k in range(num_dynamic_segments_to_draw):
             j = k + 1 if self.always_on_bottom else k
+            
+            # For bottom placement, segments grow upward from the bottom
             segment_y = self.viz_bottom - (j + 1) * self.segment_height - j * self.segment_gap
             dest_xy = (int(bar_x), int(segment_y))
 
@@ -355,6 +384,10 @@ class SpectrumRenderer:
 
         draw = ImageDraw.Draw(image)
 
+        # Position text below visualizer in all cases
+        # The visualizer bottom position has already been calculated to leave room for text
+        artist_y = self.viz_bottom + self.text_spacing
+
         # Draw artist name
         if artist_name:
             artist_color_rgba = self.artist_color_rgb + (255,)
@@ -365,7 +398,6 @@ class SpectrumRenderer:
                 # For older PIL versions
                 artist_text_width = self.artist_font.getlength(artist_name)
             artist_x = (self.width - artist_text_width) // 2
-            artist_y = int(self.height * 0.75)
             draw.text((artist_x, artist_y), artist_name, fill=artist_color_rgba, font=self.artist_font)
 
         # Draw track title
@@ -378,7 +410,11 @@ class SpectrumRenderer:
                 # For older PIL versions
                 title_text_width = self.title_font.getlength(track_title)
             title_x = (self.width - title_text_width) // 2
-            title_y = int(self.height * 0.85)
+            
+            # Adjust spacing between artist and title based on font size
+            spacing = 5 if self.artist_font.size < 40 else 10
+            title_y = artist_y + (self.artist_font.size + spacing if artist_name else 0)
+            
             draw.text((title_x, title_y), track_title, fill=title_color_rgba, font=self.title_font)
 
     def _draw_text_mask(self, image, artist_name, track_title):
@@ -396,6 +432,9 @@ class SpectrumRenderer:
 
         draw = ImageDraw.Draw(image)
 
+        # Position text below visualizer - MUST MATCH _draw_text method
+        artist_y = self.viz_bottom + self.text_spacing
+
         # Use the glow color with full opacity for the mask
         glow_color = self.glow_color_rgb + (255,) if self.glow_color_rgb else (255, 255, 255, 255)
 
@@ -408,9 +447,6 @@ class SpectrumRenderer:
                 # For older PIL versions
                 artist_text_width = self.artist_font.getlength(artist_name)
             artist_x = (self.width - artist_text_width) // 2
-            artist_y = int(self.height * 0.75)
-
-            # Use exactly the same font as the regular text
             draw.text((artist_x, artist_y), artist_name, fill=glow_color, font=self.artist_font)
 
         # Draw track title
@@ -422,7 +458,9 @@ class SpectrumRenderer:
                 # For older PIL versions
                 title_text_width = self.title_font.getlength(track_title)
             title_x = (self.width - title_text_width) // 2
-            title_y = int(self.height * 0.85)
-
-            # Use exactly the same font as the regular text
+            
+            # Adjust spacing between artist and title based on font size
+            spacing = 5 if self.artist_font.size < 40 else 10
+            title_y = artist_y + (self.artist_font.size + spacing if artist_name else 0)
+            
             draw.text((title_x, title_y), track_title, fill=glow_color, font=self.title_font)

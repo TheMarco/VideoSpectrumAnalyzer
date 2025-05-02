@@ -48,6 +48,11 @@ document.addEventListener('DOMContentLoaded', function() {
     uploadForm.addEventListener('submit', function(e) {
         e.preventDefault();
 
+        // Validate form before submission
+        if (!validateForm()) {
+            return; // Stop submission if validation fails
+        }
+
         const submitBtn = document.getElementById('submit-btn');
         submitBtn.disabled = true;
         submitBtn.textContent = 'Processing...';
@@ -77,15 +82,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const audioFileInput = document.getElementById('file');
-        // ****** MODIFIED THIS BLOCK ******
         if (audioFileInput && audioFileInput.files.length > 0) {
             formData.append('file', audioFileInput.files[0]);
         } else {
-             showError('Please select an audio file.');
-             // REMOVED: resetToFormState(); // DO NOT reset here, let showError handle UI
-             return; // Stop submission
+            showError('Please select an audio file.');
+            return; // Stop submission
         }
-        // ****** END MOD ******
 
         const backgroundMediaInput = document.getElementById('background_media');
         if (backgroundMediaInput && backgroundMediaInput.files.length > 0) {
@@ -113,6 +115,26 @@ document.addEventListener('DOMContentLoaded', function() {
             showError('An error occurred during upload: ' + error.message);
         });
     });
+
+    // Function to validate the form
+    function validateForm() {
+        const audioFileInput = document.getElementById('file');
+        if (!audioFileInput || audioFileInput.files.length === 0) {
+            showError('Please select an audio file.');
+            return false;
+        }
+        return true;
+    }
+
+    // Update the file input to clear validation styling when a file is selected
+    const audioFileInput = document.getElementById('file');
+    if (audioFileInput) {
+        audioFileInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                this.classList.remove('is-invalid');
+            }
+        });
+    }
 
     // Back button (from error card) - Calls resetToFormState (Unchanged)
     if (backBtn) {

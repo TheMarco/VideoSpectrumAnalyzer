@@ -78,8 +78,13 @@ def create_spectrum_analyzer(
     actual_frames = audio_analysis["actual_frames"]
     dynamic_thresholds = audio_analysis["dynamic_thresholds"]
 
-    # Load fonts
-    artist_font, title_font = load_fonts()
+    # Load fonts with the text size from config
+    text_size = conf.get("text_size", "large")
+    print(f"Passing text_size to load_fonts: {text_size}")
+    artist_font, title_font = load_fonts(text_size=text_size)
+
+    # Print the text size being used for debugging
+    print(f"Using text size: {conf.get('text_size', 'large')}")
 
     # Initialize renderer
     renderer = SpectrumRenderer(width, height, conf, artist_font, title_font)
