@@ -36,6 +36,12 @@ VideoSpectrumAnalyzer/
 │   ├── css/
 │   ├── js/
 │   │   ├── form-validation.js      # Shared form validation
+│   │   ├── form-utilities.js       # Shared form utilities
+│   │   ├── modal-manager.js        # Shared modal dialog management
+│   │   ├── processing-ui.js        # Shared processing UI and video playback
+│   │   ├── tab-navigation.js       # Shared tab navigation utilities
+│   │   ├── tooltip-manager.js      # Shared tooltip management
+│   │   ├── ui-effects.js           # Shared UI animations and effects
 │   │   ├── main.js                 # Main application JS
 │   │   └── [visualizer]_form.js    # Visualizer-specific form handling
 │   └── images/
@@ -92,8 +98,16 @@ Each visualizer is contained in its own directory under the `visualizers` packag
   - **[visualizer]_form.html**: Visualizer-specific form templates.
 
 - **JavaScript**:
-  - **form-validation.js**: Shared form validation and error handling.
-  - **[visualizer]_form.js**: Visualizer-specific form handling.
+  - **Shared Modules**:
+    - **form-validation.js**: Form validation and error handling.
+    - **form-utilities.js**: Form data collection and manipulation utilities.
+    - **modal-manager.js**: Modal dialog management and interaction.
+    - **processing-ui.js**: Processing UI, progress tracking, and video playback.
+    - **tab-navigation.js**: Tab navigation and error indication.
+    - **tooltip-manager.js**: Bootstrap tooltip initialization and management.
+    - **ui-effects.js**: UI animations and visual effects.
+  - **Visualizer-Specific**:
+    - **[visualizer]_form.js**: Visualizer-specific form handling and validation.
 
 ## Shared vs. Visualizer-Specific Code
 
@@ -124,7 +138,28 @@ Each visualizer is contained in its own directory under the `visualizers` packag
    - Use the shared error modal via `{% include 'partials/error_modal.html' %}`.
 4. **Add JavaScript**:
    - Create `static/js/[visualizer_name]_form.js` for form handling.
-   - Import shared validation from `form-validation.js`.
+   - Include all shared modules in your template:
+     ```html
+     <!-- Shared Modules -->
+     <script src="{{ url_for('static', filename='js/ui-effects.js') }}"></script>
+     <script src="{{ url_for('static', filename='js/modal-manager.js') }}"></script>
+     <script src="{{ url_for('static', filename='js/form-utilities.js') }}"></script>
+     <script src="{{ url_for('static', filename='js/tab-navigation.js') }}"></script>
+     <script src="{{ url_for('static', filename='js/tooltip-manager.js') }}"></script>
+     <script src="{{ url_for('static', filename='js/form-validation.js') }}"></script>
+     <script src="{{ url_for('static', filename='js/processing-ui.js') }}"></script>
+     ```
+   - Initialize and use the shared modules in your form JS:
+     ```javascript
+     // Initialize the shared processing UI module
+     const processingUI = window.ProcessingUI.init();
+
+     // Use form utilities for data collection
+     const formData = window.FormUtils.collectFormData(formElement);
+
+     // Use tab navigation for managing tabs
+     window.TabNavigation.showFirstTab();
+     ```
 
 ## Avoiding Entanglement
 
@@ -136,43 +171,93 @@ To prevent visualizers from becoming entangled with each other:
 4. **Clear Interfaces**: Use well-defined interfaces for all components.
 5. **Consistent Structure**: Follow the established directory and file structure.
 
-## Form Validation and Error Handling
+## Shared JavaScript Modules
 
-Form validation and error handling are shared across all visualizers:
+The application uses a modular JavaScript architecture to promote code reuse and maintainability:
 
-1. **Shared Validation Logic**: Use `form-validation.js` for common validation patterns.
-2. **Error Modal**: Use the shared error modal component for displaying errors.
-3. **Validation Functions**: Use `showValidationError()` and `showError()` from the shared library.
+### UI and Interaction Modules
 
-Example of proper form validation:
+1. **UI Effects (`ui-effects.js`)**:
+   - Handles animations and visual effects across the application
+   - Provides consistent fade-in/out transitions
+   - Manages hover effects and other UI animations
+
+2. **Modal Management (`modal-manager.js`)**:
+   - Handles modal dialog initialization and cleanup
+   - Manages modal backdrops and accessibility
+   - Provides a consistent API for showing/hiding modals
+
+3. **Tab Navigation (`tab-navigation.js`)**:
+   - Manages tab switching and activation
+   - Handles error indicators on tabs
+   - Provides utilities for finding and navigating to tabs
+
+4. **Tooltip Management (`tooltip-manager.js`)**:
+   - Initializes Bootstrap tooltips
+   - Handles tooltip refreshing for dynamic content
+   - Ensures consistent tooltip behavior
+
+### Form Handling Modules
+
+1. **Form Utilities (`form-utilities.js`)**:
+   - Collects form data consistently
+   - Handles file input validation
+   - Provides form reset functionality
+
+2. **Form Validation (`form-validation.js`)**:
+   - Validates form inputs
+   - Shows validation errors with proper UI feedback
+   - Integrates with tab navigation for error indication
+
+3. **Processing UI (`processing-ui.js`)**:
+   - Manages the processing interface
+   - Handles progress tracking and updates
+   - Controls video playback after processing
+
+### Using the Shared Modules
+
+Example of proper form handling using the shared modules:
 
 ```javascript
 // In [visualizer]_form.js
-function validateForm() {
-    // Get form fields
-    const fields = Array.from(uploadForm.elements).filter(el =>
-        el.tagName === 'INPUT' ||
-        el.tagName === 'SELECT' ||
-        el.tagName === 'TEXTAREA'
-    );
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize shared modules
+    const processingUI = window.ProcessingUI.init();
 
-    // Validate each field
-    for (const field of fields) {
-        // Field-specific validation
-        if (field.required && !field.value.trim()) {
-            showValidationError({
-                field: field,
-                friendlyName: getFieldFriendlyName(field),
-                tabName: getTabNameFromField(field),
-                message: "This field is required",
-                description: getFieldDescription(field)
-            });
+    // Get form element
+    const uploadForm = document.getElementById('upload-form');
+
+    // Handle form submission
+    uploadForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        // Validate form
+        if (!validateForm()) {
+            return; // Stop submission if validation fails
+        }
+
+        // Prepare form data using shared utilities
+        const formData = window.FormUtils.collectFormData(uploadForm);
+        window.FormUtils.addFileInputs(formData, ['file', 'background_media']);
+
+        // Submit the form using the shared processing UI
+        processingUI.submitForm(formData);
+    });
+
+    // Form validation function
+    function validateForm() {
+        // Validate required file input
+        if (!window.FormUtils.validateFileInput('file', {
+            errorMessage: 'Please select an audio file to process'
+        })) {
             return false;
         }
-    }
 
-    return true;
-}
+        // Additional validation logic...
+
+        return true;
+    }
+});
 ```
 
 ## FFmpeg Processing
@@ -204,13 +289,13 @@ def process_config(config):
         "bar_gap": 2,
         # Other defaults...
     }
-    
+
     # Merge with user config
     merged_config = {**default_config, **config}
-    
+
     # Validate and transform values
     merged_config["bar_color_rgb"] = hex_to_rgb(merged_config["bar_color"])
-    
+
     return merged_config
 ```
 
@@ -232,27 +317,27 @@ class VisualizerRenderer:
         self.config = config
         self.artist_font = artist_font
         self.title_font = title_font
-        
+
     def render_frame(self, frame_data, background_image, metadata):
         # Create a new image
         image = Image.new("RGBA", (self.width, self.height), (0, 0, 0, 0))
-        
+
         # Draw on the image
         draw = ImageDraw.Draw(image)
-        
+
         # Render visualizer elements
         self._render_bars(draw, frame_data)
         self._render_text(draw, metadata)
-        
+
         # Composite with background
         result = Image.alpha_composite(background_image.convert("RGBA"), image)
-        
+
         return result
-        
+
     def _render_bars(self, draw, frame_data):
         # Visualizer-specific bar rendering
         pass
-        
+
     def _render_text(self, draw, metadata):
         # Text rendering
         pass
@@ -262,9 +347,17 @@ class VisualizerRenderer:
 
 By following these guidelines, the Video Spectrum Analyzer can maintain a clean, modular structure where visualizers are independent of each other but share common functionality through well-defined interfaces. This approach makes the application easier to maintain, extend, and debug.
 
+The modular JavaScript architecture provides several benefits:
+- **Reduced Code Duplication**: Common functionality is defined in a single place
+- **Improved Maintainability**: Changes to shared functionality only need to be made in one place
+- **Consistent Behavior**: All parts of the application have consistent animations, modal behavior, and form handling
+- **Easier Extension**: New visualizer types can reuse the shared modules
+- **Separation of Concerns**: Each module focuses on a specific aspect of the UI
+
 Remember:
 - Keep visualizers independent
 - Share code through the core framework and modules
+- Use the shared JavaScript modules for frontend functionality
 - Use consistent patterns for configuration, rendering, and validation
 - Follow the established directory and file structure
-- Use shared components for common UI elements like error handling
+- Use shared components for common UI elements like error handling and processing UI
