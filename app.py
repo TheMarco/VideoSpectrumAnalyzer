@@ -7,7 +7,9 @@ import threading
 from werkzeug.utils import secure_filename
 import traceback
 
-from visualizer import create_spectrum_analyzer
+# Import core components
+from core.registry import registry
+from core.utils import is_image_file, is_video_file
 
 app = Flask(__name__, static_folder="static")
 app.config["UPLOAD_FOLDER"] = "uploads"
@@ -16,6 +18,11 @@ app.config["MAX_CONTENT_LENGTH"] = 1600 * 1024 * 1024 # 1.6 GB total request siz
 
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 os.makedirs(app.config["OUTPUT_FOLDER"], exist_ok=True)
+os.makedirs(os.path.join("static", "images", "thumbnails"), exist_ok=True)
+
+# Discover available visualizers
+registry.discover_visualizers()
+print(f"Discovered visualizers: {registry.get_visualizer_names()}")
 
 jobs = {}
 
@@ -26,24 +33,31 @@ MAX_IMAGE_SIZE = 50 * 1024 * 1024 # 50 MB
 MAX_VIDEO_SIZE = 1000 * 1024 * 1024 # 1 GB (1000 MB)
 
 
-# (parse_hex_color helper remains unchanged)
-def parse_hex_color(hex_color, default=(255, 255, 255)):
-    hex_color = hex_color.lstrip("#")
-    if len(hex_color) == 6:
-        try:
-            return tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))
-        except ValueError:
-            return default
-    return default
-
-
 @app.route("/")
 def index():
-    return render_template("index.html")
+    visualizers = registry.get_all_visualizers()
+    return render_template("index.html", visualizers=visualizers)
+
+@app.route("/visualizer/<name>")
+def visualizer_form(name):
+    visualizer = registry.get_visualizer(name)
+    if not visualizer:
+        return render_template("error.html", message=f"Visualizer '{name}' not found"), 404
+    return render_template("visualizer_form.html", visualizer=visualizer)
 
 
 @app.route("/upload", methods=["POST"])
 def upload_file():
+    # Get the visualizer name from the form
+    visualizer_name = request.form.get("visualizer_name")
+    if not visualizer_name:
+        return jsonify({"error": "No visualizer specified"}), 400
+
+    # Get the visualizer instance
+    visualizer = registry.get_visualizer(visualizer_name)
+    if not visualizer:
+        return jsonify({"error": f"Visualizer '{visualizer_name}' not found"}), 404
+
     # --- Basic File Handling (Audio) ---
     if "file" not in request.files:
         return jsonify({"error": "No audio file part"}), 400
@@ -109,59 +123,58 @@ def upload_file():
             return jsonify({"error": f"Failed to save or process background media: {e}"}), 500
     # --- End Background Media Handling ---
 
+    # --- Get Configuration from form ---
+    # Convert form data to a dictionary
+    config = {}
+    for key, value in request.form.items():
+        if key != "visualizer_name":  # Skip the visualizer name
+            config[key] = value
 
-    # --- Get Configuration (No changes needed here for background) ---
-    config = {
-        # Basic Info
-        "artist_name": request.form.get("artist_name", ""),
-        "track_title": request.form.get("track_title", ""),
-        "artist_color": request.form.get("artist_color", "#FFFFFF"),
-        "title_color": request.form.get("title_color", "#FFFFFF"),
-        "text_size": request.form.get("text_size", "large"),  # Add text size option
-        "visualizer_placement": request.form.get("visualizer_placement", "standard"),  # Add placement option
-        # Visualizer Appearance
-        "n_bars": int(request.form.get("n_bars", 20)),
-        "bar_width": int(request.form.get("bar_width", 40)),
-        "bar_gap": int(request.form.get("bar_gap", 2)),
-        "segment_height": int(request.form.get("segment_height", 6)),
-        "segment_gap": int(request.form.get("segment_gap", 6)),
-        "corner_radius": int(request.form.get("corner_radius", 2)), # Default updated
-        "analyzer_alpha": float(request.form.get("analyzer_alpha", 1.0)),
-        "bar_color": request.form.get("bar_color", "#FFFFFF"),
-        "glow_effect": request.form.get("glow_effect", "off"),
-        "use_gradient": request.form.get("use_gradient") == "on",
-        "always_on_bottom": str(request.form.get("always_on_bottom")).lower() in ("on", "true"),
-        # Advanced: Reactivity
-        "amplitude_scale": float(request.form.get("amplitude_scale", 0.6)),
-        "sensitivity": float(request.form.get("sensitivity", 1.0)),
-        "threshold_factor": float(request.form.get("threshold_factor", 0.3)),
-        "attack_speed": float(request.form.get("attack_speed", 0.95)),
-        "decay_speed": float(request.form.get("decay_speed", 0.25)),
-        "noise_gate": float(request.form.get("noise_gate", 0.08)),
-        # Advanced: Peaks
-        "peak_hold_frames": int(request.form.get("peak_hold_frames", 5)),
-        "peak_decay_speed": float(request.form.get("peak_decay_speed", 0.15)),
-        # Advanced: Frequency & Thresholds
-        "min_freq": int(request.form.get("min_freq", 30)),
-        "max_freq": int(request.form.get("max_freq", 16000)),
-        "bass_threshold_adjust": float(request.form.get("bass_threshold_adjust", 1.2)),
-        "mid_threshold_adjust": float(request.form.get("mid_threshold_adjust", 1.0)),
-        "high_threshold_adjust": float(request.form.get("high_threshold_adjust", 0.9)),
-        # Advanced: Silence
-        "silence_threshold": float(request.form.get("silence_threshold", 0.04)),
-        "silence_decay_factor": float(request.form.get("silence_decay_factor", 0.5)),
-        # Video Output
-        "duration": float(request.form.get("duration", 0)) or None,
-        "fps": int(request.form.get("fps", 30)),
-        "width": int(request.form.get("width", 1280)),
-        "height": int(request.form.get("height", 720)),
-        # Other
-        "background_color": (0, 0, 0), # Fallback solid color
-    }
-    # --- End Configuration ---
+    # Process specific types
+    for key in config:
+        # Convert numeric values
+        if key in ["n_bars", "bar_width", "bar_gap", "segment_height", "segment_gap",
+                  "corner_radius", "peak_hold_frames", "min_freq", "max_freq",
+                  "fps", "width", "height", "max_segments"]:
+            try:
+                config[key] = int(config[key])
+            except (ValueError, TypeError):
+                pass
 
-    # Debug print to verify text_size is being received
-    print(f"Text size from form: {request.form.get('text_size', 'not found')}")
+        # Convert float values
+        elif key in ["amplitude_scale", "sensitivity", "analyzer_alpha", "threshold_factor",
+                    "attack_speed", "decay_speed", "peak_decay_speed", "bass_threshold_adjust",
+                    "mid_threshold_adjust", "high_threshold_adjust", "silence_threshold",
+                    "silence_decay_factor", "noise_gate", "duration"]:
+            try:
+                config[key] = float(config[key])
+            except (ValueError, TypeError):
+                pass
+
+        # Convert boolean values
+        elif key in ["always_on_bottom", "use_gradient"]:
+            if isinstance(config[key], str):
+                config[key] = config[key].lower() in ("true", "on", "yes", "1")
+            else:
+                config[key] = bool(config[key])
+
+    # Handle special case for duration
+    if "duration" in config and (config["duration"] == 0 or config["duration"] == "0"):
+        config["duration"] = None
+
+    # Add default background color
+    config["background_color"] = (0, 0, 0)  # Fallback solid color
+
+    # Debug print
+    print(f"Processed configuration: {config}")
+
+    # Add important default values if not present
+    if "n_bars" not in config:
+        config["n_bars"] = 40
+    if "amplitude_scale" not in config:
+        config["amplitude_scale"] = 0.6
+    if "sensitivity" not in config:
+        config["sensitivity"] = 1.0
 
     # Save configuration
     config_path = os.path.join(app.config["UPLOAD_FOLDER"], f"{job_id}_config.json")
@@ -175,8 +188,8 @@ def upload_file():
     jobs[job_id] = {
         "status": "queued",
         "progress": 0,
+        "visualizer": visualizer_name,
         "input_file": audio_file_path,
-        # Pass the determined paths (one will be None)
         "background_image_file": background_image_path,
         "background_video_file": background_video_path,
         "output_file": output_path,
@@ -188,9 +201,10 @@ def upload_file():
         target=process_video,
         args=(
             job_id,
+            visualizer,
             audio_file_path,
-            background_image_path, # Pass the potentially None path
-            background_video_path, # Pass the potentially None path
+            background_image_path,
+            background_video_path,
             output_path,
             config,
         ),
@@ -207,12 +221,12 @@ def upload_file():
     )
 
 
-# --- process_video, job_status, download_file (remain unchanged) ---
 def process_video(
     job_id,
+    visualizer,
     input_file,
-    background_image_file, # Receives image path or None
-    background_video_file, # Receives video path or None
+    background_image_file,
+    background_video_file,
     output_file,
     config,
 ):
@@ -222,17 +236,18 @@ def process_video(
         def update_progress(progress):
             jobs[job_id]["progress"] = progress
 
-        create_spectrum_analyzer(
+        # Use the visualizer to create the visualization
+        visualizer.create_visualization(
             audio_file=input_file,
-            background_image_path=background_image_file, # Pass along
-            background_video_path=background_video_file, # Pass along
+            background_image_path=background_image_file,
+            background_video_path=background_video_file,
             output_file=output_file,
-            artist_name=config["artist_name"],
-            track_title=config["track_title"],
-            duration=config["duration"],
-            fps=config["fps"],
-            height=config["height"],
-            width=config["width"],
+            artist_name=config.get("artist_name", ""),
+            track_title=config.get("track_title", ""),
+            duration=config.get("duration"),
+            fps=config.get("fps", 30),
+            height=config.get("height", 720),
+            width=config.get("width", 1280),
             config=config,
             progress_callback=update_progress,
         )
@@ -265,4 +280,4 @@ def download_file(job_id):
 
 if __name__ == "__main__":
     # Use host='0.0.0.0' for accessibility on network, debug=False for production
-    app.run(debug=True, host="0.0.0.0", port=8080)
+    app.run(debug=True, host="0.0.0.0", port=8085)

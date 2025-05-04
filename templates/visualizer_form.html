@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ visualizer.name }} - Video Spectrum Analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container mt-4 mb-5">
+        <h1 class="text-center mb-4">{{ visualizer.name }}</h1>
+        <p class="text-center mb-4">{{ visualizer.description }}</p>
+
+        <div class="mb-4">
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Visualizer Selection
+            </a>
+        </div>
+
+        <form id="upload-form" enctype="multipart/form-data">
+            <!-- Hidden field for visualizer name -->
+            <input type="hidden" name="visualizer_name" value="{{ visualizer.name }}">
+
+            <!-- Nav Tabs -->
+            <ul class="nav nav-tabs nav-fill mb-3" id="configTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="input-tab" data-bs-toggle="tab" data-bs-target="#input-tab-pane" type="button" role="tab" aria-controls="input-tab-pane" aria-selected="true">1. Input Files & Info</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="appearance-tab" data-bs-toggle="tab" data-bs-target="#appearance-tab-pane" type="button" role="tab" aria-controls="appearance-tab-pane" aria-selected="false">2. Appearance</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="reactivity-tab" data-bs-toggle="tab" data-bs-target="#reactivity-tab-pane" type="button" role="tab" aria-controls="reactivity-tab-pane" aria-selected="false">3. Reactivity</button>
+                </li>
+                 <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="advanced-tab" data-bs-toggle="tab" data-bs-target="#advanced-tab-pane" type="button" role="tab" aria-controls="advanced-tab-pane" aria-selected="false">4. Advanced & Output</button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="configTabsContent">
+
+                <!-- ======================= -->
+                <!--      INPUT TAB PANE     -->
+                <!-- ======================= -->
+                <div class="tab-pane fade show active" id="input-tab-pane" role="tabpanel" aria-labelledby="input-tab" tabindex="0">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Input Files & Info</h5>
+                             <!-- Audio File -->
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <label for="file" class="form-label">Audio File* <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="right" title="Select the primary audio track (MP3, WAV, FLAC, etc.). Max 1.6GB."></i></label>
+                                    <input type="file" class="form-control" id="file" name="file" accept="audio/*">
+                                </div>
+                            </div>
+
+                            <!-- Background Media -->
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <label for="background_media" class="form-label">Background Image/Video <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="right" title="Optional background image (JPG, PNG) or video (MP4). If not provided, a black background will be used."></i></label>
+                                    <input type="file" class="form-control" id="background_media" name="background_media" accept="image/*,video/*">
+                                </div>
+                            </div>
+
+                            <!-- Artist and Track Info -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="artist_name" class="form-label">Artist Name <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Artist name to display in the visualization."></i></label>
+                                    <input type="text" class="form-control" id="artist_name" name="artist_name" value="">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="track_title" class="form-label">Track Title <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Track title to display in the visualization."></i></label>
+                                    <input type="text" class="form-control" id="track_title" name="track_title" value="">
+                                </div>
+                            </div>
+
+                            <!-- Text Colors -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="artist_color" class="form-label">Artist Text Color <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Color for the artist name text."></i></label>
+                                    <input type="color" class="form-control form-control-color w-100" id="artist_color" name="artist_color" value="#FFFFFF">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="title_color" class="form-label">Title Text Color <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Color for the track title text."></i></label>
+                                    <input type="color" class="form-control form-control-color w-100" id="title_color" name="title_color" value="#FFFFFF">
+                                </div>
+                            </div>
+
+                            <!-- Text Size -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="text_size" class="form-label">Text Size <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Size of the artist and title text."></i></label>
+                                    <select class="form-select" id="text_size" name="text_size">
+                                        <option value="small">Small</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="large" selected>Large</option>
+                                        <option value="x-large">Extra Large</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="visualizer_placement" class="form-label">Visualizer Placement <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Position of the visualizer bars on the screen."></i></label>
+                                    <select class="form-select" id="visualizer_placement" name="visualizer_placement">
+                                        <option value="standard" selected>Standard (Center)</option>
+                                        <option value="bottom">Bottom</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div> <!-- End Card Body -->
+                    </div> <!-- End Card -->
+                </div> <!-- End Input Tab Pane -->
+
+                <!-- ======================= -->
+                <!--    APPEARANCE TAB PANE  -->
+                <!-- ======================= -->
+                <div class="tab-pane fade" id="appearance-tab-pane" role="tabpanel" aria-labelledby="appearance-tab" tabindex="0">
+                     <div class="card">
+                        <div class="card-body">
+                             <h5 class="card-title mb-3">Visualizer Appearance</h5>
+                             <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="n_bars" class="form-label">Number of Bars <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="How many vertical frequency bars to display."></i></label>
+                                    <input type="number" class="form-control" id="n_bars" name="n_bars" value="20" min="10" max="100">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="bar_width" class="form-label">Bar Width (px) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Width of each individual bar."></i></label>
+                                    <input type="number" class="form-control" id="bar_width" name="bar_width" value="40" min="5" max="100">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="bar_gap" class="form-label">Bar Gap (px) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Space between adjacent bars."></i></label>
+                                    <input type="number" class="form-control" id="bar_gap" name="bar_gap" value="2" min="0" max="20">
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <label for="max_segments" class="form-label">Number of Segments <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Maximum number of segments per bar. Controls the height of the visualizer."></i></label>
+                                    <input type="number" class="form-control" id="max_segments" name="max_segments" value="40" min="10" max="100">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="segment_height" class="form-label">Segment Height (px) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Height of each lit segment within a bar."></i></label>
+                                    <input type="number" class="form-control" id="segment_height" name="segment_height" value="6" min="2" max="20">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="segment_gap" class="form-label">Segment Gap (px) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Vertical space between lit segments."></i></label>
+                                    <input type="number" class="form-control" id="segment_gap" name="segment_gap" value="6" min="0" max="20">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="corner_radius" class="form-label">Corner Radius (px) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Rounded corner radius for segments. Set to 0 for sharp corners."></i></label>
+                                    <input type="number" class="form-control" id="corner_radius" name="corner_radius" value="2" min="0" max="10">
+                                </div>
+                            </div>
+                             <div class="row mb-3 align-items-center">
+                                 <div class="col-md-3">
+                                    <label for="analyzer_alpha" class="form-label">Transparency <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Overall transparency of the visualizer bars (0=invisible, 1=opaque)."></i></label>
+                                    <input type="range" class="form-range" id="analyzer_alpha" name="analyzer_alpha" value="1.0" min="0.05" max="1.0" step="0.05">
+                                </div>
+                                 <div class="col-md-3">
+                                     <label for="bar_color" class="form-label">Bar Color <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Base color used for the visualizer bars."></i></label>
+                                     <input type="color" class="form-control form-control-color w-100" id="bar_color" name="bar_color" value="#FFFFFF" title="Choose base bar color">
+                                 </div>
+                                 <div class="col-md-3">
+                                    <label for="glow_effect" class="form-label">Glow Effect <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Adds a subtle blurred glow behind the bars and text."></i></label>
+                                    <select class="form-select" id="glow_effect" name="glow_effect">
+                                        <option value="off" selected>Off</option>
+                                        <option value="white">White</option>
+                                        <option value="black">Black</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 pt-3">
+                                    <div class="form-check mb-1">
+                                        <input class="form-check-input" type="checkbox" id="always_on_bottom" name="always_on_bottom" checked>
+                                        <label class="form-check-label" for="always_on_bottom">Show Bottom <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Always keep the bottom-most segment of each bar lit."></i></label>
+                                    </div>
+                                </div>
+                             </div>
+                        </div> <!-- End Card Body -->
+                    </div> <!-- End Card -->
+                </div> <!-- End Appearance Tab Pane -->
+
+                <!-- ======================= -->
+                <!--    REACTIVITY TAB PANE  -->
+                <!-- ======================= -->
+                <div class="tab-pane fade" id="reactivity-tab-pane" role="tabpanel" aria-labelledby="reactivity-tab" tabindex="0">
+                     <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Reactivity & Dynamics</h5>
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="sensitivity" class="form-label">Overall Sensitivity <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="General multiplier for bar height response to audio levels."></i></label>
+                                    <input type="range" class="form-range" id="sensitivity" name="sensitivity" value="1.0" min="0.2" max="3.0" step="0.1">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="amplitude_scale" class="form-label">Amplitude Scale <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Internal scaling factor applied before sensitivity. Affects how much of the available height the bars use."></i></label>
+                                    <input type="number" class="form-control" id="amplitude_scale" name="amplitude_scale" value="0.6" min="0.1" max="2" step="0.1">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="threshold_factor" class="form-label">Threshold Factor <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Controls the dynamic threshold based on average frequency energy. Lower values make bars react to quieter sounds in their frequency band."></i></label>
+                                    <input type="number" class="form-control" id="threshold_factor" name="threshold_factor" value="0.3" min="0.05" max="0.5" step="0.05">
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="attack_speed" class="form-label">Attack Speed <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="How quickly bars rise to match the audio level (higher = faster)."></i></label>
+                                    <input type="number" class="form-control" id="attack_speed" name="attack_speed" value="0.95" min="0.5" max="0.99" step="0.01">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="decay_speed" class="form-label">Decay Speed <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="How quickly bars fall when the audio level drops (higher = slower decay)."></i></label>
+                                    <input type="number" class="form-control" id="decay_speed" name="decay_speed" value="0.25" min="0.05" max="0.5" step="0.05">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="noise_gate" class="form-label">Noise Gate <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Normalized amplitude level below which bars are forced to zero to reduce noise visualization."></i></label>
+                                    <input type="number" class="form-control" id="noise_gate" name="noise_gate" value="0.08" min="0.0" max="0.2" step="0.01">
+                                </div>
+                            </div>
+                            <h6 class="mt-4">Peak Settings</h6>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="peak_hold_frames" class="form-label">Peak Hold Frames <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Number of frames the peak indicator stays at its highest point before starting to decay."></i></label>
+                                    <input type="number" class="form-control" id="peak_hold_frames" name="peak_hold_frames" value="5" min="0" max="60">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="peak_decay_speed" class="form-label">Peak Decay Speed <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="How quickly the peak indicator falls after the hold duration (higher = slower decay)."></i></label>
+                                    <input type="number" class="form-control" id="peak_decay_speed" name="peak_decay_speed" value="0.15" min="0.01" max="0.5" step="0.01">
+                                </div>
+                            </div>
+                        </div> <!-- End Card Body -->
+                    </div> <!-- End Card -->
+                </div> <!-- End Reactivity Tab Pane -->
+
+                 <!-- ======================= -->
+                <!--    ADVANCED TAB PANE    -->
+                <!-- ======================= -->
+                <div class="tab-pane fade" id="advanced-tab-pane" role="tabpanel" aria-labelledby="advanced-tab" tabindex="0">
+                     <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Advanced & Output</h5>
+                            <h6>Frequency & Threshold Adjustments</h6>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="min_freq" class="form-label">Min Frequency (Hz) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Lowest audio frequency the visualizer responds to."></i></label>
+                                    <input type="number" class="form-control" id="min_freq" name="min_freq" value="30" min="20" max="500">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="max_freq" class="form-label">Max Frequency (Hz) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Highest audio frequency the visualizer responds to."></i></label>
+                                    <input type="number" class="form-control" id="max_freq" name="max_freq" value="16000" min="5000" max="22050">
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="bass_threshold_adjust" class="form-label">Bass Threshold Adj. <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Multiplier for the dynamic threshold specifically for bass frequencies (lower 20% of bars). >1 requires louder bass to react, <1 makes bass more sensitive."></i></label>
+                                    <input type="number" class="form-control" id="bass_threshold_adjust" name="bass_threshold_adjust" value="1.2" min="0.5" max="2" step="0.1">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="mid_threshold_adjust" class="form-label">Mid Threshold Adj. <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Multiplier for the dynamic threshold for mid-range frequencies (next 50% of bars)."></i></label>
+                                    <input type="number" class="form-control" id="mid_threshold_adjust" name="mid_threshold_adjust" value="1.0" min="0.5" max="2" step="0.1">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="high_threshold_adjust" class="form-label">High Threshold Adj. <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Multiplier for the dynamic threshold for high frequencies (upper 30% of bars)."></i></label>
+                                    <input type="number" class="form-control" id="high_threshold_adjust" name="high_threshold_adjust" value="0.9" min="0.5" max="2" step="0.1">
+                                </div>
+                            </div>
+                            <h6 class="mt-4">Silence Handling</h6>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="silence_threshold" class="form-label">Silence Threshold <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Normalized overall audio energy level below which the entire track is considered 'silent', triggering faster decay."></i></label>
+                                    <input type="number" class="form-control" id="silence_threshold" name="silence_threshold" value="0.04" min="0.01" max="0.2" step="0.01">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="silence_decay_factor" class="form-label">Silence Decay Factor <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Multiplier applied to bar heights each frame during silence (e.g., 0.5 halves the height each frame). Lower = faster fade out during silence."></i></label>
+                                    <input type="number" class="form-control" id="silence_decay_factor" name="silence_decay_factor" value="0.5" min="0.1" max="0.9" step="0.1">
+                                </div>
+                            </div>
+                            <h6 class="mt-4">Video Output Settings</h6>
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="duration" class="form-label">Duration (sec) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Maximum output video duration in seconds. Set to 0 or leave empty to process the full audio track."></i></label>
+                                    <input type="number" class="form-control" id="duration" name="duration" value="0" min="0" step="1">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="fps" class="form-label">FPS <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Frames per second for the output video (e.g., 30, 60). Higher FPS means smoother animation but larger file size and longer processing."></i></label>
+                                    <input type="number" class="form-control" id="fps" name="fps" value="30" min="15" max="60">
+                                </div>
+                                <div class="col-md-4"></div> <!-- Placeholder -->
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="width" class="form-label">Video Width (px) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Width of the output video (e.g., 1280, 1920, 3840)."></i></label>
+                                    <input type="number" class="form-control" id="width" name="width" value="1280" min="640" max="3840" step="10">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="height" class="form-label">Video Height (px) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Height of the output video (e.g., 720, 1080, 2160)."></i></label>
+                                    <input type="number" class="form-control" id="height" name="height" value="720" min="360" max="2160" step="10">
+                                </div>
+                            </div>
+                        </div> <!-- End Card Body -->
+                    </div> <!-- End Card -->
+                </div> <!-- End Advanced Tab Pane -->
+
+            </div> <!-- End Tab Content -->
+
+            <!-- Submit Button -->
+            <div class="d-grid mt-4">
+                <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">Generate Visualization</button>
+            </div>
+
+        </form> <!-- End Form -->
+
+        <!-- Processing Card -->
+         <div id="processing-card" class="card my-4" style="display: none;">
+             <div class="card-header"><h5>Processing</h5></div>
+             <div class="card-body">
+                 <div class="progress mb-3" style="height: 30px;">
+                     <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated fs-6" role="progressbar" style="width: 0%"></div>
+                 </div>
+                 <p id="status-message" class="text-center">Processing your audio file...</p>
+                 <div id="download-section" style="display: none;">
+                    <div class="d-flex justify-content-center gap-3 mt-3">
+                        <a id="download-link" href="#" class="btn btn-success btn-lg px-4">Download Visualization</a>
+                        <button type="button" class="btn btn-outline-secondary btn-lg px-4" id="create-another-btn">Create Another</button>
+                    </div>
+                 </div>
+             </div>
+         </div> <!-- End Processing Card -->
+
+         <!-- Error Card -->
+         <div id="error-card" class="card my-4" style="display: none;">
+             <div class="card-header bg-danger-subtle text-danger-emphasis"><h5>Error</h5></div>
+             <div class="card-body">
+                 <p><strong>An error occurred during processing:</strong></p>
+                 <pre id="error-message" class="error-pre"></pre>
+                 <div class="d-grid">
+                     <button type="button" class="btn btn-outline-secondary" id="back-btn">Back to Form</button>
+                 </div>
+             </div>
+         </div> <!-- End Error Card -->
+
+    </div> <!-- End Container -->
+
+    <!-- Footer -->
+    <footer class="container text-center text-muted mt-4 py-3 border-top">
+        <p class="mb-0">Created by Marco van Hylckama Vlieg (<a href="https://x.com/AIandDesign" target="_blank" rel="noopener noreferrer" class="link-secondary">@AIandDesign on X</a>)</p>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <!-- Inline JS for Tooltip Initialization -->
+    <script>
+        // Initialize Bootstrap Tooltips
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+    </script>
+</body>
+</html>
