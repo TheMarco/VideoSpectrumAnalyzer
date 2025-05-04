@@ -18,11 +18,14 @@ function showValidationError(errorInfo) {
     const field = errorInfo.field;
     const tabPane = field ? field.closest('.tab-pane') : null;
     let tabId = null;
-    let tabButton = null;
 
     if (tabPane) {
         tabId = tabPane.id;
-        tabButton = document.querySelector(`[data-bs-target="#${tabId}"]`);
+
+        // Mark the tab with an error indicator
+        if (window.TabNavigation) {
+            window.TabNavigation.markTabWithError(tabId);
+        }
     }
 
     // Highlight the field with error
@@ -51,8 +54,7 @@ function showValidationError(errorInfo) {
         title: 'Validation Error',
         message: errorMessage,
         field: field,
-        tabId: tabId,
-        tabButton: tabButton
+        tabId: tabId
     });
 }
 
@@ -86,16 +88,66 @@ function getTabNameFromField(field) {
  * @param {string} errorOptions.message - The error message to display
  * @param {HTMLElement} [errorOptions.field] - The field that has the error
  * @param {string} [errorOptions.tabId] - The ID of the tab containing the error field
- * @param {HTMLElement} [errorOptions.tabButton] - The tab button element
  */
 function showErrorModal(errorOptions) {
     console.error("Error displayed:", errorOptions.message);
 
-    // Get the error modal element
+    // Use the modal manager if available
+    if (window.ModalManager) {
+        const modalContent = {
+            title: `<i class="bi bi-exclamation-triangle-fill me-2"></i>${errorOptions.title}`,
+            content: errorOptions.message
+        };
+
+        // Show the modal
+        window.ModalManager.showModal('errorModal', modalContent);
+
+        // Configure "Go to Field" button
+        const goToFieldBtn = document.getElementById('goToFieldBtn');
+        if (goToFieldBtn) {
+            if (errorOptions.field && errorOptions.tabId) {
+                goToFieldBtn.style.display = 'block';
+
+                // Remove any existing click handlers
+                const newGoToFieldBtn = goToFieldBtn.cloneNode(true);
+                goToFieldBtn.parentNode.replaceChild(newGoToFieldBtn, goToFieldBtn);
+
+                // Add click handler to go to the field
+                newGoToFieldBtn.addEventListener('click', function() {
+                    // Hide the modal
+                    window.ModalManager.hideModal('errorModal');
+
+                    // Show the tab containing the field
+                    if (window.TabNavigation && errorOptions.tabId) {
+                        window.TabNavigation.showTab(errorOptions.tabId);
+                    }
+
+                    // Focus and scroll to the field
+                    setTimeout(() => {
+                        if (errorOptions.field) {
+                            errorOptions.field.focus();
+                            errorOptions.field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                            // Add a temporary highlight effect
+                            errorOptions.field.classList.add('is-invalid');
+                            setTimeout(() => {
+                                errorOptions.field.classList.remove('is-invalid');
+                            }, 5000);
+                        }
+                    }, 400); // Wait for tab transition
+                });
+            } else {
+                goToFieldBtn.style.display = 'none';
+            }
+        }
+
+        return;
+    }
+
+    // Fallback if modal manager is not available
     const errorModal = document.getElementById('errorModal');
     if (!errorModal) {
         console.error("Error modal not found in the DOM");
-        // Fall back to the old method if modal is not available
         showErrorFallback(errorOptions.message);
         return;
     }
@@ -103,7 +155,6 @@ function showErrorModal(errorOptions) {
     // Get modal elements
     const modalTitle = errorModal.querySelector('.modal-title');
     const modalBody = errorModal.querySelector('.modal-body');
-    const goToFieldBtn = errorModal.querySelector('#goToFieldBtn');
 
     // Set modal content
     if (modalTitle) {
@@ -348,16 +399,7 @@ window.showError = showError;
 window.showErrorModal = showErrorModal;
 window.showErrorFallback = showErrorFallback;
 
-// Make sure the error modal is hidden when the page loads
+// Initialize on DOM content loaded
 document.addEventListener('DOMContentLoaded', function() {
-    const errorModal = document.getElementById('errorModal');
-    if (errorModal) {
-        errorModal.style.display = 'none';
-        errorModal.classList.remove('show');
-
-        // Remove any existing backdrops
-        document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
-            backdrop.parentNode.removeChild(backdrop);
-        });
-    }
+    // This is now handled by the modal-manager.js module
 });

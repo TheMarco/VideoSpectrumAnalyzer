@@ -398,18 +398,18 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Form Validation Utilities -->
+
+    <!-- Shared Modules -->
+    <script src="{{ url_for('static', filename='js/ui-effects.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/modal-manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/form-utilities.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/tab-navigation.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/tooltip-manager.js') }}"></script>
     <script src="{{ url_for('static', filename='js/form-validation.js') }}"></script>
-    <!-- Shared Processing UI Module -->
     <script src="{{ url_for('static', filename='js/processing-ui.js') }}"></script>
+
     <!-- Spectrum Analyzer Form JS -->
     <script src="{{ url_for('static', filename='js/spectrum_analyzer_form.js') }}"></script>
-    <!-- Inline JS for Tooltip Initialization -->
-    <script>
-        // Initialize Bootstrap Tooltips
-        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
-    </script>
 
     <!-- Include the shared error modal -->
     {% include 'partials/error_modal.html' %}

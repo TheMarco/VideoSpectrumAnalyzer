@@ -7,40 +7,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Get form element
     const uploadForm = document.getElementById('upload-form');
 
-    // Add fade-in animation to cards
-    document.querySelectorAll('.card').forEach(card => {
-        card.classList.add('fade-in');
-    });
-
-    // Add subtle hover effects to form controls
-    document.querySelectorAll('.form-control, .form-select').forEach(input => {
-        input.addEventListener('focus', function() {
-            this.style.transform = 'translateY(-2px)';
-            this.style.transition = 'all 0.3s ease';
-        });
-
-        input.addEventListener('blur', function() {
-            this.style.transform = 'translateY(0)';
-        });
-    });
-
-    // Make sure the error modal is hidden on page load
-    const errorModal = document.getElementById('errorModal');
-    if (errorModal) {
-        errorModal.style.display = 'none';
-        errorModal.classList.remove('show');
-
-        // Remove any existing backdrops
-        document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
-            backdrop.parentNode.removeChild(backdrop);
-        });
-
-        // Remove modal-open class from body
-        document.body.classList.remove('modal-open');
-        document.body.style.overflow = '';
-        document.body.style.paddingRight = '';
-    }
-
     // Handle form submission
     uploadForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -56,34 +22,21 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.innerHTML = '<i class="bi bi-arrow-repeat spin me-2"></i> Processing...';
         }
 
-        // Prepare form data
-        const formData = new FormData();
-        const formElements = uploadForm.elements;
-        for (let i = 0; i < formElements.length; i++) {
-            const element = formElements[i];
-            if (element.name && element.type !== 'file' && element.type !== 'submit' && element.type !== 'radio') {
-                if (element.type === 'checkbox') {
-                    formData.append(element.name, element.checked ? 'on' : 'off');
-                } else {
-                    formData.append(element.name, element.value);
-                }
+        // Prepare form data using the form utilities
+        const formData = window.FormUtils.collectFormData(uploadForm);
+
+        // Add file inputs
+        window.FormUtils.addFileInputs(formData, ['file', 'background_media']);
+
+        // Validate required file input
+        if (!window.FormUtils.validateFileInput('file', {
+            errorMessage: 'Please select an audio file to process'
+        })) {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-magic me-2"></i> Generate Visualization';
             }
-        }
-
-        const audioFileInput = document.getElementById('file');
-        if (audioFileInput && audioFileInput.files.length > 0) {
-            formData.append('file', audioFileInput.files[0]);
-        } else {
-            processingUI.showError('Please select an audio file.');
             return; // Stop submission
-        }
-
-        const backgroundMediaInput = document.getElementById('background_media');
-        if (backgroundMediaInput && backgroundMediaInput.files.length > 0) {
-            formData.append('background_media', backgroundMediaInput.files[0]);
-            console.log("Appending background media:", backgroundMediaInput.files[0].name);
-        } else {
-            console.log("No background media selected.");
         }
 
         // Submit the form using the shared processing UI
@@ -217,5 +170,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // Clear tab errors when switching tabs
+    document.querySelectorAll('#configTabs .nav-link').forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function() {
+            window.TabNavigation.clearTabErrors();
+        });
+    });
 });
 // --- END OF FILE spectrum_analyzer_form.js ---
