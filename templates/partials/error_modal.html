@@ -1,0 +1,22 @@
+<!-- Error Modal Dialog (shared component) -->
+<div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true" data-bs-backdrop="static" style="display: none; z-index: 99999;">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(90deg, rgba(255, 82, 82, 0.1), rgba(255, 82, 82, 0.2));">
+                <h5 class="modal-title" id="errorModalLabel"><i class="bi bi-exclamation-triangle-fill me-2"></i>Error</h5>
+                <button type="button" class="btn-close" id="closeModalXBtn" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Error message will be inserted here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="goToFieldBtn">
+                    <i class="bi bi-cursor-fill me-2"></i>Go to Field
+                </button>
+                <button type="button" class="btn btn-secondary" id="closeModalBtn">
+                    <i class="bi bi-x me-2"></i>Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div> <!-- End Error Modal -->
