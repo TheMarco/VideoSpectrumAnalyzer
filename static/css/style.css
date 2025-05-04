@@ -1,93 +1,407 @@
 /* --- START OF FILE style.css --- */
 
-/* Body padding */
+/* Custom Dark Theme Color Palette */
+:root {
+    --dark-bg: #121212;
+    --dark-surface: #1e1e1e;
+    --dark-surface-2: #2d2d2d;
+    --dark-surface-3: #353535;
+    --primary-color: #8c52ff;
+    --primary-hover: #9d6fff;
+    --primary-active: #7b3dff;
+    --accent-color: #00e5ff;
+    --accent-hover: #33eaff;
+    --accent-active: #00c8e0;
+    --success-color: #00e676;
+    --error-color: #ff5252;
+    --warning-color: #ffab40;
+    --text-primary: rgba(255, 255, 255, 0.87);
+    --text-secondary: rgba(255, 255, 255, 0.6);
+    --text-disabled: rgba(255, 255, 255, 0.38);
+    --border-color: rgba(255, 255, 255, 0.12);
+    --shadow-color: rgba(0, 0, 0, 0.5);
+    --card-gradient: linear-gradient(145deg, #1e1e1e, #252525);
+    --card-gradient-hover: linear-gradient(145deg, #252525, #2a2a2a);
+}
+
+/* Global Styles */
 body {
+    background-color: var(--dark-bg);
+    background-image:
+        radial-gradient(circle at 25% 25%, rgba(140, 82, 255, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(0, 229, 255, 0.05) 0%, transparent 50%);
+    color: var(--text-primary);
     padding-bottom: 50px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    line-height: 1.6;
+    transition: background-color 0.3s ease;
 }
 
 .container {
     max-width: 960px;
 }
 
-/* Card shadow (optional adjustment for dark theme) */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 1rem;
+}
+
+h1 {
+    font-size: 2.5rem;
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+a {
+    color: var(--accent-color);
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--accent-hover);
+    text-decoration: none;
+}
+
+/* Card Styling */
 .card {
-    /* Slightly softer shadow for dark mode */
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.25);
-    border: 1px solid var(--bs-border-color-translucent); /* Use Bootstrap variable */
+    background: var(--card-gradient);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 8px 16px var(--shadow-color);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
 }
 
-.progress {
-    height: 30px;
-    font-size: 1rem;
+.card:hover {
+    box-shadow: 0 12px 24px var(--shadow-color);
+    transform: translateY(-2px);
+    background: var(--card-gradient-hover);
 }
 
-/* Remove specific background/border for advanced settings card */
-/* #advanced-settings .card { ... } */ /* No longer needed with tabs */
+.card-header {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem 1.25rem;
+}
 
+.card-body {
+    padding: 1.5rem;
+}
+
+.card-title {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.card-img-top {
+    border-bottom: 1px solid var(--border-color);
+    object-fit: cover;
+    height: 200px;
+}
+
+/* Button Styling */
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    padding: 0.5rem 1.25rem;
+    transition: all 0.2s ease;
+    text-transform: none;
+    letter-spacing: 0.02em;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover, .btn-primary:focus {
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary:active {
+    background-color: var(--primary-active);
+    border-color: var(--primary-active);
+    transform: translateY(0);
+}
+
+.btn-success {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+    color: #000;
+}
+
+.btn-success:hover, .btn-success:focus {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+    opacity: 0.9;
+    color: #000;
+}
+
+.btn-outline-secondary {
+    border-color: var(--border-color);
+    color: var(--text-secondary);
+}
+
+.btn-outline-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+}
+
+.btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.1rem;
+}
+
+/* Form Controls */
 .form-label {
     font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.form-control, .form-select {
+    background-color: var(--dark-surface-2);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    padding: 0.6rem 1rem;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: var(--dark-surface-3);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(140, 82, 255, 0.25);
+}
+
+.form-control::placeholder {
+    color: var(--text-disabled);
 }
 
 .form-control-color {
     min-height: calc(1.5em + 0.75rem + 2px);
     padding: 0.375rem;
+    background-color: var(--dark-surface-2);
+    border-radius: 8px;
+}
+
+.form-range::-webkit-slider-thumb {
+    background: var(--primary-color);
+}
+
+.form-range::-moz-range-thumb {
+    background: var(--primary-color);
+}
+
+.form-range::-webkit-slider-runnable-track {
+    background-color: var(--dark-surface-3);
+}
+
+.form-range::-moz-range-track {
+    background-color: var(--dark-surface-3);
+}
+
+.form-check-input {
+    background-color: var(--dark-surface-2);
+    border: 1px solid var(--border-color);
+}
+
+.form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
 }
 
 /* Help Icon Styling */
 .help-icon {
     cursor: help;
-    color: var(--bs-secondary-color); /* Use Bootstrap's secondary text color */
-    font-size: 0.9em; /* Slightly smaller */
-    vertical-align: super; /* Align nicely with label text */
+    color: var(--text-secondary);
+    font-size: 0.9em;
+    vertical-align: super;
     margin-left: 4px;
+    transition: color 0.2s ease;
 }
 
-/* Error message styling for Dark Theme */
+.help-icon:hover {
+    color: var(--accent-color);
+}
+
+/* Progress Bar */
+.progress {
+    height: 30px;
+    font-size: 1rem;
+    background-color: var(--dark-surface-2);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+    color: white;
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    transition: width 0.3s ease;
+}
+
+.progress-bar-animated {
+    animation: progress-bar-stripes 1s linear infinite;
+}
+
+/* Error message styling */
 #error-message, .error-pre {
-     white-space: pre-wrap;
-     word-wrap: break-word;
-     max-height: 400px;
-     overflow-y: auto;
-     background-color: #4d1a20;
-     border: 1px solid #8c2d38;
-     padding: 15px;
-     border-radius: 5px;
-     font-family: monospace;
-     color: #f8d7da;
-     font-size: 0.9em;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 400px;
+    overflow-y: auto;
+    background-color: rgba(255, 82, 82, 0.1);
+    border: 1px solid rgba(255, 82, 82, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+    font-family: 'Fira Code', 'Roboto Mono', monospace;
+    color: #ff8a8a;
+    font-size: 0.9em;
+}
+
+/* Tab Navigation */
+.nav-tabs {
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 1.5rem;
+}
+
+.nav-tabs .nav-link {
+    margin-bottom: -1px;
+    background: none;
+    border: 1px solid transparent;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    color: var(--text-secondary);
+    padding: 0.75rem 1.25rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.nav-tabs .nav-link:hover {
+    border-color: transparent;
+    color: var(--text-primary);
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--primary-color);
+    background-color: var(--dark-surface);
+    border-color: var(--border-color) var(--border-color) transparent;
+    border-bottom: 2px solid var(--primary-color);
+}
+
+/* Tab Content */
+.tab-pane .card-body {
+    padding-top: 1.5rem;
 }
 
 /* Footer styling */
 footer {
     font-size: 0.9em;
+    color: var(--text-secondary);
+    padding: 1.5rem 0;
+    border-top: 1px solid var(--border-color);
+    margin-top: 3rem;
 }
 
-/* Ensure tabs look okay */
-.nav-tabs .nav-link {
-    margin-bottom: -1px; /* Align with card border */
+footer a {
+    color: var(--text-secondary);
 }
 
-/* Add some padding inside tab panes */
-.tab-pane .card-body {
-    padding-top: 1.5rem;
+footer a:hover {
+    color: var(--accent-color);
 }
 
+/* Visualizer Cards */
+.visualizer-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
 
+.visualizer-card .card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.visualizer-card .card-text {
+    flex: 1;
+    margin-bottom: 1rem;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease forwards;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.spin, .bi-arrow-repeat {
+    animation: spin 1.5s linear infinite;
+    display: inline-block;
+}
+
+/* Responsive Adjustments */
 @media (max-width: 768px) {
     .container {
         max-width: 100%;
-        padding: 10px;
+        padding: 15px;
     }
+
     .nav-tabs.nav-fill .nav-item,
     .nav-tabs.nav-fill .nav-link {
         width: 100%; /* Stack tabs vertically on small screens */
+    }
+
+    h1 {
+        font-size: 2rem;
+    }
+
+    .card-body {
+        padding: 1.25rem;
     }
 }
 
 /* Add styling for invalid form fields */
 .is-invalid {
-    border-color: #dc3545 !important;
-    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25) !important;
+    border-color: var(--error-color) !important;
+    box-shadow: 0 0 0 0.25rem rgba(255, 82, 82, 0.25) !important;
 }
 
 /* Add a shake animation for invalid fields */

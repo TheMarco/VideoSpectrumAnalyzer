@@ -45,6 +45,7 @@ def process_config(config=None):
         "noise_gate": 0.04,  # Reduced from 0.08 to make bars more responsive
         "text_size": "large",  # Options: "small", "medium", "large"
         "visualizer_placement": "standard",  # Options: "standard", "bottom"
+        "max_segments": 40  # Default number of segments per bar
     }
 
     # Merge user config with defaults
@@ -82,7 +83,7 @@ def process_config(config=None):
         # Process integer values
         int_keys = [
             "n_bars", "bar_width", "bar_gap", "segment_height", "segment_gap",
-            "corner_radius", "min_freq", "max_freq", "peak_hold_frames"
+            "corner_radius", "min_freq", "max_freq", "peak_hold_frames", "max_segments"
         ]
         for key in int_keys:
             if key in config:

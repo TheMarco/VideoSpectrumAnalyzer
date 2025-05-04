@@ -1,7 +1,7 @@
 // --- START OF FILE main.js ---
 
 document.addEventListener('DOMContentLoaded', function() {
-    // ... (references to elements remain the same) ...
+    // Element references
     const uploadForm = document.getElementById('upload-form');
     const processingCard = document.getElementById('processing-card');
     const errorCard = document.getElementById('error-card');
@@ -15,31 +15,83 @@ document.addEventListener('DOMContentLoaded', function() {
     const configTabs = document.getElementById('configTabs');
     const configTabsContent = document.getElementById('configTabsContent');
 
+    // Add fade-in animation to cards
+    document.querySelectorAll('.card').forEach(card => {
+        card.classList.add('fade-in');
+    });
+
+    // Add subtle hover effects to form controls
+    document.querySelectorAll('.form-control, .form-select').forEach(input => {
+        input.addEventListener('focus', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.transition = 'all 0.3s ease';
+        });
+
+        input.addEventListener('blur', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+
     let currentJobId = null;
     let progressInterval = null;
 
-    // Function to reset the UI back to the form state (Unchanged)
+    // Function to reset the UI back to the form state with animations
     function resetToFormState() {
-        errorCard.style.display = 'none';
-        processingCard.style.display = 'none';
-        if (configTabs) configTabs.style.display = 'flex';
-        if (configTabsContent) configTabsContent.style.display = 'block';
+        // Fade out error and processing cards
+        if (errorCard.style.display === 'block') {
+            errorCard.style.opacity = '0';
+            errorCard.style.transition = 'opacity 0.3s ease';
+            setTimeout(() => { errorCard.style.display = 'none'; }, 300);
+        }
+
+        if (processingCard.style.display === 'block') {
+            processingCard.style.opacity = '0';
+            processingCard.style.transition = 'opacity 0.3s ease';
+            setTimeout(() => { processingCard.style.display = 'none'; }, 300);
+        }
+
+        // Fade in form elements
+        if (configTabs) {
+            configTabs.style.display = 'flex';
+            configTabs.style.opacity = '0';
+            setTimeout(() => {
+                configTabs.style.opacity = '1';
+                configTabs.style.transition = 'opacity 0.5s ease';
+            }, 350);
+        }
+
+        if (configTabsContent) {
+            configTabsContent.style.display = 'block';
+            configTabsContent.style.opacity = '0';
+            setTimeout(() => {
+                configTabsContent.style.opacity = '1';
+                configTabsContent.style.transition = 'opacity 0.5s ease';
+            }, 350);
+        }
+
+        // Reset submit button
         const submitBtn = document.getElementById('submit-btn');
         if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.textContent = 'Generate Visualization';
+            submitBtn.innerHTML = '<i class="bi bi-magic me-2"></i> Generate Visualization';
         }
+
+        // Reset progress elements
         if (progressBar) {
             progressBar.style.width = '0%';
             progressBar.textContent = '';
             progressBar.classList.remove('bg-success', 'bg-danger');
             progressBar.classList.add('progress-bar-animated');
         }
+
         if (statusMessage) statusMessage.textContent = 'Processing your audio file...';
+
+        // Reset file inputs
         const audioFileInput = document.getElementById('file');
         const backgroundMediaInput = document.getElementById('background_media');
         if (audioFileInput) audioFileInput.value = '';
         if (backgroundMediaInput) backgroundMediaInput.value = '';
+
         currentJobId = null;
     }
 
@@ -55,11 +107,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const submitBtn = document.getElementById('submit-btn');
         submitBtn.disabled = true;
-        submitBtn.textContent = 'Processing...';
+        submitBtn.innerHTML = '<i class="bi bi-arrow-repeat spin me-2"></i> Processing...';
 
-        if (configTabs) configTabs.style.display = 'none';
-        if (configTabsContent) configTabsContent.style.display = 'none';
+        // Smooth transition to processing card
+        if (configTabs) {
+            configTabs.style.opacity = '0';
+            configTabs.style.transition = 'opacity 0.3s ease';
+            setTimeout(() => { configTabs.style.display = 'none'; }, 300);
+        }
+
+        if (configTabsContent) {
+            configTabsContent.style.opacity = '0';
+            configTabsContent.style.transition = 'opacity 0.3s ease';
+            setTimeout(() => { configTabsContent.style.display = 'none'; }, 300);
+        }
+
+        // Show processing card with animation
         processingCard.style.display = 'block';
+        processingCard.style.opacity = '0';
+        setTimeout(() => {
+            processingCard.style.opacity = '1';
+            processingCard.style.transition = 'opacity 0.5s ease';
+        }, 50);
+
         errorCard.style.display = 'none';
         downloadSection.style.display = 'none';
         progressBar.style.width = '0%';
@@ -198,20 +268,48 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Show error message (Unchanged from previous correct version)
+    // Show error message with animations
     function showError(message) {
         console.error("Error displayed:", message);
-        if (configTabs) configTabs.style.display = 'none';
-        if (configTabsContent) configTabsContent.style.display = 'none';
-        processingCard.style.display = 'none';
-        errorCard.style.display = 'block';
-        errorMessage.textContent = message;
+
+        // Fade out other elements
+        if (configTabs) {
+            configTabs.style.opacity = '0';
+            configTabs.style.transition = 'opacity 0.3s ease';
+            setTimeout(() => { configTabs.style.display = 'none'; }, 300);
+        }
+
+        if (configTabsContent) {
+            configTabsContent.style.opacity = '0';
+            configTabsContent.style.transition = 'opacity 0.3s ease';
+            setTimeout(() => { configTabsContent.style.display = 'none'; }, 300);
+        }
+
+        if (processingCard.style.display === 'block') {
+            processingCard.style.opacity = '0';
+            processingCard.style.transition = 'opacity 0.3s ease';
+            setTimeout(() => { processingCard.style.display = 'none'; }, 300);
+        }
+
+        // Show error card with animation
+        setTimeout(() => {
+            errorCard.style.display = 'block';
+            errorCard.style.opacity = '0';
+            errorMessage.textContent = message;
+
+            setTimeout(() => {
+                errorCard.style.opacity = '1';
+                errorCard.style.transition = 'opacity 0.5s ease';
+            }, 50);
+        }, 350);
+
         if (progressInterval) clearInterval(progressInterval);
-         const submitBtn = document.getElementById('submit-btn');
-         if (submitBtn) {
+
+        const submitBtn = document.getElementById('submit-btn');
+        if (submitBtn) {
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Error Occurred';
-         }
+            submitBtn.innerHTML = '<i class="bi bi-x-circle me-2"></i> Error Occurred';
+        }
     }
 
 });

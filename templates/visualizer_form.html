@@ -6,16 +6,19 @@
     <title>{{ visualizer.name }} - Video Spectrum Analyzer</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <div class="container mt-4 mb-5">
-        <h1 class="text-center mb-4">{{ visualizer.name }}</h1>
-        <p class="text-center mb-4">{{ visualizer.description }}</p>
+    <div class="container mt-5 mb-5 fade-in">
+        <h1 class="text-center mb-3">{{ visualizer.name }}</h1>
+        <p class="text-center mb-5" style="max-width: 700px; margin-left: auto; margin-right: auto; color: var(--text-secondary);">{{ visualizer.description }}</p>
 
         <div class="mb-4">
             <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Back to Visualizer Selection
+                <i class="bi bi-arrow-left me-2"></i> Back to Visualizer Selection
             </a>
         </div>
 
@@ -24,18 +27,26 @@
             <input type="hidden" name="visualizer_name" value="{{ visualizer.name }}">
 
             <!-- Nav Tabs -->
-            <ul class="nav nav-tabs nav-fill mb-3" id="configTabs" role="tablist">
+            <ul class="nav nav-tabs nav-fill mb-4" id="configTabs" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="input-tab" data-bs-toggle="tab" data-bs-target="#input-tab-pane" type="button" role="tab" aria-controls="input-tab-pane" aria-selected="true">1. Input Files & Info</button>
+                    <button class="nav-link active" id="input-tab" data-bs-toggle="tab" data-bs-target="#input-tab-pane" type="button" role="tab" aria-controls="input-tab-pane" aria-selected="true">
+                        <i class="bi bi-file-music me-2"></i> 1. Input Files & Info
+                    </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="appearance-tab" data-bs-toggle="tab" data-bs-target="#appearance-tab-pane" type="button" role="tab" aria-controls="appearance-tab-pane" aria-selected="false">2. Appearance</button>
+                    <button class="nav-link" id="appearance-tab" data-bs-toggle="tab" data-bs-target="#appearance-tab-pane" type="button" role="tab" aria-controls="appearance-tab-pane" aria-selected="false">
+                        <i class="bi bi-palette me-2"></i> 2. Appearance
+                    </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="reactivity-tab" data-bs-toggle="tab" data-bs-target="#reactivity-tab-pane" type="button" role="tab" aria-controls="reactivity-tab-pane" aria-selected="false">3. Reactivity</button>
+                    <button class="nav-link" id="reactivity-tab" data-bs-toggle="tab" data-bs-target="#reactivity-tab-pane" type="button" role="tab" aria-controls="reactivity-tab-pane" aria-selected="false">
+                        <i class="bi bi-soundwave me-2"></i> 3. Reactivity
+                    </button>
                 </li>
-                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="advanced-tab" data-bs-toggle="tab" data-bs-target="#advanced-tab-pane" type="button" role="tab" aria-controls="advanced-tab-pane" aria-selected="false">4. Advanced & Output</button>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="advanced-tab" data-bs-toggle="tab" data-bs-target="#advanced-tab-pane" type="button" role="tab" aria-controls="advanced-tab-pane" aria-selected="false">
+                        <i class="bi bi-gear me-2"></i> 4. Advanced & Output
+                    </button>
                 </li>
             </ul>
 
@@ -301,46 +312,75 @@
             </div> <!-- End Tab Content -->
 
             <!-- Submit Button -->
-            <div class="d-grid mt-4">
-                <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">Generate Visualization</button>
+            <div class="d-grid mt-5">
+                <button type="submit" class="btn btn-primary btn-lg py-3" id="submit-btn">
+                    <i class="bi bi-magic me-2"></i> Generate Visualization
+                </button>
+                <p class="text-center mt-2" style="color: var(--text-secondary); font-size: 0.9rem;">
+                    <i class="bi bi-info-circle me-1"></i> Processing may take a few minutes depending on file size and settings
+                </p>
             </div>
 
         </form> <!-- End Form -->
 
         <!-- Processing Card -->
-         <div id="processing-card" class="card my-4" style="display: none;">
-             <div class="card-header"><h5>Processing</h5></div>
-             <div class="card-body">
-                 <div class="progress mb-3" style="height: 30px;">
-                     <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated fs-6" role="progressbar" style="width: 0%"></div>
-                 </div>
-                 <p id="status-message" class="text-center">Processing your audio file...</p>
-                 <div id="download-section" style="display: none;">
-                    <div class="d-flex justify-content-center gap-3 mt-3">
-                        <a id="download-link" href="#" class="btn btn-success btn-lg px-4">Download Visualization</a>
-                        <button type="button" class="btn btn-outline-secondary btn-lg px-4" id="create-another-btn">Create Another</button>
+        <div id="processing-card" class="card my-5" style="display: none;">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-cpu me-2"></i> Processing</h5>
+            </div>
+            <div class="card-body text-center py-4">
+                <div class="mb-4">
+                    <i class="bi bi-waveform pulse" style="font-size: 3rem; color: var(--primary-color);"></i>
+                </div>
+                <div class="progress mb-4" style="height: 30px;">
+                    <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated fs-6" role="progressbar" style="width: 0%"></div>
+                </div>
+                <p id="status-message" class="mb-4">Processing your audio file...</p>
+                <div id="download-section" style="display: none;">
+                    <div class="d-flex justify-content-center gap-3 mt-4">
+                        <a id="download-link" href="#" class="btn btn-success btn-lg px-4">
+                            <i class="bi bi-download me-2"></i> Download Visualization
+                        </a>
+                        <button type="button" class="btn btn-outline-secondary btn-lg px-4" id="create-another-btn">
+                            <i class="bi bi-plus-circle me-2"></i> Create Another
+                        </button>
                     </div>
-                 </div>
-             </div>
-         </div> <!-- End Processing Card -->
+                </div>
+            </div>
+        </div> <!-- End Processing Card -->
 
-         <!-- Error Card -->
-         <div id="error-card" class="card my-4" style="display: none;">
-             <div class="card-header bg-danger-subtle text-danger-emphasis"><h5>Error</h5></div>
-             <div class="card-body">
-                 <p><strong>An error occurred during processing:</strong></p>
-                 <pre id="error-message" class="error-pre"></pre>
-                 <div class="d-grid">
-                     <button type="button" class="btn btn-outline-secondary" id="back-btn">Back to Form</button>
-                 </div>
-             </div>
-         </div> <!-- End Error Card -->
+        <!-- Error Card -->
+        <div id="error-card" class="card my-5" style="display: none;">
+            <div class="card-header" style="background: linear-gradient(90deg, rgba(255, 82, 82, 0.1), rgba(255, 82, 82, 0.2));">
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i> Error</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <i class="bi bi-x-circle" style="font-size: 2.5rem; color: var(--error-color);"></i>
+                </div>
+                <p class="text-center mb-3"><strong>An error occurred during processing:</strong></p>
+                <pre id="error-message" class="error-pre mb-4"></pre>
+                <div class="d-grid">
+                    <button type="button" class="btn btn-outline-secondary" id="back-btn">
+                        <i class="bi bi-arrow-left me-2"></i> Back to Form
+                    </button>
+                </div>
+            </div>
+        </div> <!-- End Error Card -->
 
     </div> <!-- End Container -->
 
     <!-- Footer -->
-    <footer class="container text-center text-muted mt-4 py-3 border-top">
-        <p class="mb-0">Created by Marco van Hylckama Vlieg (<a href="https://x.com/AIandDesign" target="_blank" rel="noopener noreferrer" class="link-secondary">@AIandDesign on X</a>)</p>
+    <footer class="container text-center mt-5 py-4">
+        <div class="mb-3">
+            <i class="bi bi-soundwave" style="font-size: 1.5rem; color: var(--primary-color);"></i>
+        </div>
+        <p class="mb-2">Created by Marco van Hylckama Vlieg</p>
+        <p class="mb-0">
+            <a href="https://x.com/AIandDesign" target="_blank" rel="noopener noreferrer" class="me-3">
+                <i class="bi bi-twitter-x me-1"></i> @AIandDesign
+            </a>
+        </p>
     </footer>
 
     <!-- Bootstrap JS -->
