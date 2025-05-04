@@ -1,9 +1,16 @@
 # requirements.txt
 
-flask
-werkzeug
-numpy
-librosa
-tqdm
-Pillow
-opencv-python
+# Web framework
+flask>=2.0.0
+werkzeug>=2.0.0
+
+# Audio processing
+librosa>=0.9.0
+numpy>=1.20.0
+
+# Image and video processing
+Pillow>=9.0.0
+opencv-python>=4.5.0
+
+# Utilities
+tqdm>=4.60.0
