@@ -1,8 +1,8 @@
-# Video Spectrum Analyzer - Module Structure Design Document
+# Audio Visualizer Suite - Module Structure Design Document
 
 ## Overview
 
-This document outlines the module structure of the Video Spectrum Analyzer application, focusing on proper separation of concerns and how to avoid entanglement between modules. It serves as a guide for developers to understand how to maintain clean boundaries between components and how to properly share code across the application.
+This document outlines the module structure of the Audio Visualizer Suite application, focusing on proper separation of concerns and how to avoid entanglement between modules. It serves as a guide for developers to understand how to maintain clean boundaries between components and how to properly share code across the application.
 
 ## Core Architecture Principles
 
@@ -14,10 +14,10 @@ This document outlines the module structure of the Video Spectrum Analyzer appli
 
 ## Application Structure
 
-The Video Spectrum Analyzer is structured as follows:
+The Audio Visualizer Suite is structured as follows:
 
 ```
-VideoSpectrumAnalyzer/
+AudioVisualizerSuite/
 ├── app.py                  # Main Flask application
 ├── core/                   # Core framework components
 │   ├── __init__.py
@@ -345,7 +345,7 @@ class VisualizerRenderer:
 
 ## Conclusion
 
-By following these guidelines, the Video Spectrum Analyzer can maintain a clean, modular structure where visualizers are independent of each other but share common functionality through well-defined interfaces. This approach makes the application easier to maintain, extend, and debug.
+By following these guidelines, the Audio Visualizer Suite can maintain a clean, modular structure where visualizers are independent of each other but share common functionality through well-defined interfaces. This approach makes the application easier to maintain, extend, and debug.
 
 The modular JavaScript architecture provides several benefits:
 - **Reduced Code Duplication**: Common functionality is defined in a single place

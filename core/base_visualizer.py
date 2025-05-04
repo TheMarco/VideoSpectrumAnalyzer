@@ -1,5 +1,5 @@
 """
-Base visualizer class for the Video Spectrum Analyzer.
+Base visualizer class for the Audio Visualizer Suite.
 All visualizers must inherit from this class.
 """
 import os

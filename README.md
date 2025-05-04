@@ -1,4 +1,4 @@
-# Audio Spectrum Visualizer Web App
+# Audio Visualizer Suite
 
 This web application generates a spectrum analyzer video visualization for an audio file. You can upload an audio file, optionally provide a background image, configure various visualizer parameters through a web interface, and download the resulting MP4 video.
 
