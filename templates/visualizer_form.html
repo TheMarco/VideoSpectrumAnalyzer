@@ -23,8 +23,9 @@
         </div>
 
         <form id="upload-form" enctype="multipart/form-data">
-            <!-- Hidden field for visualizer name -->
+            <!-- Hidden fields -->
             <input type="hidden" name="visualizer_name" value="{{ visualizer.name }}">
+            <input type="hidden" name="submitted" value="{{ submitted }}"
 
             <!-- Nav Tabs -->
             <ul class="nav nav-tabs nav-fill mb-4" id="configTabs" role="tablist">
@@ -161,6 +162,13 @@
                                     <label for="corner_radius" class="form-label">Corner Radius (px) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Rounded corner radius for segments. Set to 0 for sharp corners."></i></label>
                                     <input type="number" class="form-control" id="corner_radius" name="corner_radius" value="2" min="0" max="10">
                                 </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="max_amplitude" class="form-label">Max Amplitude (px) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Maximum height of bars for the Dual Bar Visualizer (100-300px)."></i></label>
+                                    <input type="number" class="form-control" id="max_amplitude" name="max_amplitude" value="200" min="100" max="300" step="10">
+                                </div>
+                                <div class="col-md-8"></div>
                             </div>
                              <div class="row mb-3 align-items-center">
                                  <div class="col-md-3">
@@ -387,6 +395,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Custom JS -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/visualizer-ui.js') }}"></script>
     <!-- Inline JS for Tooltip Initialization -->
     <script>
         // Initialize Bootstrap Tooltips

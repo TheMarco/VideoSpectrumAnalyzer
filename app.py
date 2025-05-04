@@ -135,7 +135,7 @@ def upload_file():
         # Convert numeric values
         if key in ["n_bars", "bar_width", "bar_gap", "segment_height", "segment_gap",
                   "corner_radius", "peak_hold_frames", "min_freq", "max_freq",
-                  "fps", "width", "height", "max_segments"]:
+                  "fps", "width", "height", "max_segments", "max_amplitude"]:
             try:
                 config[key] = int(config[key])
             except (ValueError, TypeError):
@@ -280,4 +280,4 @@ def download_file(job_id):
 
 if __name__ == "__main__":
     # Use host='0.0.0.0' for accessibility on network, debug=False for production
-    app.run(debug=True, host="0.0.0.0", port=8085)
+    app.run(debug=True, host="0.0.0.0", port=8086)
