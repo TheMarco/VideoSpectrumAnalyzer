@@ -24,29 +24,31 @@ def process_config(config=None):
         "background_color": (0, 0, 0),
         "artist_color": "#FFFFFF",
         "title_color": "#FFFFFF",
-        "amplitude_scale": 0.8,  # Increased for better visibility with thinner bars
-        "sensitivity": 1.2,      # Increased for better responsiveness
+        "amplitude_scale": 1.0,  # Increased for more extreme visualization
+        "sensitivity": 2.0,      # Significantly increased for extreme responsiveness
         "analyzer_alpha": 1.0,
         "corner_radius": 0,      # Default to no rounded corners for a cleaner look
         "min_freq": 30,
         "max_freq": 16000,
-        "threshold_factor": 0.25, # Slightly lower to make bars more responsive
-        "attack_speed": 0.95,
-        "decay_speed": 0.4,      # Faster decay for quicker response
+        "threshold_factor": 0.35, # Increased to make low signals less visible
+        "attack_speed": 0.98,    # Faster attack for more immediate response
+        "decay_speed": 0.5,      # Even faster decay for quicker response
         "peak_hold_frames": 3,   # Reduced peak hold frames
-        "peak_decay_speed": 0.25, # Faster peak decay
-        "bass_threshold_adjust": 1.2,
-        "mid_threshold_adjust": 1.0,
-        "high_threshold_adjust": 0.9,
-        "silence_threshold": 0.02,
-        "silence_decay_factor": 0.7, # Faster silence decay
-        "noise_gate": 0.04,
+        "peak_decay_speed": 0.3, # Faster peak decay
+        "bass_threshold_adjust": 1.3,  # More aggressive bass threshold
+        "mid_threshold_adjust": 1.1,   # More aggressive mid threshold
+        "high_threshold_adjust": 0.6,  # Reduced high threshold to make highs more responsive
+        "silence_threshold": 0.03, # Slightly higher silence threshold
+        "silence_decay_factor": 0.8, # Faster silence decay
+        "noise_gate": 0.08,      # Higher noise gate to suppress more low signals
         "text_size": "large",    # Options: "small", "medium", "large"
         "visualizer_placement": "center", # Options: "center", "bottom"
         "center_line_color": "match_bar", # Center line color matches bar color
-        "center_line_thickness": 4,     # Thickness of 4px as requested
+        "center_line_thickness": 3,     # Reduced to 3px thickness as requested
+        "center_line_extension": 25,    # Extend the center line by 25px on each side
         "edge_rolloff": True,    # Enable edge rolloff effect
         "edge_rolloff_factor": 0.4, # More aggressive rolloff (lower value = more rolloff)
+        "signal_power": 2.5,     # New parameter: power function exponent for signal boosting
     }
 
     # Merge user config with defaults

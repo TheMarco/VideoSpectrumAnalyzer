@@ -43,6 +43,7 @@ class DualBarRenderer:
         self.background_color = config["background_color"]
         self.glow_effect = config["glow_effect"]
         self.glow_blur_radius = config["glow_blur_radius"]
+        self.signal_power = config.get("signal_power", 2.5)  # Get the signal power parameter
         self.glow_color_rgb = config["glow_color_rgb"]
         self.visualizer_placement = config.get("visualizer_placement", "center")
 
@@ -52,7 +53,8 @@ class DualBarRenderer:
             self.center_line_color = self.bar_color_rgb
         else:
             self.center_line_color = hex_to_rgb(center_line_color)
-        self.center_line_thickness = config.get("center_line_thickness", 4)
+        self.center_line_thickness = config.get("center_line_thickness", 3)
+        self.center_line_extension = config.get("center_line_extension", 25)
 
         # Edge rolloff configuration
         self.edge_rolloff = config.get("edge_rolloff", True)
@@ -183,8 +185,13 @@ class DualBarRenderer:
         draw = ImageDraw.Draw(image)
 
         # Calculate line start and end positions
-        line_start_x = self.start_x
-        line_end_x = self.start_x + (self.n_bars * self.total_bar_width_gap) - self.bar_gap
+        # Extend the line by the specified amount on both sides
+        line_start_x = self.start_x - self.center_line_extension
+        line_end_x = self.start_x + (self.n_bars * self.total_bar_width_gap) - self.bar_gap + self.center_line_extension
+
+        # Ensure the line doesn't go outside the image boundaries
+        line_start_x = max(0, line_start_x)
+        line_end_x = min(self.width, line_end_x)
 
         # Draw the center line
         center_line_color_rgba = self.center_line_color + (255,)  # Full opacity for the line
@@ -218,16 +225,29 @@ class DualBarRenderer:
         # This will emphasize the differences between low and high frequencies
         log_spectrum = np.copy(smoothed_spectrum)
         for i in range(len(log_spectrum)):
-            # Apply frequency-dependent scaling (higher boost for mid-range frequencies)
+            # Apply frequency-dependent scaling with higher boost for high frequencies
             freq_factor = 1.0
             if i < self.n_bars * 0.2:  # Bass (first 20%)
-                freq_factor = 1.2
+                freq_factor = 1.5  # Keep bass boost the same
             elif i < self.n_bars * 0.6:  # Mid-range (next 40%)
-                freq_factor = 1.4
+                freq_factor = 1.8  # Keep mids boost the same
             else:  # High frequencies (last 40%)
-                freq_factor = 1.0
+                freq_factor = 2.2  # Significantly increased from 1.2 to make highs more pronounced
 
+            # Apply the frequency factor
             log_spectrum[i] = log_spectrum[i] * freq_factor
+
+            # Apply non-linear transformation to boost high signals and suppress low signals
+            # Using a power function with the signal_power parameter
+            if log_spectrum[i] > 0:
+                # Apply power function to create more extreme contrast
+                # Use a more aggressive power function for high frequencies
+                if i >= self.n_bars * 0.6:  # High frequencies (last 40%)
+                    # Use a lower power value for high frequencies to boost them more
+                    high_freq_power = max(1.0, self.signal_power - 0.8)
+                    log_spectrum[i] = np.power(log_spectrum[i], high_freq_power)
+                else:
+                    log_spectrum[i] = np.power(log_spectrum[i], self.signal_power)
 
         # Draw each bar
         for i in range(self.n_bars):
@@ -240,7 +260,7 @@ class DualBarRenderer:
 
             # Calculate bar height based on signal strength
             # Apply amplitude scale and clamp to max amplitude
-            enhanced_amplitude_scale = self.effective_amplitude_scale * 2.0
+            enhanced_amplitude_scale = self.effective_amplitude_scale * 2.5  # Increased from 2.0 for more extreme effect
             bar_height = min(int(signal * self.max_amplitude * enhanced_amplitude_scale), self.max_amplitude)
 
             # Ensure minimum visible height for active bars

@@ -233,11 +233,13 @@ class BaseVisualizer(ABC):
                 smoothed_spectrum[i] *= conf.get("silence_decay_factor", 0.5)
                 peak_values[i] *= conf.get("silence_decay_factor", 0.5)
             else:
-                # Apply dynamic threshold (this is the key difference from our previous implementation)
+                # Apply dynamic threshold with more extreme processing
                 if current_spectrum[i] > dynamic_thresholds[i]:
                     # Calculate strength based on how much the signal exceeds the threshold
+                    # Use a more aggressive formula for the Dual Bar visualizer
+                    # This creates a more extreme difference between high and low signals
                     strength = np.clip(
-                        (current_spectrum[i] - dynamic_thresholds[i]) / (1 - dynamic_thresholds[i] + 1e-6),
+                        np.power((current_spectrum[i] - dynamic_thresholds[i]) / (1 - dynamic_thresholds[i] + 1e-6), 1.5),
                         0, 1
                     )
 
@@ -249,6 +251,7 @@ class BaseVisualizer(ABC):
                     )
                 else:
                     # Apply decay if signal is below threshold
+                    # Use a faster decay for more extreme effect
                     decay_speed = conf.get("decay_speed", 0.25)
                     smoothed_spectrum[i] = smoothed_spectrum[i] * (1 - decay_speed)
 
