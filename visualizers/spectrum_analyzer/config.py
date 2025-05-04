@@ -15,18 +15,18 @@ def process_config(config=None):
     """
     # Default configuration
     default_config = {
-        "n_bars": 40,
+        "n_bars": 20,
         "bar_width": 25,
         "bar_gap": 2,
         "bar_color": "#FFFFFF",
-        "glow_effect": "off",
+        "glow_effect": "black",
         "background_color": (0, 0, 0),
         "artist_color": "#FFFFFF",
         "title_color": "#FFFFFF",
         "amplitude_scale": 0.6,
         "sensitivity": 1.0,
         "analyzer_alpha": 1.0,
-        "segment_height": 6,
+        "segment_height": 4,
         "segment_gap": 6,
         "corner_radius": 2,
         "min_freq": 30,
@@ -43,9 +43,9 @@ def process_config(config=None):
         "silence_threshold": 0.02,  # Reduced from 0.04 to make it more sensitive
         "silence_decay_factor": 0.5,
         "noise_gate": 0.04,  # Reduced from 0.08 to make bars more responsive
-        "text_size": "large",  # Options: "small", "medium", "large"
+        "text_size": "medium",  # Options: "small", "medium", "large"
         "visualizer_placement": "standard",  # Options: "standard", "bottom"
-        "max_segments": 40  # Default number of segments per bar
+        "max_segments": 24  # Default number of segments per bar
     }
 
     # Merge user config with defaults

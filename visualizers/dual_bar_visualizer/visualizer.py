@@ -7,6 +7,7 @@ from core.base_visualizer import BaseVisualizer
 from modules.media_handler import load_fonts
 from visualizers.dual_bar_visualizer.config import process_config
 from visualizers.dual_bar_visualizer.renderer import DualBarRenderer
+import numpy as np
 
 class DualBarVisualizer(BaseVisualizer):
     """
@@ -87,3 +88,64 @@ class DualBarVisualizer(BaseVisualizer):
             artist_name,
             track_title
         )
+    
+    def update_frame_data(self, frame_data, frame_idx, conf):
+        """
+        Update frame data for the current frame.
+
+        Args:
+            frame_data (dict): Frame data to update
+            frame_idx (int): Current frame index
+            conf (dict): Configuration dictionary
+        """
+        mel_spec_norm = frame_data["mel_spec_norm"]
+        normalized_frame_energy = frame_data["normalized_frame_energy"]
+        dynamic_thresholds = frame_data["dynamic_thresholds"]
+        smoothed_spectrum = frame_data["smoothed_spectrum"]
+        peak_values = frame_data["peak_values"]
+        peak_hold_counters = frame_data["peak_hold_counters"]
+
+        current_spectrum = mel_spec_norm[:, frame_idx].copy()
+        is_silent = normalized_frame_energy[frame_idx] < conf.get("silence_threshold", 0.04) if frame_idx < len(normalized_frame_energy) else True
+
+        if frame_idx % 100 == 0:
+            print(f"Frame {frame_idx}: Max spectrum value: {np.max(current_spectrum):.4f}, Is silent: {is_silent}")
+
+        n_bars = len(current_spectrum)
+        for i in range(n_bars):
+            if is_silent:
+                smoothed_spectrum[i] *= conf.get("silence_decay_factor", 0.5)
+                peak_values[i] *= conf.get("silence_decay_factor", 0.5)
+            else:
+                if current_spectrum[i] > dynamic_thresholds[i]:
+                    strength = np.clip(
+                        np.power((current_spectrum[i] - dynamic_thresholds[i]) / (1 - dynamic_thresholds[i] + 1e-6), 1.5),
+                        0, 1
+                    )
+
+                    attack_speed = conf.get("attack_speed", 0.95)
+                    smoothed_spectrum[i] = max(
+                        smoothed_spectrum[i] * (1 - attack_speed),
+                        attack_speed * strength + smoothed_spectrum[i] * (1 - attack_speed)
+                    )
+                else:
+                    decay_speed = conf.get("decay_speed", 0.25)
+                    smoothed_spectrum[i] = smoothed_spectrum[i] * (1 - decay_speed)
+
+                if smoothed_spectrum[i] < conf.get("noise_gate", 0.04):
+                    smoothed_spectrum[i] = 0.0
+
+                if smoothed_spectrum[i] > peak_values[i]:
+                    peak_values[i] = smoothed_spectrum[i]
+                    peak_hold_counters[i] = conf.get("peak_hold_frames", 5)
+                elif peak_hold_counters[i] > 0:
+                    peak_hold_counters[i] -= 1
+                else:
+                    peak_values[i] = max(peak_values[i] * (1 - conf.get("peak_decay_speed", 0.15)), smoothed_spectrum[i])
+
+                if peak_values[i] < conf.get("noise_gate", 0.04):
+                    peak_values[i] = 0.0
+
+        frame_data["smoothed_spectrum"] = smoothed_spectrum
+        frame_data["peak_values"] = peak_values
+        frame_data["peak_hold_counters"] = peak_hold_counters

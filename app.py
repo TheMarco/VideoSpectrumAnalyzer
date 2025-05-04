@@ -43,7 +43,14 @@ def visualizer_form(name):
     visualizer = registry.get_visualizer(name)
     if not visualizer:
         return render_template("error.html", message=f"Visualizer '{name}' not found"), 404
-    return render_template("visualizer_form.html", visualizer=visualizer)
+    # Choose per-visualizer form template
+    if visualizer.name == "Dual Bar Visualizer":
+        template = "dual_bar_visualizer_form.html"
+    elif visualizer.name == "Spectrum Analyzer":
+        template = "spectrum_analyzer_form.html"
+    else:
+        template = "visualizer_form.html"
+    return render_template(template, visualizer=visualizer)
 
 
 @app.route("/upload", methods=["POST"])
@@ -280,4 +287,4 @@ def download_file(job_id):
 
 if __name__ == "__main__":
     # Use host='0.0.0.0' for accessibility on network, debug=False for production
-    app.run(debug=True, host="0.0.0.0", port=8087)
+    app.run(debug=True, host="0.0.0.0", port=8080)

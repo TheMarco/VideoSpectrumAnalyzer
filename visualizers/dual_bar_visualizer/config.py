@@ -15,12 +15,12 @@ def process_config(config=None):
     """
     # Default configuration
     default_config = {
-        "n_bars": 60,
-        "bar_width": 5,
+        "n_bars": 80,
+        "bar_width": 3,
         "bar_gap": 5,            # Increased gap between bars to 5px
         "bar_color": "#FFFFFF",
         "max_amplitude": 250,    # Increased to 250px as requested
-        "glow_effect": "off",
+        "glow_effect": "black",
         "background_color": (0, 0, 0),
         "artist_color": "#FFFFFF",
         "title_color": "#FFFFFF",
@@ -42,9 +42,8 @@ def process_config(config=None):
         "silence_decay_factor": 0.8, # Faster silence decay
         "noise_gate": 0.08,      # Higher noise gate to suppress more low signals
         "text_size": "large",    # Options: "small", "medium", "large"
-        "visualizer_placement": "center", # Options: "center", "bottom"
         "center_line_color": "match_bar", # Center line color matches bar color
-        "center_line_thickness": 3,     # Reduced to 3px thickness as requested
+        "center_line_thickness": 2,     # Height of the horizontal center line in pixels
         "center_line_extension": 25,    # Extend the center line by 25px on each side
         "edge_rolloff": True,    # Enable edge rolloff effect
         "edge_rolloff_factor": 0.4, # More aggressive rolloff (lower value = more rolloff)
@@ -55,7 +54,7 @@ def process_config(config=None):
     conf = default_config.copy()
     if config and isinstance(config, dict):
         # Process string values that should be preserved as-is
-        string_keys = ["text_size", "visualizer_placement", "glow_effect", "bar_color", "artist_color", "title_color"]
+        string_keys = ["text_size", "glow_effect", "bar_color", "artist_color", "title_color"]
         for key in string_keys:
             if key in config:
                 conf[key] = config[key]

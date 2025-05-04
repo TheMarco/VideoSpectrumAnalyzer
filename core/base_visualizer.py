@@ -200,6 +200,7 @@ class BaseVisualizer(ABC):
         print(f"Video saved to: {output_file}")
         return output_file
 
+    @abstractmethod
     def update_frame_data(self, frame_data, frame_idx, conf):
         """
         Update frame data for the current frame.
@@ -209,69 +210,4 @@ class BaseVisualizer(ABC):
             frame_idx (int): Current frame index
             conf (dict): Configuration dictionary
         """
-        # Extract data from frame_data
-        mel_spec_norm = frame_data["mel_spec_norm"]
-        normalized_frame_energy = frame_data["normalized_frame_energy"]
-        dynamic_thresholds = frame_data["dynamic_thresholds"]
-        smoothed_spectrum = frame_data["smoothed_spectrum"]
-        peak_values = frame_data["peak_values"]
-        peak_hold_counters = frame_data["peak_hold_counters"]
-
-        # Update spectrum and peaks
-        current_spectrum = mel_spec_norm[:, frame_idx].copy()
-        is_silent = normalized_frame_energy[frame_idx] < conf.get("silence_threshold", 0.04) if frame_idx < len(normalized_frame_energy) else True
-
-        # Debug prints (every 100 frames)
-        if frame_idx % 100 == 0:
-            print(f"Frame {frame_idx}: Max spectrum value: {np.max(current_spectrum):.4f}, Is silent: {is_silent}")
-
-        # Process each frequency band
-        n_bars = len(current_spectrum)
-        for i in range(n_bars):
-            if is_silent:
-                # Apply silence decay to both spectrum and peaks
-                smoothed_spectrum[i] *= conf.get("silence_decay_factor", 0.5)
-                peak_values[i] *= conf.get("silence_decay_factor", 0.5)
-            else:
-                # Apply dynamic threshold with more extreme processing
-                if current_spectrum[i] > dynamic_thresholds[i]:
-                    # Calculate strength based on how much the signal exceeds the threshold
-                    # Use a more aggressive formula for the Dual Bar visualizer
-                    # This creates a more extreme difference between high and low signals
-                    strength = np.clip(
-                        np.power((current_spectrum[i] - dynamic_thresholds[i]) / (1 - dynamic_thresholds[i] + 1e-6), 1.5),
-                        0, 1
-                    )
-
-                    # Apply attack speed
-                    attack_speed = conf.get("attack_speed", 0.95)
-                    smoothed_spectrum[i] = max(
-                        smoothed_spectrum[i] * (1 - attack_speed),
-                        attack_speed * strength + smoothed_spectrum[i] * (1 - attack_speed)
-                    )
-                else:
-                    # Apply decay if signal is below threshold
-                    # Use a faster decay for more extreme effect
-                    decay_speed = conf.get("decay_speed", 0.25)
-                    smoothed_spectrum[i] = smoothed_spectrum[i] * (1 - decay_speed)
-
-                # Apply noise gate
-                if smoothed_spectrum[i] < conf.get("noise_gate", 0.04):
-                    smoothed_spectrum[i] = 0.0
-
-                # Update peak values
-                if smoothed_spectrum[i] > peak_values[i]:
-                    peak_values[i] = smoothed_spectrum[i]
-                    peak_hold_counters[i] = conf.get("peak_hold_frames", 5)
-                elif peak_hold_counters[i] > 0:
-                    peak_hold_counters[i] -= 1
-                else:
-                    peak_values[i] = max(peak_values[i] * (1 - conf.get("peak_decay_speed", 0.15)), smoothed_spectrum[i])
-
-                if peak_values[i] < conf.get("noise_gate", 0.04):
-                    peak_values[i] = 0.0
-
-        # Update frame_data with new values
-        frame_data["smoothed_spectrum"] = smoothed_spectrum
-        frame_data["peak_values"] = peak_values
-        frame_data["peak_hold_counters"] = peak_hold_counters
+        raise NotImplementedError("Subclasses must implement update_frame_data")
