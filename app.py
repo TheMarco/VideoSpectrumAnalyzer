@@ -285,6 +285,16 @@ def download_file(job_id):
     return send_from_directory(directory, filename, as_attachment=True)
 
 
+@app.route("/stream/<job_id>", methods=["GET"])
+def stream_file(job_id):
+    if job_id not in jobs or jobs[job_id]["status"] != "completed":
+        return jsonify({"error": "File not ready or job not found"}), 404
+    directory = os.path.abspath(app.config["OUTPUT_FOLDER"])
+    filename = os.path.basename(jobs[job_id]["output_file"])
+    # Return the file for streaming (not as attachment)
+    return send_from_directory(directory, filename, as_attachment=False)
+
+
 if __name__ == "__main__":
     # Use host='0.0.0.0' for accessibility on network, debug=False for production
     app.run(debug=True, host="0.0.0.0", port=8091)
