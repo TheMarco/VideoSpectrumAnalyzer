@@ -279,32 +279,6 @@ def process_video(
             # Debug: Print current job state
             print(f"DEBUG: Current job state: {jobs[job_id]}")
 
-        # Add a timeout mechanism
-        import threading
-        import time
-
-        # Flag to indicate if processing is complete
-        processing_complete = [False]
-
-        # Function to check for timeout
-        def check_timeout():
-            # Wait for 5 minutes (300 seconds)
-            timeout_seconds = 300
-            start_time = time.time()
-
-            while not processing_complete[0]:
-                if time.time() - start_time > timeout_seconds:
-                    print(f"Processing job {job_id} timed out after {timeout_seconds} seconds")
-                    jobs[job_id]["status"] = "failed"
-                    jobs[job_id]["error"] = f"Processing timed out after {timeout_seconds} seconds"
-                    return
-                time.sleep(5)  # Check every 5 seconds
-
-        # Start timeout thread
-        timeout_thread = threading.Thread(target=check_timeout)
-        timeout_thread.daemon = True
-        timeout_thread.start()
-
         # Use the visualizer to create the visualization
         try:
             visualizer.create_visualization(
@@ -329,9 +303,6 @@ def process_video(
             jobs[job_id]["error"] = f"{str(e)}\n{traceback.format_exc()}"
             print(f"Error processing job {job_id}: {e}")
             traceback.print_exc()
-        finally:
-            # Mark processing as complete to stop the timeout thread
-            processing_complete[0] = True
     except Exception as e:
         jobs[job_id]["status"] = "failed"
         jobs[job_id]["error"] = f"{str(e)}\n{traceback.format_exc()}"
