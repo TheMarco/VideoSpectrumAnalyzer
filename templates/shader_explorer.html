@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Background Shader Explorer - Audio Visualizer Suite</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container mt-5 mb-5 fade-in">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">Background Shader Explorer</h1>
+            <div>
+                {% if referrer %}
+                <a href="{{ referrer }}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left me-2"></i> Back to Form
+                </a>
+                {% else %}
+                <a href="/" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left me-2"></i> Back to Home
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <p class="mb-0">
+                    This page shows previews of all available background shaders.
+                    Click "Select this shader" to use a shader in your visualization.
+                </p>
+            </div>
+        </div>
+
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for shader in shaders %}
+            <div class="col">
+                <div class="card h-100 shader-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">{{ shader.name }}</h5>
+                    </div>
+                    <div class="card-body p-0 position-relative">
+                        {% if shader.preview_path %}
+                        <video class="w-100 shader-preview" controls loop muted>
+                            <source src="/shader-preview/{{ shader.path|replace('glsl/', '')|replace('.glsl', '') }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                        {% else %}
+                        <div class="d-flex align-items-center justify-content-center bg-dark text-light" style="height: 200px;">
+                            <div class="text-center">
+                                <i class="bi bi-exclamation-triangle fs-1 mb-2"></i>
+                                <p>Preview not available</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        {% if visualizer_name %}
+                        <a href="/visualizer/{{ visualizer_name }}?shader={{ shader.path }}" class="btn btn-primary w-100">
+                            <i class="bi bi-check-circle me-2"></i> Select this shader
+                        </a>
+                        {% else %}
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-primary w-100 copy-shader-path" data-shader-path="{{ shader.path }}">
+                                <i class="bi bi-clipboard me-2"></i> Copy shader path
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="container text-center mt-5 py-4">
+        <div class="mb-3">
+            <i class="bi bi-soundwave" style="font-size: 1.5rem; color: var(--primary-color);"></i>
+        </div>
+        <p class="mb-2">Created by Marco van Hylckama Vlieg</p>
+        <p class="mb-0">
+            <a href="https://x.com/AIandDesign" target="_blank" rel="noopener noreferrer" class="me-3">
+                <i class="bi bi-twitter-x me-1"></i> @AIandDesign
+            </a>
+        </p>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-play videos when they come into view
+        const videos = document.querySelectorAll('.shader-preview');
+
+        // Create an intersection observer
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    // Play the video when it's in view
+                    entry.target.play().catch(e => console.log('Auto-play prevented:', e));
+                } else {
+                    // Pause the video when it's out of view
+                    entry.target.pause();
+                }
+            });
+        }, { threshold: 0.5 });
+
+        // Observe each video
+        videos.forEach(video => {
+            observer.observe(video);
+        });
+
+        // Handle copy shader path buttons
+        const copyButtons = document.querySelectorAll('.copy-shader-path');
+        copyButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const shaderPath = this.getAttribute('data-shader-path');
+                navigator.clipboard.writeText(shaderPath)
+                    .then(() => {
+                        // Change button text temporarily
+                        const originalText = this.innerHTML;
+                        this.innerHTML = '<i class="bi bi-check-lg me-2"></i> Copied!';
+                        setTimeout(() => {
+                            this.innerHTML = originalText;
+                        }, 2000);
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy: ', err);
+                    });
+            });
+        });
+    });
+    </script>
+</body>
+</html>

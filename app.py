@@ -37,6 +37,8 @@ MAX_VIDEO_SIZE = 1000 * 1024 * 1024 # 1 GB (1000 MB)
 def get_available_shaders():
     """Get a list of all available GLSL shaders in the glsl directory."""
     shader_files = glob.glob("glsl/*.glsl")
+    # Filter out optical_deconstruction shader as per user preference
+    shader_files = [f for f in shader_files if "optical_deconstruction" not in f]
     shaders = []
 
     for shader_path in shader_files:
@@ -44,9 +46,15 @@ def get_available_shaders():
         shader_name = os.path.basename(shader_path).replace(".glsl", "")
         # Convert to title case for display (e.g., "biomine" -> "Biomine")
         display_name = shader_name.replace("_", " ").title()
+
+        # Check if a preview video exists for this shader
+        preview_path = f"glsl/previews/{shader_name}.mp4"
+        has_preview = os.path.exists(preview_path)
+
         shaders.append({
             "path": shader_path,
-            "name": display_name
+            "name": display_name,
+            "preview_path": preview_path if has_preview else None
         })
 
     return sorted(shaders, key=lambda x: x["name"])
@@ -425,6 +433,46 @@ def stream_file(job_id):
     return send_from_directory(directory, filename, as_attachment=False)
 
 
+@app.route("/shader-explorer")
+def shader_explorer():
+    """Render the shader explorer page with previews of all shaders."""
+    # Get the referring page to allow returning to it
+    referrer = request.referrer
+    visualizer_name = None
+
+    # Try to extract visualizer name from referrer URL if it exists
+    if referrer and '/visualizer/' in referrer:
+        try:
+            visualizer_name = referrer.split('/visualizer/')[1].split('?')[0]
+        except:
+            pass
+
+    # Get available shaders
+    shaders = get_available_shaders()
+
+    return render_template(
+        "shader_explorer.html",
+        shaders=shaders,
+        visualizer_name=visualizer_name,
+        referrer=referrer
+    )
+
+
+@app.route("/shader-preview/<path:shader_name>")
+def shader_preview(shader_name):
+    """Stream a shader preview video."""
+    # The shader_name parameter will be something like "biomine"
+    preview_path = f"glsl/previews/{shader_name}.mp4"
+
+    if not os.path.exists(preview_path):
+        return jsonify({"error": "Shader preview not found"}), 404
+
+    directory = os.path.dirname(os.path.abspath(preview_path))
+    filename = os.path.basename(preview_path)
+
+    return send_from_directory(directory, filename, as_attachment=False)
+
+
 if __name__ == "__main__":
     # Use host='0.0.0.0' for accessibility on network, debug=False for production
-    app.run(debug=True, host="0.0.0.0", port=8084)
+    app.run(debug=True, host="0.0.0.0", port=8080)

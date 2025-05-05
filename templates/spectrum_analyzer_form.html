@@ -80,7 +80,12 @@
                             <!-- Background Shader -->
                             <div class="row mb-3">
                                 <div class="col-12">
-                                    <label for="background_shader" class="form-label">Background Shader <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="right" title="Optional GLSL shader for dynamic background effects. Takes precedence over image/video if both are provided."></i></label>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <label for="background_shader" class="form-label">Background Shader <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="right" title="Optional GLSL shader for dynamic background effects. Takes precedence over image/video if both are provided."></i></label>
+                                        <a href="/shader-explorer" class="text-decoration-none">
+                                            <i class="bi bi-eye me-1"></i> Preview Shaders
+                                        </a>
+                                    </div>
                                     <select class="form-select" id="background_shader" name="background_shader">
                                         <option value="">None (use image/video or black background)</option>
                                         {% for shader in shaders %}
@@ -423,6 +428,9 @@
 
     <!-- Spectrum Analyzer Form JS -->
     <script src="{{ url_for('static', filename='js/spectrum_analyzer_form.js') }}"></script>
+
+    <!-- Shader Selector JS -->
+    <script src="{{ url_for('static', filename='js/shader-selector.js') }}"></script>
 
     <!-- Include the shared error modal -->
     {% include 'partials/error_modal.html' %}
