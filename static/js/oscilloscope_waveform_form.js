@@ -22,6 +22,91 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
+    // Add event listener for background shader selection
+    const backgroundShaderSelect = document.getElementById('background_shader');
+    const backgroundMediaInput = document.getElementById('background_media');
+
+    if (backgroundShaderSelect && backgroundMediaInput) {
+        backgroundShaderSelect.addEventListener('change', function() {
+            if (this.value) {
+                // If a shader is selected, show a note about precedence
+                const note = document.createElement('small');
+                note.id = 'shader-note';
+                note.className = 'form-text text-warning';
+                note.innerHTML = '<i class="bi bi-info-circle"></i> The selected shader will take precedence over the background image/video.';
+                
+                // Remove existing note if any
+                const existingNote = document.getElementById('shader-note');
+                if (existingNote) existingNote.remove();
+                
+                // Add the note after the background media input
+                backgroundMediaInput.parentNode.appendChild(note);
+                
+                // Optionally, you can visually indicate that the media input is less important
+                backgroundMediaInput.classList.add('opacity-50');
+            } else {
+                // Remove the note if no shader is selected
+                const existingNote = document.getElementById('shader-note');
+                if (existingNote) existingNote.remove();
+                
+                // Remove visual indication
+                backgroundMediaInput.classList.remove('opacity-50');
+            }
+        });
+    }
+
+    // Add event listener for glow effect selection
+    const glowEffectSelect = document.getElementById('glow_effect');
+    const glowSettings = document.querySelectorAll('.glow-setting');
+
+    if (glowEffectSelect && glowSettings.length > 0) {
+        glowEffectSelect.addEventListener('change', function() {
+            if (this.value === 'off') {
+                // Hide glow settings if glow is off
+                glowSettings.forEach(setting => {
+                    setting.style.display = 'none';
+                });
+            } else {
+                // Show glow settings if glow is on
+                glowSettings.forEach(setting => {
+                    setting.style.display = 'flex';
+                });
+            }
+        });
+        
+        // Trigger the change event to set initial state
+        glowEffectSelect.dispatchEvent(new Event('change'));
+    }
+
+    // Add event listener for resolution selection
+    const resolutionSelect = document.getElementById('resolution');
+    const widthInput = document.getElementById('width');
+    const heightInput = document.getElementById('height');
+
+    if (resolutionSelect && widthInput && heightInput) {
+        resolutionSelect.addEventListener('change', function() {
+            // Set width and height based on selected resolution
+            switch(this.value) {
+                case '720p':
+                    widthInput.value = 1280;
+                    heightInput.value = 720;
+                    break;
+                case '1080p':
+                    widthInput.value = 1920;
+                    heightInput.value = 1080;
+                    break;
+                case '1440p':
+                    widthInput.value = 2560;
+                    heightInput.value = 1440;
+                    break;
+                case '4K':
+                    widthInput.value = 3840;
+                    heightInput.value = 2160;
+                    break;
+            }
+        });
+    }
+
     // Handle form submission
     uploadForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -81,6 +166,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // Make sure the visualizer name is included
         if (!formData.has('visualizer_name')) {
             formData.append('visualizer_name', 'OscilloscopeWaveformVisualizer');
+        }
+
+        // Add background shader path if selected
+        const backgroundShader = document.getElementById('background_shader');
+        if (backgroundShader && backgroundShader.value) {
+            formData.append('background_shader_path', backgroundShader.value);
         }
 
         console.log("Form data prepared, submitting...");

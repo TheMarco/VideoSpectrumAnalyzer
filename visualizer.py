@@ -6,6 +6,7 @@ import os
 import numpy as np
 from tqdm import tqdm
 import time
+import cv2
 
 # Import modules from the modules package
 from modules.utils import hex_to_rgb
@@ -27,6 +28,7 @@ def create_spectrum_analyzer(
     output_file="output.mp4",
     background_image_path=None,
     background_video_path=None,
+    background_shader_path=None,  # New parameter for shader path
     artist_name="Artist Name",
     track_title="Track Title",
     duration=None,
@@ -38,13 +40,14 @@ def create_spectrum_analyzer(
 ):
     """
     Create a spectrum analyzer visualization for an audio file,
-    optionally with a static image or looping video background.
+    optionally with a static image, looping video, or GLSL shader background.
 
     Args:
         audio_file (str): Path to the audio file
         output_file (str): Path to save the output video
         background_image_path (str, optional): Path to background image
         background_video_path (str, optional): Path to background video
+        background_shader_path (str, optional): Path to GLSL shader file
         artist_name (str): Artist name to display
         track_title (str): Track title to display
         duration (float, optional): Duration in seconds to trim the audio to
@@ -63,9 +66,18 @@ def create_spectrum_analyzer(
     # Load audio
     y, sr, duration = load_audio(audio_file, duration, progress_callback)
 
+    # Debug the progress callback
+    print(f"DEBUG: visualizer.py progress_callback is {'provided' if progress_callback else 'NOT provided'}")
+    if progress_callback:
+        print(f"DEBUG: visualizer.py progress_callback type: {type(progress_callback)}")
+        # Test the callback
+        progress_callback(1, "DEBUG: Testing progress callback from visualizer.py")
+
     # Load background media
-    background_pil, video_capture, bg_frame_count, bg_fps = load_background_media(
-        background_image_path, background_video_path, width, height
+    print(f"DEBUG: Calling load_background_media with background_shader_path={background_shader_path}")
+    background_pil, video_capture, bg_frame_count, bg_fps, shader_renderer = load_background_media(
+        background_image_path, background_video_path, background_shader_path, width, height,
+        duration=duration, fps=fps, progress_callback=progress_callback
     )
 
     # Analyze audio
@@ -137,10 +149,13 @@ def create_spectrum_analyzer(
                 if peak_values[i] < conf["noise_gate"]:
                     peak_values[i] = 0.0
 
-        # Process video frame if using video background
+        # Calculate current time for shader rendering
+        current_time = frame_idx / fps
+
+        # Process video frame if using video background or shader
         current_bg_frame_pil, last_good_bg_frame_pil = process_video_frame(
-            video_capture, width, height, last_good_bg_frame_pil
-        ) if video_capture else (background_pil, last_good_bg_frame_pil)
+            video_capture, shader_renderer, width, height, current_time, last_good_bg_frame_pil
+        ) if (video_capture or shader_renderer) else (background_pil, last_good_bg_frame_pil)
 
         # Render frame
         image = renderer.render_frame(
@@ -183,6 +198,10 @@ def create_spectrum_analyzer(
 
     # Cleanup
     cleanup_temp_files(temp_video_path, video_capture)
+
+    # Cleanup shader renderer if used
+    if shader_renderer:
+        shader_renderer.cleanup()
 
     if progress_callback:
         progress_callback(100)

@@ -149,3 +149,7 @@ class SpectrumAnalyzer(BaseVisualizer):
         frame_data["smoothed_spectrum"] = smoothed_spectrum
         frame_data["peak_values"] = peak_values
         frame_data["peak_hold_counters"] = peak_hold_counters
+
+    def get_config_template(self):
+        """Returns the path to the visualizer's configuration template."""
+        return "spectrum_analyzer_form.html"

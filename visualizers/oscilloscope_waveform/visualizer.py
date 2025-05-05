@@ -113,6 +113,7 @@ class OscilloscopeWaveformVisualizer(BaseVisualizer):
         output_file="output.mp4",
         background_image_path=None,
         background_video_path=None,
+        background_shader_path=None,
         artist_name="Artist Name",
         track_title="Track Title",
         duration=None,
@@ -144,6 +145,7 @@ class OscilloscopeWaveformVisualizer(BaseVisualizer):
             output_file=output_file,
             background_image_path=background_image_path,
             background_video_path=background_video_path,
+            background_shader_path=background_shader_path,
             artist_name=artist_name,
             track_title=track_title,
             duration=duration, # Pass duration to base class

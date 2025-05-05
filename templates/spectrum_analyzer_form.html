@@ -77,6 +77,19 @@
                                 </div>
                             </div>
 
+                            <!-- Background Shader -->
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <label for="background_shader" class="form-label">Background Shader <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="right" title="Optional GLSL shader for dynamic background effects. Takes precedence over image/video if both are provided."></i></label>
+                                    <select class="form-select" id="background_shader" name="background_shader">
+                                        <option value="">None (use image/video or black background)</option>
+                                        {% for shader in shaders %}
+                                        <option value="{{ shader.path }}">{{ shader.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
                             <!-- Artist and Track Info -->
                             <div class="row mb-3">
                                 <div class="col-md-6">

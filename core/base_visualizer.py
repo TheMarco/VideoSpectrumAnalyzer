@@ -85,6 +85,7 @@ class BaseVisualizer(ABC):
         output_file="output.mp4",
         background_image_path=None,
         background_video_path=None,
+        background_shader_path=None,  # New parameter
         artist_name="Artist Name",
         track_title="Track Title",
         duration=None,
@@ -102,6 +103,7 @@ class BaseVisualizer(ABC):
             output_file (str, optional): Path to the output video file
             background_image_path (str, optional): Path to the background image
             background_video_path (str, optional): Path to the background video
+            background_shader_path (str, optional): Path to the GLSL shader file
             artist_name (str, optional): Artist name to display
             track_title (str, optional): Track title to display
             duration (float, optional): Duration in seconds to trim the audio to
@@ -120,9 +122,23 @@ class BaseVisualizer(ABC):
         # Load audio
         y, sr, duration = load_audio(audio_file, duration, progress_callback)
 
+        # Debug the progress callback
+        print(f"DEBUG: base_visualizer progress_callback is {'provided' if progress_callback else 'NOT provided'}")
+        if progress_callback:
+            print(f"DEBUG: base_visualizer progress_callback type: {type(progress_callback)}")
+            # Test the callback with a more user-friendly message
+            progress_callback(1, "Initializing visualization...")
+
+        # Define a wrapper callback for debugging
+        def debug_progress_callback(progress, message):
+            print(f"DEBUG: base_visualizer wrapper callback called with progress={progress}, message={message}")
+            if progress_callback:
+                progress_callback(progress, message)
+
         # Load background media
-        background_pil, video_capture, bg_frame_count, bg_fps = load_background_media(
-            background_image_path, background_video_path, width, height
+        background_pil, video_capture, bg_frame_count, bg_fps, shader_renderer = load_background_media(
+            background_image_path, background_video_path, background_shader_path, width, height,
+            duration=duration, fps=fps, progress_callback=debug_progress_callback if progress_callback else None
         )
 
         # Analyze audio
@@ -169,10 +185,13 @@ class BaseVisualizer(ABC):
             # Update frame data
             self.update_frame_data(frame_data, frame_idx, conf)
 
-            # Process video frame if using video background
+            # Calculate current time for shader rendering
+            current_time = frame_idx / fps
+
+            # Process video frame if using video background or shader
             current_bg_frame_pil, last_good_bg_frame_pil = process_video_frame(
-                video_capture, width, height, last_good_bg_frame_pil
-            ) if video_capture else (background_pil, last_good_bg_frame_pil)
+                video_capture, shader_renderer, width, height, current_time, last_good_bg_frame_pil
+            ) if (video_capture or shader_renderer) else (background_pil, last_good_bg_frame_pil)
 
             # Render frame
             image = self.render_frame(renderer, frame_data, current_bg_frame_pil, metadata)
@@ -201,6 +220,10 @@ class BaseVisualizer(ABC):
 
         # Cleanup
         cleanup_temp_files(temp_video_path, video_capture)
+
+        # Cleanup shader renderer if used
+        if shader_renderer:
+            shader_renderer.cleanup()
 
         print(f"Video saved to: {output_file}")
         return output_file

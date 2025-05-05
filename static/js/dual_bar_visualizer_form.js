@@ -7,19 +7,44 @@ document.addEventListener('DOMContentLoaded', function() {
     // Get form element
     const uploadForm = document.getElementById('upload-form');
 
+    // Add event listener for background shader selection
+    const backgroundShaderSelect = document.getElementById('background_shader');
+    const backgroundMediaInput = document.getElementById('background_media');
+
+    if (backgroundShaderSelect && backgroundMediaInput) {
+        backgroundShaderSelect.addEventListener('change', function() {
+            if (this.value) {
+                // If a shader is selected, show a note about precedence
+                if (backgroundMediaInput.value) {
+                    const note = document.createElement('small');
+                    note.id = 'shader-note';
+                    note.className = 'form-text text-warning';
+                    note.innerHTML = '<i class="bi bi-info-circle"></i> The selected shader will take precedence over the background image/video.';
+                    
+                    // Remove existing note if any
+                    const existingNote = document.getElementById('shader-note');
+                    if (existingNote) existingNote.remove();
+                    
+                    // Add the note after the background media input
+                    backgroundMediaInput.parentNode.appendChild(note);
+                }
+            } else {
+                // Remove the note if no shader is selected
+                const existingNote = document.getElementById('shader-note');
+                if (existingNote) existingNote.remove();
+            }
+        });
+    }
+
     // Handle form submission
     uploadForm.addEventListener('submit', function(e) {
         e.preventDefault();
-
-        // Validate form before submission
-        if (!validateForm()) {
-            return; // Stop submission if validation fails
-        }
-
+        
+        // Disable submit button to prevent multiple submissions
         const submitBtn = document.getElementById('submit-btn');
         if (submitBtn) {
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="bi bi-arrow-repeat spin me-2"></i> Processing...';
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Processing...';
         }
 
         // Prepare form data using the form utilities
@@ -27,6 +52,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Add file inputs
         window.FormUtils.addFileInputs(formData, ['file', 'background_media']);
+
+        // Add background shader if selected
+        const backgroundShader = document.getElementById('background_shader');
+        if (backgroundShader && backgroundShader.value) {
+            formData.append('background_shader_path', backgroundShader.value);
+        }
 
         // Validate required file input
         if (!window.FormUtils.validateFileInput('file', {

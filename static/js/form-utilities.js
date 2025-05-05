@@ -5,25 +5,49 @@
  */
 
 /**
- * Collect form data from a form element
- * @param {HTMLFormElement} formElement - The form element to collect data from
- * @returns {FormData|null} - The collected form data or null if form not found
+ * Collect all form data from a form element
+ * @param {HTMLFormElement} form - The form element
+ * @returns {FormData} - The collected form data
  */
-function collectFormData(formElement) {
-    if (!formElement) return null;
-    
+function collectFormData(form) {
     const formData = new FormData();
-    const formElements = formElement.elements;
     
-    // Add regular form fields
+    // Get all form elements
+    const formElements = form.elements;
+    
+    // Loop through form elements and add to FormData
     for (let i = 0; i < formElements.length; i++) {
         const element = formElements[i];
-        if (element.name && element.type !== 'file' && element.type !== 'submit' && element.type !== 'radio') {
-            if (element.type === 'checkbox') {
-                formData.append(element.name, element.checked ? 'on' : 'off');
-            } else {
+        
+        // Skip file inputs (they're handled separately)
+        if (element.type === 'file') continue;
+        
+        // Skip buttons
+        if (element.type === 'button' || element.type === 'submit' || element.type === 'reset') continue;
+        
+        // Handle checkboxes
+        if (element.type === 'checkbox') {
+            formData.append(element.name, element.checked);
+            continue;
+        }
+        
+        // Handle radio buttons
+        if (element.type === 'radio') {
+            if (element.checked) {
                 formData.append(element.name, element.value);
             }
+            continue;
+        }
+        
+        // Handle select elements
+        if (element.tagName.toLowerCase() === 'select') {
+            formData.append(element.name, element.value);
+            continue;
+        }
+        
+        // Handle all other inputs
+        if (element.name) {
+            formData.append(element.name, element.value);
         }
     }
     
@@ -31,25 +55,27 @@ function collectFormData(formElement) {
 }
 
 /**
- * Add file inputs to form data
- * @param {FormData} formData - The FormData object to add files to
- * @param {Array<string>} fileInputIds - Array of file input IDs to add
- * @returns {FormData} - The updated FormData object
+ * Add file inputs to FormData
+ * @param {FormData} formData - The FormData object
+ * @param {Array} fileInputIds - Array of file input IDs to add
  */
 function addFileInputs(formData, fileInputIds) {
-    if (!formData) return formData;
-    
-    fileInputIds.forEach(inputId => {
-        const fileInput = document.getElementById(inputId);
+    fileInputIds.forEach(id => {
+        const fileInput = document.getElementById(id);
         if (fileInput && fileInput.files.length > 0) {
-            formData.append(fileInput.name || inputId, fileInput.files[0]);
-            console.log(`Added file: ${fileInput.files[0].name}`);
+            formData.append(id, fileInput.files[0]);
+            console.log(`Appending ${id}:`, fileInput.files[0].name);
         } else {
-            console.log(`No file selected for ${inputId}`);
+            console.log(`No file selected for ${id}.`);
         }
     });
     
-    return formData;
+    // Add background shader path if it exists
+    const backgroundShader = document.getElementById('background_shader');
+    if (backgroundShader && backgroundShader.value) {
+        formData.append('background_shader_path', backgroundShader.value);
+        console.log("Appending background shader path:", backgroundShader.value);
+    }
 }
 
 /**

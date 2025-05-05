@@ -6,6 +6,7 @@ import subprocess
 import threading
 from werkzeug.utils import secure_filename
 import traceback
+import glob
 
 # Import core components
 from core.registry import registry
@@ -33,27 +34,42 @@ ALLOWED_VIDEO_EXTENSIONS = {'.mp4', '.mov', '.avi', '.webm', '.mkv'}
 MAX_IMAGE_SIZE = 50 * 1024 * 1024 # 50 MB
 MAX_VIDEO_SIZE = 1000 * 1024 * 1024 # 1 GB (1000 MB)
 
+def get_available_shaders():
+    """Get a list of all available GLSL shaders in the glsl directory."""
+    shader_files = glob.glob("glsl/*.glsl")
+    shaders = []
+
+    for shader_path in shader_files:
+        # Get just the filename without extension
+        shader_name = os.path.basename(shader_path).replace(".glsl", "")
+        # Convert to title case for display (e.g., "biomine" -> "Biomine")
+        display_name = shader_name.replace("_", " ").title()
+        shaders.append({
+            "path": shader_path,
+            "name": display_name
+        })
+
+    return sorted(shaders, key=lambda x: x["name"])
 
 @app.route("/")
 def index():
+    """Render the home page with all available visualizers."""
     visualizers = registry.get_all_visualizers()
-    return render_template("index.html", visualizers=visualizers)
+    shaders = get_available_shaders()
+    return render_template("index.html", visualizers=visualizers, shaders=shaders)
 
 @app.route("/visualizer/<name>")
 def visualizer_form(name):
+    """Render the form for a specific visualizer."""
     visualizer = registry.get_visualizer(name)
     if not visualizer:
-        return render_template("error.html", message=f"Visualizer '{name}' not found"), 404
-    # Choose per-visualizer form template
-    if visualizer.name == "Dual Bar Visualizer":
-        template = "dual_bar_visualizer_form.html"
-    elif visualizer.name == "Spectrum Analyzer":
-        template = "spectrum_analyzer_form.html"
-    elif isinstance(visualizer, OscilloscopeWaveformVisualizer):
-        template = "oscilloscope_waveform_form.html"
-    else:
-        template = "visualizer_form.html"
-    return render_template(template, visualizer=visualizer)
+        return render_template("error.html", message=f"Visualizer '{name}' not found")
+
+    # Get available shaders
+    shaders = get_available_shaders()
+
+    template = visualizer.get_config_template()
+    return render_template(template, visualizer=visualizer, shaders=shaders)
 
 
 @app.route("/upload", methods=["POST"])
@@ -215,6 +231,7 @@ def upload_file():
             audio_file_path,
             background_image_path,
             background_video_path,
+            config.get("background_shader_path"),  # Add shader path
             output_path,
             config,
         ),
@@ -237,32 +254,76 @@ def process_video(
     input_file,
     background_image_file,
     background_video_file,
+    background_shader_file,  # Parameter for shader path
     output_file,
     config,
 ):
     try:
         jobs[job_id]["status"] = "processing"
 
-        def update_progress(progress):
+        def update_progress(progress, message=None):
+            print(f"DEBUG: Progress callback called with progress={progress}, message={message}")
             jobs[job_id]["progress"] = progress
+            if message:
+                jobs[job_id]["message"] = message
+                print(f"DEBUG: Setting job message to: {message}")
+
+            # Debug: Print current job state
+            print(f"DEBUG: Current job state: {jobs[job_id]}")
+
+        # Add a timeout mechanism
+        import threading
+        import time
+
+        # Flag to indicate if processing is complete
+        processing_complete = [False]
+
+        # Function to check for timeout
+        def check_timeout():
+            # Wait for 5 minutes (300 seconds)
+            timeout_seconds = 300
+            start_time = time.time()
+
+            while not processing_complete[0]:
+                if time.time() - start_time > timeout_seconds:
+                    print(f"Processing job {job_id} timed out after {timeout_seconds} seconds")
+                    jobs[job_id]["status"] = "failed"
+                    jobs[job_id]["error"] = f"Processing timed out after {timeout_seconds} seconds"
+                    return
+                time.sleep(5)  # Check every 5 seconds
+
+        # Start timeout thread
+        timeout_thread = threading.Thread(target=check_timeout)
+        timeout_thread.daemon = True
+        timeout_thread.start()
 
         # Use the visualizer to create the visualization
-        visualizer.create_visualization(
-            audio_file=input_file,
-            background_image_path=background_image_file,
-            background_video_path=background_video_file,
-            output_file=output_file,
-            artist_name=config.get("artist_name", ""),
-            track_title=config.get("track_title", ""),
-            duration=config.get("duration"),
-            fps=config.get("fps", 30),
-            height=config.get("height", 720),
-            width=config.get("width", 1280),
-            config=config,
-            progress_callback=update_progress,
-        )
-        jobs[job_id]["status"] = "completed"
-        jobs[job_id]["progress"] = 100
+        try:
+            visualizer.create_visualization(
+                audio_file=input_file,
+                background_image_path=background_image_file,
+                background_video_path=background_video_file,
+                background_shader_path=background_shader_file,  # Pass shader path
+                output_file=output_file,
+                artist_name=config.get("artist_name", ""),
+                track_title=config.get("track_title", ""),
+                duration=config.get("duration"),
+                fps=config.get("fps", 30),
+                height=config.get("height", 720),
+                width=config.get("width", 1280),
+                config=config,
+                progress_callback=update_progress,
+            )
+            jobs[job_id]["status"] = "completed"
+            jobs[job_id]["progress"] = 100
+        except Exception as e:
+            jobs[job_id]["status"] = "failed"
+            jobs[job_id]["error"] = f"{str(e)}\n{traceback.format_exc()}"
+            print(f"Error processing job {job_id}: {e}")
+            traceback.print_exc()
+        finally:
+            # Mark processing as complete to stop the timeout thread
+            processing_complete[0] = True
     except Exception as e:
         jobs[job_id]["status"] = "failed"
         jobs[job_id]["error"] = f"{str(e)}\n{traceback.format_exc()}"
@@ -275,8 +336,74 @@ def job_status(job_id):
     if job_id not in jobs:
         return jsonify({"error": "Job not found"}), 404
     job_data = jobs[job_id].copy()
+    # Debug: Print job data being sent to client
+    print(f"DEBUG: Sending job data to client: {job_data}")
     # Ensure sensitive paths aren't sent to client if needed, but okay for now
     return jsonify(job_data)
+
+@app.route("/debug_job_status/<job_id>", methods=["GET"])
+def debug_job_status(job_id):
+    """Debug route to display the current job status as HTML."""
+    if job_id == "latest" and jobs:
+        # Get the most recent job
+        job_id = list(jobs.keys())[-1]
+        print(f"Using latest job ID: {job_id}")
+
+    if job_id not in jobs:
+        # List all available jobs
+        job_list = "<ul>"
+        for jid in jobs:
+            job_list += f'<li><a href="/debug_job_status/{jid}">{jid}</a> - {jobs[jid].get("status", "unknown")}</li>'
+        job_list += "</ul>"
+
+        return f"""
+        <h1>Job not found: {job_id}</h1>
+        <h2>Available jobs:</h2>
+        {job_list}
+        """
+
+    job_data = jobs[job_id]
+
+    html = f"""
+    <html>
+    <head>
+        <title>Job Status Debug</title>
+        <meta http-equiv="refresh" content="2">
+        <style>
+            body {{ font-family: Arial, sans-serif; margin: 20px; }}
+            .job-info {{ margin-bottom: 20px; }}
+            .progress {{ background-color: #f0f0f0; height: 20px; border-radius: 5px; margin-bottom: 10px; }}
+            .progress-bar {{ background-color: #4CAF50; height: 100%; border-radius: 5px; text-align: center; color: white; }}
+            .message {{ padding: 10px; background-color: #e0e0e0; border-radius: 5px; }}
+        </style>
+    </head>
+    <body>
+        <h1>Job Status Debug</h1>
+        <div class="job-info">
+            <p><strong>Job ID:</strong> {job_id}</p>
+            <p><strong>Status:</strong> {job_data.get('status', 'unknown')}</p>
+            <p><strong>Visualizer:</strong> {job_data.get('visualizer', 'unknown')}</p>
+        </div>
+
+        <h2>Progress</h2>
+        <div class="progress">
+            <div class="progress-bar" style="width: {job_data.get('progress', 0)}%">
+                {job_data.get('progress', 0)}%
+            </div>
+        </div>
+
+        <h2>Message</h2>
+        <div class="message">
+            {job_data.get('message', 'No message')}
+        </div>
+
+        <h2>Full Job Data</h2>
+        <pre>{json.dumps(job_data, indent=2)}</pre>
+    </body>
+    </html>
+    """
+
+    return html
 
 
 @app.route("/download/<job_id>", methods=["GET"])
@@ -300,4 +427,4 @@ def stream_file(job_id):
 
 if __name__ == "__main__":
     # Use host='0.0.0.0' for accessibility on network, debug=False for production
-    app.run(debug=True, host="0.0.0.0", port=8082)
+    app.run(debug=True, host="0.0.0.0", port=8084)

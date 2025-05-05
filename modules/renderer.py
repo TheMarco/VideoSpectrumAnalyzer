@@ -109,11 +109,17 @@ class SpectrumRenderer:
         """
         if background_pil:
             # Use provided background image
+            print(f"Using background image: {background_pil.size}, mode: {background_pil.mode}")
             image = background_pil.copy()
+            
+            # Debug: save a copy of the background image
+            image.save("debug_background.png")
+            print("Saved background image to debug_background.png")
         else:
             # Create solid color background
+            print(f"Creating solid color background: {background_color}")
             image = Image.new("RGBA", (self.width, self.height), color=background_color + (255,))
-
+        
         return image
 
     def render_frame(self, smoothed_spectrum, peak_values, background_pil, artist_name, track_title):

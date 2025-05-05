@@ -80,7 +80,7 @@ function initProcessingUI(options = {}) {
                 elements.configTabsContent.style.opacity = '1';
                 elements.configTabsContent.style.transition = 'opacity 0.5s ease';
             }, 350);
-            
+
             // Activate the first tab
             const firstTab = document.querySelector('#configTabs .nav-link');
             if (firstTab) {
@@ -107,14 +107,14 @@ function initProcessingUI(options = {}) {
         if (elements.statusMessage) {
             elements.statusMessage.textContent = 'Processing your audio file...';
         }
-        
+
         // Reset video player
         if (elements.resultVideo) {
             elements.resultVideo.pause();
             elements.resultVideo.removeAttribute('src');
             elements.resultVideo.load();
         }
-        
+
         // Reset UI elements visibility
         if (elements.processingAnimation) {
             elements.processingAnimation.style.display = 'block';
@@ -177,14 +177,14 @@ function initProcessingUI(options = {}) {
         if (elements.statusMessage) {
             elements.statusMessage.textContent = 'Uploading files...';
         }
-        
+
         // Reset video player
         if (elements.resultVideo) {
             elements.resultVideo.pause();
             elements.resultVideo.removeAttribute('src');
             elements.resultVideo.load();
         }
-        
+
         // Reset UI elements visibility
         if (elements.processingAnimation) {
             elements.processingAnimation.style.display = 'block';
@@ -200,11 +200,11 @@ function initProcessingUI(options = {}) {
      */
     function startProgressPolling(jobId) {
         currentJobId = jobId;
-        
+
         if (progressInterval) {
             clearInterval(progressInterval);
         }
-        
+
         progressInterval = setInterval(() => {
             fetch(`/job_status/${jobId}`)
                 .then(response => response.json())
@@ -223,8 +223,8 @@ function initProcessingUI(options = {}) {
                     showError('Error polling job status: ' + error.message);
                     clearInterval(progressInterval);
                 });
-        }, 1500);
-        
+        }, 500); // Poll more frequently (every 500ms instead of 1500ms)
+
         // Update global reference
         window.progressInterval = progressInterval;
     }
@@ -235,7 +235,7 @@ function initProcessingUI(options = {}) {
      */
     function updateProgress(data) {
         if (!elements.progressBar) return;
-        
+
         const progress = Math.min(100, Math.max(0, data.progress || 0));
         elements.progressBar.style.width = `${progress}%`;
         elements.progressBar.textContent = `${progress}%`;
@@ -245,18 +245,23 @@ function initProcessingUI(options = {}) {
             elements.statusMessage.textContent = 'Waiting in queue...';
         }
         else if (data.status === 'processing' && elements.statusMessage) {
-            elements.statusMessage.textContent = `Processing: ${progress}% complete`;
+            if (data.message) {
+                console.log("DEBUG: Received message from server:", data.message);
+                elements.statusMessage.textContent = data.message;
+            } else {
+                elements.statusMessage.textContent = `Processing: ${progress}% complete`;
+            }
         }
         else if (data.status === 'completed') {
             if (elements.statusMessage) {
                 elements.statusMessage.textContent = 'Processing complete!';
             }
-            
+
             // Hide processing animation
             if (elements.processingAnimation) {
                 elements.processingAnimation.style.display = 'none';
             }
-            
+
             // Show video player
             if (elements.videoPlayerContainer && elements.resultVideo) {
                 elements.videoPlayerContainer.style.display = 'block';
@@ -264,7 +269,7 @@ function initProcessingUI(options = {}) {
                 elements.resultVideo.load();
                 elements.resultVideo.play().catch(e => console.log('Auto-play prevented:', e));
             }
-            
+
             // Show download section
             if (elements.downloadSection) {
                 elements.downloadSection.style.display = 'block';
@@ -272,13 +277,13 @@ function initProcessingUI(options = {}) {
             if (elements.downloadLink) {
                 elements.downloadLink.href = `/download/${currentJobId}`;
             }
-            
+
             // Update progress bar
             if (elements.progressBar) {
                 elements.progressBar.classList.remove('progress-bar-animated');
                 elements.progressBar.classList.add('bg-success');
             }
-            
+
             // Update submit button
             const submitBtn = document.getElementById('submit-btn');
             if (submitBtn) {
@@ -307,22 +312,22 @@ function initProcessingUI(options = {}) {
             window.showErrorModal(message);
             return;
         }
-        
+
         // Fallback to basic error display
         console.error("Error:", message);
-        
+
         if (elements.errorMessage) {
             elements.errorMessage.textContent = message;
         }
-        
+
         if (elements.errorCard) {
             elements.errorCard.style.display = 'block';
         }
-        
+
         if (elements.processingCard && elements.processingCard.style.display === 'block') {
             elements.processingCard.style.display = 'none';
         }
-        
+
         if (progressInterval) {
             clearInterval(progressInterval);
         }
@@ -334,7 +339,7 @@ function initProcessingUI(options = {}) {
      */
     function submitForm(formData) {
         showProcessingUI();
-        
+
         fetch('/upload', {
             method: 'POST',
             body: formData
