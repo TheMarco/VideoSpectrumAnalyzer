@@ -1,0 +1,54 @@
+<!-- Processing Card -->
+<div id="processing-card" class="card my-5" style="display: none;">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-cpu me-2"></i> Processing</h5>
+    </div>
+    <div class="card-body text-center py-4">
+        <!-- Processing Animation (shown during processing) -->
+        <div id="processing-animation" class="mb-4">
+            <i class="bi bi-waveform pulse" style="font-size: 3rem; color: var(--primary-color);"></i>
+        </div>
+        <div class="progress mb-4" style="height: 30px;">
+            <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated fs-6" role="progressbar" style="width: 0%"></div>
+        </div>
+        <p id="status-message" class="mb-4">Processing your audio file...</p>
+
+        <!-- Video Player (hidden until processing completes) -->
+        <div id="video-player-container" style="display: none;" class="mb-4">
+            <video id="result-video" class="w-100 rounded shadow" controls>
+                Your browser does not support the video tag.
+            </video>
+        </div>
+
+        <!-- Download and Create Another Buttons -->
+        <div id="download-section" style="display: none;">
+            <div class="d-flex justify-content-center gap-3 mt-4">
+                <a id="download-link" href="#" class="btn btn-success btn-lg px-4">
+                    <i class="bi bi-download me-2"></i> Download Visualization
+                </a>
+                <button type="button" class="btn btn-outline-secondary btn-lg px-4" id="create-another-btn">
+                    <i class="bi bi-plus-circle me-2"></i> Create Another
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Error Card (Fallback for when modal can't be used) -->
+<div id="error-card" class="card my-5" style="display: none;">
+    <div class="card-header" style="background: linear-gradient(90deg, rgba(255, 82, 82, 0.1), rgba(255, 82, 82, 0.2));">
+        <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i> Error</h5>
+    </div>
+    <div class="card-body">
+        <div class="text-center mb-3">
+            <i class="bi bi-x-circle" style="font-size: 2.5rem; color: var(--error-color);"></i>
+        </div>
+        <p class="text-center mb-3"><strong>An error occurred during processing:</strong></p>
+        <pre id="error-message" class="error-pre mb-4"></pre>
+        <div class="d-grid">
+            <button type="button" class="btn btn-outline-secondary" id="back-btn">
+                <i class="bi bi-arrow-left me-2"></i> Back to Form
+            </button>
+        </div>
+    </div>
+</div>

@@ -29,13 +29,14 @@
             </div>
         </div>
 
+        {% block main_content %}
         <div class="row row-cols-1 row-cols-md-2 g-4 mb-4">
             {% for visualizer in visualizers %}
             <div class="col">
                 <div class="card h-100 visualizer-card">
-                    {% if visualizer.thumbnail %}
+                    {% if visualizer['thumbnail'] %}
                     <div class="position-relative">
-                        <img src="{{ url_for('static', filename=visualizer.thumbnail.replace('static/', '')) }}" class="card-img-top" alt="{{ visualizer.name }}">
+                        <img src="{{ url_for('static', filename=visualizer['thumbnail'].replace('static/', '')) }}" class="card-img-top" alt="{{ visualizer['name'] }}">
                         <div class="position-absolute top-0 end-0 m-2">
                             <span class="badge bg-primary bg-opacity-75 px-3 py-2 rounded-pill">
                                 <i class="bi bi-soundwave me-1"></i> Visualizer
@@ -48,18 +49,13 @@
                             <i class="bi bi-music-note-beamed" style="font-size: 3rem; opacity: 0.5;"></i>
                             <p class="mt-2">No Preview Available</p>
                         </div>
-                        <div class="position-absolute top-0 end-0 m-2">
-                            <span class="badge bg-primary bg-opacity-75 px-3 py-2 rounded-pill">
-                                <i class="bi bi-soundwave me-1"></i> Visualizer
-                            </span>
-                        </div>
                     </div>
                     {% endif %}
                     <div class="card-body d-flex flex-column">
-                        <h5 class="card-title">{{ visualizer.name }}</h5>
-                        <p class="card-text flex-grow-1">{{ visualizer.description }}</p>
+                        <h5 class="card-title">{{ visualizer['display_name'] if 'display_name' in visualizer else visualizer['name'] }}</h5>
+                        <p class="card-text flex-grow-1">{{ visualizer['description'] }}</p>
                         <div class="mt-auto">
-                            <a href="{{ url_for('visualizer_form', name=visualizer.name) }}" class="btn btn-primary w-100">
+                            <a href="{{ url_for('visualizer_form', name=visualizer['name']) }}" class="btn btn-primary w-100">
                                 <i class="bi bi-sliders me-2"></i> Configure & Create
                             </a>
                         </div>
@@ -108,6 +104,7 @@
             </div>
         </div>
     </div>
+{% endblock %}
 
     <!-- Footer -->
     <footer class="container text-center mt-5 py-4">

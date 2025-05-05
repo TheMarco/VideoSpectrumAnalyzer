@@ -36,13 +36,13 @@ function markTabWithError(tabId) {
     const tabElement = document.querySelector(`[data-bs-target="#${tabId}"]`);
     if (tabElement) {
         tabElement.classList.add('tab-error');
-        
+
         // Remove existing error indicator if any
         const existingIndicator = tabElement.querySelector('.tab-error-indicator');
         if (existingIndicator) {
             existingIndicator.remove();
         }
-        
+
         // Add error indicator
         const errorIndicator = document.createElement('span');
         errorIndicator.className = 'tab-error-indicator ms-2';
@@ -58,7 +58,7 @@ function clearTabErrors() {
     document.querySelectorAll('.tab-error').forEach(tab => {
         tab.classList.remove('tab-error');
     });
-    
+
     document.querySelectorAll('.tab-error-indicator').forEach(indicator => {
         indicator.remove();
     });
@@ -71,9 +71,27 @@ function clearTabErrors() {
  */
 function getTabIdForElement(element) {
     if (!element) return null;
-    
+
     const tabPane = element.closest('.tab-pane');
     return tabPane ? tabPane.id : null;
+}
+
+/**
+ * Show the first tab that contains an error
+ */
+function showFirstTabWithError() {
+    // Find all elements with the 'is-invalid' class
+    const invalidElements = document.querySelectorAll('.is-invalid');
+    if (invalidElements.length === 0) return;
+
+    // Find the first tab containing an invalid element
+    for (const element of invalidElements) {
+        const tabId = getTabIdForElement(element);
+        if (tabId) {
+            showTab(tabId);
+            break;
+        }
+    }
 }
 
 // Export the module
@@ -82,6 +100,7 @@ window.TabNavigation = {
     showFirstTab: showFirstTab,
     markTabWithError: markTabWithError,
     clearTabErrors: clearTabErrors,
-    getTabIdForElement: getTabIdForElement
+    getTabIdForElement: getTabIdForElement,
+    showFirstTabWithError: showFirstTabWithError
 };
 // --- END OF FILE tab-navigation.js ---

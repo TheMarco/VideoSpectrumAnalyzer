@@ -10,6 +10,7 @@ import traceback
 # Import core components
 from core.registry import registry
 from core.utils import is_image_file, is_video_file
+from visualizers.oscilloscope_waveform.visualizer import OscilloscopeWaveformVisualizer # Import the specific visualizer class
 
 app = Flask(__name__, static_folder="static")
 app.config["UPLOAD_FOLDER"] = "uploads"
@@ -48,6 +49,8 @@ def visualizer_form(name):
         template = "dual_bar_visualizer_form.html"
     elif visualizer.name == "Spectrum Analyzer":
         template = "spectrum_analyzer_form.html"
+    elif isinstance(visualizer, OscilloscopeWaveformVisualizer):
+        template = "oscilloscope_waveform_form.html"
     else:
         template = "visualizer_form.html"
     return render_template(template, visualizer=visualizer)
@@ -297,4 +300,4 @@ def stream_file(job_id):
 
 if __name__ == "__main__":
     # Use host='0.0.0.0' for accessibility on network, debug=False for production
-    app.run(debug=True, host="0.0.0.0", port=8080)
+    app.run(debug=True, host="0.0.0.0", port=8082)

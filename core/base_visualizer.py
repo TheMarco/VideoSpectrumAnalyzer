@@ -27,8 +27,13 @@ class BaseVisualizer(ABC):
     def __init__(self):
         """Initialize the base visualizer."""
         self.name = self.__class__.__name__
-        self.description = "Base visualizer class"
-        self.thumbnail = None
+        # Use display_name if defined, otherwise use name
+        self.display_name = getattr(self, 'display_name', self.name)
+        # Only set description and thumbnail if not already defined in the class
+        if not hasattr(self, 'description'):
+            self.description = "Base visualizer class"
+        if not hasattr(self, 'thumbnail'):
+            self.thumbnail = None
 
     @abstractmethod
     def process_config(self, config=None):
