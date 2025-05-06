@@ -138,5 +138,42 @@
         });
     });
     </script>
+    <script>
+        // Check if we're in a modal
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const isModal = urlParams.get('modal') === 'true';
+            
+            if (isModal) {
+                // Hide the back button when in modal mode
+                const backButtons = document.querySelectorAll('.btn-outline-primary');
+                backButtons.forEach(button => {
+                    button.style.display = 'none';
+                });
+                
+                // Modify the "Select this shader" buttons to use postMessage
+                const selectButtons = document.querySelectorAll('a[href^="/visualizer/"]');
+                selectButtons.forEach(button => {
+                    button.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        
+                        // Extract the shader path from the href
+                        const href = this.getAttribute('href');
+                        const shaderMatch = href.match(/shader=([^&]+)/);
+                        
+                        if (shaderMatch && shaderMatch[1]) {
+                            const shaderPath = shaderMatch[1];
+                            
+                            // Send message to parent window
+                            window.parent.postMessage({
+                                type: 'shaderSelected',
+                                shader: shaderPath
+                            }, '*');
+                        }
+                    });
+                });
+            }
+        });
+    </script>
 </body>
 </html>
