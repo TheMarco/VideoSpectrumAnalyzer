@@ -10,7 +10,7 @@ class DualBarRenderer:
     Class for rendering dual bar visualizer frames.
     """
 
-    def __init__(self, width, height, config, artist_font, title_font):
+    def __init__(self, width, height, config, artist_font=None, title_font=None):
         """
         Initialize the renderer.
 
@@ -27,11 +27,42 @@ class DualBarRenderer:
         self.artist_font = artist_font
         self.title_font = title_font
 
+        # Add resolution scaling factor
+        self.base_resolution = 1280  # Base width for scaling calculations
+        self.scale_factor = width / self.base_resolution
+        
+        # Scale parameters based on resolution
+        self.bar_width = int(config["bar_width"] * self.scale_factor)
+        self.bar_gap = int(config["bar_gap"] * self.scale_factor)
+        self.max_amplitude = int(config["max_amplitude"] * self.scale_factor)
+        
+        # Scale text sizes based on resolution
+        self.text_spacing = int(20 * self.scale_factor)  # Distance between visualizer and text
+        
+        # Scale font sizes if fonts are provided
+        if artist_font:
+            self.artist_font_size = int(getattr(artist_font, 'size', 36) * self.scale_factor)
+            # Create new font with scaled size
+            artist_font_path = artist_font.path if hasattr(artist_font, 'path') else None
+            if artist_font_path:
+                self.artist_font = ImageFont.truetype(artist_font_path, self.artist_font_size)
+        else:
+            self.artist_font_size = int(36 * self.scale_factor)
+            
+        if title_font:
+            self.title_font_size = int(getattr(title_font, 'size', 24) * self.scale_factor)
+            # Create new font with scaled size
+            title_font_path = title_font.path if hasattr(title_font, 'path') else None
+            if title_font_path:
+                self.title_font = ImageFont.truetype(title_font_path, self.title_font_size)
+        else:
+            self.title_font_size = int(24 * self.scale_factor)
+            
+        self.text_spacing_between = int(10 * self.scale_factor)  # Space between artist and title text
+        self.max_text_height = self.artist_font_size + self.title_font_size + self.text_spacing_between
+
         # Extract configuration values
         self.n_bars = config["n_bars"]
-        self.bar_width = config["bar_width"]
-        self.bar_gap = config["bar_gap"]
-        self.max_amplitude = config["max_amplitude"]
         self.corner_radius = min(config["corner_radius"], self.bar_width // 2)
         self.corner_radius = max(0, self.corner_radius)
         self.noise_gate = config["noise_gate"]
@@ -59,16 +90,6 @@ class DualBarRenderer:
         # Edge rolloff configuration
         self.edge_rolloff = config.get("edge_rolloff", True)
         self.edge_rolloff_factor = config.get("edge_rolloff_factor", 0.4)
-
-        # Add text spacing attribute
-        self.text_spacing = 20  # Distance between visualizer and text in pixels
-
-        # Calculate total text height (if both artist and title are present)
-        # This is an estimate for layout calculations
-        self.artist_font_size = getattr(self.artist_font, 'size', 36)
-        self.title_font_size = getattr(self.title_font, 'size', 24)
-        self.text_spacing_between = 10  # Space between artist and title text
-        self.max_text_height = self.artist_font_size + self.title_font_size + self.text_spacing_between
 
         # Calculate total width of all bars
         self.total_bar_width_gap = self.bar_width + self.bar_gap

@@ -45,6 +45,41 @@ class OscilloscopeWaveformRenderer:
         self.title_color_rgb = config.get("title_color_rgb", (204, 204, 204))
         self.text_spacing = 20  # Distance between visualizer and text in pixels
 
+        # Add resolution scaling factor
+        self.base_resolution = 1280  # Base width for scaling calculations
+        self.scale_factor = width / self.base_resolution
+        
+        # Scale parameters based on resolution
+        self.line_thickness = int(config.get("line_thickness", 2) * self.scale_factor)
+        
+        # Scale text sizes based on resolution
+        self.text_spacing = int(20 * self.scale_factor)  # Distance between visualizer and text
+        
+        # Scale font sizes if fonts are provided
+        if artist_font:
+            self.artist_font_size = int(getattr(artist_font, 'size', 36) * self.scale_factor)
+            # Create new font with scaled size
+            artist_font_path = artist_font.path if hasattr(artist_font, 'path') else None
+            if artist_font_path:
+                self.artist_font = ImageFont.truetype(artist_font_path, self.artist_font_size)
+        else:
+            self.artist_font_size = int(36 * self.scale_factor)
+            
+        if title_font:
+            self.title_font_size = int(getattr(title_font, 'size', 24) * self.scale_factor)
+            # Create new font with scaled size
+            title_font_path = title_font.path if hasattr(title_font, 'path') else None
+            if title_font_path:
+                self.title_font = ImageFont.truetype(title_font_path, self.title_font_size)
+        else:
+            self.title_font_size = int(24 * self.scale_factor)
+            
+        self.text_spacing_between = int(10 * self.scale_factor)  # Space between artist and title text
+        self.max_text_height = self.artist_font_size + self.title_font_size + self.text_spacing_between
+        
+        # Scale glow blur radius
+        self.glow_blur_radius = int(self.glow_blur_radius * self.scale_factor)
+
         # Keep track of the previous frame's waveform for smoothing
         self._previous_waveform = None
 

@@ -9,7 +9,7 @@ class SpectrumRenderer:
     Class for rendering spectrum analyzer frames.
     """
 
-    def __init__(self, width, height, config, artist_font, title_font):
+    def __init__(self, width, height, config, artist_font=None, title_font=None):
         """
         Initialize the renderer.
 
@@ -26,13 +26,17 @@ class SpectrumRenderer:
         self.artist_font = artist_font
         self.title_font = title_font
 
-        # Extract configuration values
+        # Add resolution scaling factor
+        self.base_resolution = 1280  # Base width for scaling calculations
+        self.scale_factor = width / self.base_resolution
+        
+        # Scale parameters based on resolution
         self.n_bars = config["n_bars"]
-        self.bar_width = config["bar_width"]
-        self.bar_gap = config["bar_gap"]
-        self.segment_height = config["segment_height"]
-        self.segment_gap = config["segment_gap"]
-        self.corner_radius = min(config["corner_radius"], self.segment_height // 2, self.bar_width // 2)
+        self.bar_width = int(config["bar_width"] * self.scale_factor)
+        self.bar_gap = int(config["bar_gap"] * self.scale_factor)
+        self.segment_height = int(config["segment_height"] * self.scale_factor)
+        self.segment_gap = int(config["segment_gap"] * self.scale_factor)
+        self.corner_radius = int(config["corner_radius"] * self.scale_factor)
         self.corner_radius = max(0, self.corner_radius)
         self.always_on_bottom = config["always_on_bottom"]
         self.noise_gate = config["noise_gate"]
@@ -47,14 +51,29 @@ class SpectrumRenderer:
         self.glow_color_rgb = config["glow_color_rgb"]
         self.visualizer_placement = config.get("visualizer_placement", "standard")
 
-        # Add text spacing attribute
-        self.text_spacing = 20  # Distance between visualizer and text in pixels
-
-        # Calculate total text height (if both artist and title are present)
-        # This is an estimate for layout calculations
-        self.artist_font_size = getattr(self.artist_font, 'size', 36)
-        self.title_font_size = getattr(self.title_font, 'size', 24)
-        self.text_spacing_between = 10  # Space between artist and title text
+        # Scale text sizes based on resolution
+        self.text_spacing = int(20 * self.scale_factor)  # Distance between visualizer and text
+        
+        # Scale font sizes if fonts are provided
+        if artist_font:
+            self.artist_font_size = int(getattr(artist_font, 'size', 36) * self.scale_factor)
+            # Create new font with scaled size
+            artist_font_path = artist_font.path if hasattr(artist_font, 'path') else None
+            if artist_font_path:
+                self.artist_font = ImageFont.truetype(artist_font_path, self.artist_font_size)
+        else:
+            self.artist_font_size = int(36 * self.scale_factor)
+            
+        if title_font:
+            self.title_font_size = int(getattr(title_font, 'size', 24) * self.scale_factor)
+            # Create new font with scaled size
+            title_font_path = title_font.path if hasattr(title_font, 'path') else None
+            if title_font_path:
+                self.title_font = ImageFont.truetype(title_font_path, self.title_font_size)
+        else:
+            self.title_font_size = int(24 * self.scale_factor)
+            
+        self.text_spacing_between = int(10 * self.scale_factor)  # Space between artist and title text
         self.max_text_height = self.artist_font_size + self.title_font_size + self.text_spacing_between
 
         # Calculate visualization dimensions based on placement
@@ -63,8 +82,9 @@ class SpectrumRenderer:
 
         # Use max_segments from config if provided, otherwise calculate based on height
         if "max_segments" in config:
-            self.max_segments = config["max_segments"]
-            print(f"Using max_segments from config: {self.max_segments}")
+            # Scale max_segments based on resolution if it's provided in config
+            self.max_segments = int(config["max_segments"] * self.scale_factor)
+            print(f"Using scaled max_segments: {self.max_segments} (original: {config['max_segments']})")
         else:
             self.max_segments = max(1, self.max_viz_height // self.segment_unit) if self.segment_unit > 0 else 1
             print(f"Calculated max_segments: {self.max_segments}")
