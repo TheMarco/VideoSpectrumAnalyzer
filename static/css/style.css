@@ -767,16 +767,22 @@ body.modal-open {
 /* Shader credits styling */
 .shader-credits-container {
     text-align: center;
-    min-height: 30px;
+    min-height: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 0;
+    margin: 0;
+    border: none;
+    position:relative;
+    top: 1em;
 }
 
 .shader-preview {
     display: block;
     width: 100%;
     height: auto;
+    margin-bottom: 0;
 }
 
 .shader-card {
@@ -786,6 +792,36 @@ body.modal-open {
 .shader-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.card-body {
+    padding-bottom: 0;
+}
+
+/* Reduce space between credits and footer */
+.shader-card .card-footer {
+    padding-top: 0.5rem;
+    margin-top: 0;
+}
+
+/* Reduce font size and line height for credits */
+.shader-credits-container small {
+    font-size: 0.75rem;
+    line-height: 1;
+    margin: 0;
+    padding: 0;
+}
+
+/* Fix spacing issues */
+.shader-card .card-body {
+    padding: 0;
+    margin: 0;
+}
+
+.shader-card .card-footer {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-top: none;
 }
 
 /* --- END OF FILE style.css --- */

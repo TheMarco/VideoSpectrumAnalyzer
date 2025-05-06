@@ -61,7 +61,7 @@
                         </div>
                         {% endif %}
                         
-                        <div class="shader-credits-container p-2 mt-auto">
+                        <div class="shader-credits-container">
                             {% if shader.credits %}
                                 {% if shader.credit_url %}
                                 <a href="{{ shader.credit_url }}" target="_blank" class="text-light text-decoration-none">
@@ -75,7 +75,7 @@
                             {% endif %}
                         </div>
                     </div>
-                    <div class="card-footer">
+                    <div class="card-footer pt-2 pb-3">
                         {% if visualizer_name %}
                         <a href="/visualizer/{{ visualizer_name }}?shader={{ shader.path }}" class="btn btn-primary w-100">
                             <i class="bi bi-check-circle me-2"></i> Select this shader
