@@ -1,3 +1,5 @@
+// Created by MonterMan https://www.shadertoy.com/user/MonterMan
+
 float hash11(float p)
 {
     p = fract(p * .1031);

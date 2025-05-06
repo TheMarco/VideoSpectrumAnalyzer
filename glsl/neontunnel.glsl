@@ -1,3 +1,4 @@
+// by Holtsetio https://www.shadertoy.com/user/holtsetio
 //quick and dirty code for prototyping
 
 #define MAXSTEPS 256

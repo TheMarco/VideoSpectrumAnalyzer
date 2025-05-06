@@ -1,4 +1,33 @@
+/*
+    Biomine
+    -------
 
+    A biocooling system for a futuristic, off-world mine... or a feeding mechanisn for an alien
+        hatchery? I wasn't really sure what I was creating when I started, and I'm still not. :) I at
+        least wanted to create the sense that the tubes were pumping some form of biomatter around
+        without having to resort to full reflective and refractive passes... I kind of got there. :)
+
+        All things considered, there's not a lot to this. Combine a couple of gyroid surfaces, ID them,
+        then add their respective material properties. The scene is simple to create, and explained in
+        the distance function. There's also some function based, 2nd order cellular bump mapping, for
+        anyone interested.
+
+        The fluid pumped through the tubes was created by indexing the reflected and refracted rays
+        into a basic environment mapping function. Not accurate, but simple, effective and way cheaper
+        than the real thing.
+
+        I'd just finished watching some of the Assembly 2016 entries on YouTube, so for better or
+        worse, wanted to produce the scene without the help of any in-house textures.
+
+    Related examples:
+
+    Cellular Tiling - Shane
+    https://www.shadertoy.com/view/4scXz2
+
+        Cellular Tiled Tunnel - Shane
+        https://www.shadertoy.com/view/MscSDB
+
+*/
 
 
 #define FAR 50.0 

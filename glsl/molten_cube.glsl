@@ -1,3 +1,16 @@
+// By @XorDev
+//<300 chars playlist: https://www.shadertoy.com/playlist/fXlGDN
+
+// Based on gaz's hypercube:
+// https://www.shadertoy.com/view/NlcSDS
+
+// Twigl: https://t.co/MCkEtXRfYM
+// Tweet: https://twitter.com/XorDev/status/1493984559498768384
+
+//FabriceNeyret2 saved 3 chars
+//coyote save 9 chars
+
+
 void mainImage(out vec4 O, vec2 C)
 {
     O-=O; //Clear color

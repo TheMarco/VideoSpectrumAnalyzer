@@ -1,3 +1,6 @@
+// Base for warp fBM (Fractional Brownian Motion) implemented from articles from @iq
+// https://iquilezles.org/articles/warp/warp.htm With transform_rose colormap from colormap-shaders
+
 float colormap_red(float x) {
     if (x < 0.0) {
         return 54.0 / 255.0;

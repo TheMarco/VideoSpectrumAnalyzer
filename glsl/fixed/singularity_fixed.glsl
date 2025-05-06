@@ -1,3 +1,14 @@
+/*
+    "Singularity" by @XorDev
+
+    A whirling blackhole.
+    Feel free to code golf!
+    
+    FabriceNeyret2: -19
+    dean_the_coder: -12
+    iq: -4
+*/
+
 void mainImage(out vec4 O, vec2 F)
 {
     

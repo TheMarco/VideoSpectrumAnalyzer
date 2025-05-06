@@ -1,3 +1,4 @@
+// By Kali https://www.shadertoy.com/user/Kali
 // comments below are by Shane, thanks!
 
 int hexid;
