@@ -1,3 +1,10 @@
+/*
+[C]by evilryu
+https://www.shadertoy.com/view/MsyyWG
+[/C]
+*/
+
+
 // Created by evilryu
 // License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
 

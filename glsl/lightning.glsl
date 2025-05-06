@@ -1,3 +1,8 @@
+/*
+[C]by MonterMan
+https://www.shadertoy.com/user/MonterMan
+[/C]
+*/
 // Created by MonterMan https://www.shadertoy.com/user/MonterMan
 
 float hash11(float p)

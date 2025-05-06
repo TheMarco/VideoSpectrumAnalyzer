@@ -1,3 +1,9 @@
+/*
+* License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
+* Created by bal-khan
+*/
+
+
 vec2	march(vec3 pos;
 vec3 vec3 dir);
 vec3	camera(vec2 uv);

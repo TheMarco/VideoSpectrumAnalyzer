@@ -1,3 +1,9 @@
+/*
+[C]
+by nimitz
+https://www.shadertoy.com/view/XtS3DD
+[/C]
+
 //Cloud Ten
 //by nimitz 2015 (twitter: @stormoid)
 //License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License

@@ -1,3 +1,9 @@
+/*
+[C]
+by patu
+https://www.shadertoy.com/view/4t2cR1
+[/C]
+
 // Hyper Tunnel - Completely rewritten version
 // Based on the original "Sailing Beyond" demoscene production
 // https://www.youtube.com/watch?v=oITx9xMrAcM

@@ -1,3 +1,10 @@
+/*
+[C]
+by @XorDev
+https://www.shadertoy.com/view/7dsBRB
+[/C]
+*/
+
 // By @XorDev
 //<300 chars playlist: https://www.shadertoy.com/playlist/fXlGDN
 

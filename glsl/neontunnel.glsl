@@ -1,3 +1,9 @@
+/*
+[C]
+by Holtsetio
+https://www.shadertoy.com/user/holtsetio
+[/C]
+
 // by Holtsetio https://www.shadertoy.com/user/holtsetio
 //quick and dirty code for prototyping
 

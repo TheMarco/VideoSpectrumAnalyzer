@@ -1,3 +1,8 @@
+/*
+[C]
+by srtuss
+https://www.shadertoy.com/view/4sl3Dr
+[/C]
 // by srtuss, 2013
 
 // rotate position around axis

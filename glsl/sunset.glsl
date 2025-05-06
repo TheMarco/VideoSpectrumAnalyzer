@@ -1,3 +1,9 @@
+/*
+[C]by @XorDev
+https://www.shadertoy.com/view/wXjSRt
+[/C]
+*/
+
 // Sunset Shader - A beautiful sunset sky with clouds
 // Based on techniques from various Shadertoy examples
 // License: Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License

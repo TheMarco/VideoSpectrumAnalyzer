@@ -1,4 +1,10 @@
 /*
+
+    [C]
+    by Shane
+    https://www.shadertoy.com/view/4scXz2
+    [/C]
+
     Biomine
     -------
     
@@ -21,8 +27,7 @@
 
     Related examples: 
 
-    Cellular Tiling - Shane
-    https://www.shadertoy.com/view/4scXz2
+    Cellular Tiling
 
 	Cellular Tiled Tunnel - Shane
 	https://www.shadertoy.com/view/MscSDB

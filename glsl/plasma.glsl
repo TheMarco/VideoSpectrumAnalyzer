@@ -1,4 +1,7 @@
 /*
+[C]by @XorDev
+https://x.com/XorDev/status/1894123951401378051
+[/C]
     "Plasma" by @XorDev - Fixed version
 
     X Post:

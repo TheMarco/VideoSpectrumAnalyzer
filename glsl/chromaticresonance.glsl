@@ -1,3 +1,8 @@
+/*
+[C]
+by Philippe Desgranges
+https://www.shadertoy.com/view/tlySzm
+[/C]
 //
 // Chromatic Resonance by Philippe Desgranges
 // Email: Philippe.desgranges@gmail.com

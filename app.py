@@ -7,6 +7,7 @@ import threading
 from werkzeug.utils import secure_filename
 import traceback
 import glob
+import re
 
 # Import core components
 from core.registry import registry
@@ -420,6 +421,36 @@ def shader_explorer():
 
     # Get available shaders
     shaders = get_available_shaders()
+    
+    # Extract credits for each shader
+    for shader in shaders:
+        shader_path = shader['path']
+        try:
+            with open(shader_path, 'r') as f:
+                content = f.read()
+                
+                # Look for credits between [C] and [/C] markers
+                credit_match = re.search(r'\[C\](.*?)\[/C\]', content, re.DOTALL)
+                if credit_match:
+                    credit_line = credit_match.group(1).strip()
+                    shader['credits'] = credit_line
+                    
+                    # Check for URL in the credit line
+                    url_match = re.search(r'https?://[^\s"\']+', credit_line)
+                    if url_match:
+                        shader['credit_url'] = url_match.group(0)
+                        # Remove the URL from the displayed credit text
+                        shader['credits'] = re.sub(r'\s*https?://[^\s"\']+\s*', '', credit_line).strip()
+                    else:
+                        shader['credit_url'] = None
+                else:
+                    shader['credits'] = None
+                    shader['credit_url'] = None
+            
+        except Exception as e:
+            print(f"Error extracting credits for {shader_path}: {e}")
+            shader['credits'] = None
+            shader['credit_url'] = None
 
     return render_template(
         "shader_explorer.html",

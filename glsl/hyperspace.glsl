@@ -1,3 +1,9 @@
+/*
+[C]
+by blue_max
+https://www.shadertoy.com/view/wtd3zM
+[/C]
+
 // Based on theGiallo's https://www.shadertoy.com/view/MttSz2
 // MIT License. Use freely; but attribution is expected.
 #define TAU 6.28318

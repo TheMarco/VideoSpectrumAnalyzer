@@ -1,3 +1,11 @@
+/*
+[C]
+by Vincinius Graciano Santos
+http://viniciusgraciano.com/blog/making-of-bacterium/
+[/C]
+*/
+
+
 // Created by Vinicius Graciano Santos - vgs/2014
 // This shader needs some serious work on collision avoidance :D
 // http://viniciusgraciano.com/blog/making-of-bacterium/

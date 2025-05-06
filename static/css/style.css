@@ -764,4 +764,28 @@ body.modal-open {
     padding-right: 0 !important; /* Prevent layout shift */
 }
 
+/* Shader credits styling */
+.shader-credits-container {
+    text-align: center;
+    min-height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.shader-preview {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.shader-card {
+    transition: transform 0.2s;
+}
+
+.shader-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
 /* --- END OF FILE style.css --- */

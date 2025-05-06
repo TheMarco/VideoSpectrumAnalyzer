@@ -1,4 +1,8 @@
 /*
+
+[C]by @XorDev
+https://www.shadertoy.com/view/tXlXDX
+[/C]
     "Ghosts" by @XorDev
     
     More fun with Turbulence in 3D. Also see

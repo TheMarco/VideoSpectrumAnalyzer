@@ -1,4 +1,7 @@
 /*
+[C]by @XorDev
+https://www.shadertoy.com/view/wXSXzV
+[/C]
     "Nebula 3" by @XorDev
     
     Based on my tweet shader:

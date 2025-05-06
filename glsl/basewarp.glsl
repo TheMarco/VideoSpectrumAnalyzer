@@ -1,3 +1,8 @@
+/*
+[C]
+by trinketMage
+https://www.shadertoy.com/view/tdG3Rd
+[/C]
 // Base for warp fBM (Fractional Brownian Motion) implemented from articles from @iq
 // https://iquilezles.org/articles/warp/warp.htm With transform_rose colormap from colormap-shaders
 

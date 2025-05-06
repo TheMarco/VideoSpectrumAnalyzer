@@ -1,6 +1,8 @@
-// By Kali https://www.shadertoy.com/user/Kali
-// comments below are by Shane, thanks!
-
+/*
+[C]by Kali
+https://www.shadertoy.com/user/Kali
+[/C]
+*/
 int hexid;
 vec3 hpos, point, pt;
 float tcol, bcol, hitbol, hexpos, fparam=0.;

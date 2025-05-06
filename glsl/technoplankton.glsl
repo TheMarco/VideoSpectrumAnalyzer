@@ -1,3 +1,9 @@
+/*
+[C]
+by mrange
+https://www.shadertoy.com/view/dtfSzs
+[/C]
+
 // CC0: Techno-plankton in alien ocean
 //  Rethemed the colors of an earlier shader. 
 //  Original shader: https://www.shadertoy.com/view/dtSGWh

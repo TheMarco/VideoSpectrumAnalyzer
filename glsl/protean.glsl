@@ -1,3 +1,9 @@
+/*
+[C]by nimitz
+https://www.shadertoy.com/view/3l23Rh
+[/C]
+*/
+
 // Protean clouds by nimitz (twitter: @stormoid)
 // https://www.shadertoy.com/view/3l23Rh
 // License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License

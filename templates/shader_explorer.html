@@ -44,12 +44,14 @@
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0">{{ shader.name }}</h5>
                     </div>
-                    <div class="card-body p-0 position-relative">
+                    <div class="card-body p-0 d-flex flex-column">
                         {% if shader.preview_path %}
-                        <video class="w-100 shader-preview" controls loop muted>
-                            <source src="/shader-preview/{{ shader.path|replace('glsl/', '')|replace('.glsl', '') }}" type="video/mp4">
-                            Your browser does not support the video tag.
-                        </video>
+                        <div class="position-relative">
+                            <video class="w-100 shader-preview" controls loop muted>
+                                <source src="/shader-preview/{{ shader.path|replace('glsl/', '')|replace('.glsl', '') }}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
                         {% else %}
                         <div class="d-flex align-items-center justify-content-center bg-dark text-light" style="height: 200px;">
                             <div class="text-center">
@@ -58,6 +60,20 @@
                             </div>
                         </div>
                         {% endif %}
+                        
+                        <div class="shader-credits-container p-2 mt-auto">
+                            {% if shader.credits %}
+                                {% if shader.credit_url %}
+                                <a href="{{ shader.credit_url }}" target="_blank" class="text-light text-decoration-none">
+                                    <small>{{ shader.credits }}</small>
+                                </a>
+                                {% else %}
+                                <small class="text-light">{{ shader.credits }}</small>
+                                {% endif %}
+                            {% else %}
+                                <small class="text-light opacity-0">Credits placeholder</small>
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="card-footer">
                         {% if visualizer_name %}

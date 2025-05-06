@@ -1,4 +1,9 @@
 /*
+
+    [C]by @XorDev 
+    https://www.shadertoy.com/user/Xor
+    [/C]
+
     "Angel" by @XorDev
     
     An experiment based on my "3D Fire":

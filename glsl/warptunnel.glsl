@@ -1,3 +1,7 @@
+/*
+[C]by fizzer
+https://www.shadertoy.com/view/tll3zB
+[/C]
 const float pi = acos(-1.);
 const float innerR = 1.;
 const float outerR = 12.;
