@@ -15,39 +15,38 @@ def process_config(config=None):
     """
     # Default configuration
     default_config = {
-        "n_bars": 80,
+        "n_bars": 120,           # Increased from 80 to 120 bars
         "bar_width": 3,
-        "bar_gap": 5,            # Increased gap between bars to 5px
+        "bar_gap": 5,
         "bar_color": "#FFFFFF",
-        "max_amplitude": 250,    # Increased to 250px as requested
+        "max_amplitude": 250,
         "glow_effect": "black",
         "background_color": (0, 0, 0),
         "artist_color": "#FFFFFF",
         "title_color": "#FFFFFF",
-        "amplitude_scale": 1.0,  # Increased for more extreme visualization
-        "sensitivity": 2.0,      # Significantly increased for extreme responsiveness
-        "analyzer_alpha": 1.0,
-        "corner_radius": 0,      # Default to no rounded corners for a cleaner look
+        "amplitude_scale": 0.5,  # Reduced from 0.6 to 0.5
+        "sensitivity": 0.8,      # Reduced from 1.0 to 0.8
+        "analyzer_alpha": 0.6,   # Reduced from 1.0 to 0.6 for some transparency
+        "corner_radius": 0,
         "min_freq": 30,
         "max_freq": 16000,
-        "threshold_factor": 0.35, # Increased to make low signals less visible
-        "attack_speed": 0.98,    # Faster attack for more immediate response
-        "decay_speed": 0.5,      # Even faster decay for quicker response
-        "peak_hold_frames": 3,   # Reduced peak hold frames
-        "peak_decay_speed": 0.3, # Faster peak decay
-        "bass_threshold_adjust": 1.3,  # More aggressive bass threshold
-        "mid_threshold_adjust": 1.1,   # More aggressive mid threshold
-        "high_threshold_adjust": 0.6,  # Reduced high threshold to make highs more responsive
-        "silence_threshold": 0.03, # Slightly higher silence threshold
-        "silence_decay_factor": 0.8, # Faster silence decay
-        "noise_gate": 0.08,      # Higher noise gate to suppress more low signals
-        "text_size": "large",    # Options: "small", "medium", "large"
-        "center_line_color": "match_bar", # Center line color matches bar color
-        "center_line_thickness": 2,     # Height of the horizontal center line in pixels
-        "center_line_extension": 25,    # Extend the center line by 25px on each side
-        "edge_rolloff": True,    # Enable edge rolloff effect
-        "edge_rolloff_factor": 0.4, # More aggressive rolloff (lower value = more rolloff)
-        "signal_power": 2.5,     # New parameter: power function exponent for signal boosting
+        "threshold_factor": 0.3, # Adjusted from 0.35 to 0.3
+        "attack_speed": 0.95,    # Adjusted from 0.98 to 0.95
+        "decay_speed": 0.25,     # Reduced from 0.5 to 0.25 for faster decay
+        "peak_hold_frames": 5,   # Increased from 3 to 5
+        "peak_decay_speed": 0.15, # Reduced from 0.3 to 0.15 for slower peak decay
+        "bass_threshold_adjust": 1.0,  # Reduced from 1.3 to 1.0
+        "mid_threshold_adjust": 1.0,   # Reduced from 1.1 to 1.0
+        "high_threshold_adjust": 0.9,  # Increased from 0.6 to 0.9
+        "silence_threshold": 0.04, # Increased from 0.03 to 0.04
+        "silence_decay_factor": 0.5, # Reduced from 0.8 to 0.5
+        "noise_gate": 0.08,
+        "text_size": "large",
+        "center_line_color": "match_bar",
+        "center_line_thickness": 2,
+        "center_line_extension": 25,
+        "edge_rolloff": False,   # Keep edge rolloff disabled
+        "signal_power": 2.0,
     }
 
     # Merge user config with defaults
@@ -129,6 +128,14 @@ def process_config(config=None):
 
     # Additional derived values
     conf["effective_amplitude_scale"] = conf["amplitude_scale"] * conf["sensitivity"]
+
+    # Ensure analyzer_alpha is properly converted to an integer for PIL
+    # analyzer_alpha is a float between 0.0 and 1.0
+    conf["analyzer_alpha"] = float(conf.get("analyzer_alpha", 0.6))
+    conf["analyzer_alpha"] = max(0.0, min(1.0, conf["analyzer_alpha"]))
     conf["pil_alpha"] = int(conf["analyzer_alpha"] * 255)
+
+    # Ensure pil_alpha is within valid range (0-255)
+    conf["pil_alpha"] = max(0, min(255, conf["pil_alpha"]))
 
     return conf

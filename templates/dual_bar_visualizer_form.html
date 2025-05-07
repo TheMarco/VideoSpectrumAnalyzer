@@ -145,7 +145,7 @@
                              <div class="row mb-3">
                                 <div class="col-md-4">
                                     <label for="n_bars" class="form-label">Number of Bars <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="How many vertical frequency bars to display."></i></label>
-                                    <input type="number" class="form-control" id="n_bars" name="n_bars" value="80" min="10" max="200" data-friendly-name="Number of Bars" data-tab-name="Appearance" data-description="How many vertical frequency bars to display">
+                                    <input type="number" class="form-control" id="n_bars" name="n_bars" value="120" min="10" max="200" data-friendly-name="Number of Bars" data-tab-name="Appearance" data-description="How many vertical frequency bars to display">
                                 </div>
                                 <div class="col-md-4">
                                     <label for="bar_width" class="form-label">Bar Width (px) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Width of each individual bar."></i></label>
@@ -159,14 +159,15 @@
                             <div class="row mb-3">
                                 <div class="col-md-4">
                                     <label for="max_amplitude" class="form-label">Max Amplitude (px) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Maximum height of bars for the Dual Bar Visualizer (100-300px)."></i></label>
-                                    <input type="number" class="form-control" id="max_amplitude" name="max_amplitude" value="200" min="100" max="300" step="10">
+                                    <input type="number" class="form-control" id="max_amplitude" name="max_amplitude" value="250" min="100" max="300" step="10">
                                 </div>
                                 <div class="col-md-8"></div>
                             </div>
                              <div class="row mb-3 align-items-center">
                                  <div class="col-md-3">
                                     <label for="analyzer_alpha" class="form-label">Transparency <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Overall transparency of the visualizer bars (0=invisible, 1=opaque)."></i></label>
-                                    <input type="range" class="form-range" id="analyzer_alpha" name="analyzer_alpha" value="1.0" min="0.05" max="1.0" step="0.05">
+                                    <input type="range" class="form-range" id="analyzer_alpha" name="analyzer_alpha" value="0.6" min="0.05" max="1.0" step="0.05">
+                                    <small class="form-text text-muted">Value: <span id="analyzer_alpha_value">0.6</span></small>
                                 </div>
                                  <div class="col-md-3">
                                      <label for="bar_color" class="form-label">Bar Color <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Base color used for the visualizer bars."></i></label>
@@ -201,11 +202,11 @@
                             <div class="row mb-3">
                                 <div class="col-md-4">
                                     <label for="sensitivity" class="form-label">Overall Sensitivity <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="General multiplier for bar height response to audio levels."></i></label>
-                                    <input type="range" class="form-range" id="sensitivity" name="sensitivity" value="1.0" min="0.2" max="3.0" step="0.1">
+                                    <input type="range" class="form-range" id="sensitivity" name="sensitivity" value="0.8" min="0.2" max="3.0" step="0.1">
                                 </div>
                                 <div class="col-md-4">
                                     <label for="amplitude_scale" class="form-label">Amplitude Scale <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Internal scaling factor applied before sensitivity. Affects how much of the available height the bars use."></i></label>
-                                    <input type="number" class="form-control" id="amplitude_scale" name="amplitude_scale" value="0.6" min="0.1" max="2" step="0.1">
+                                    <input type="number" class="form-control" id="amplitude_scale" name="amplitude_scale" value="0.5" min="0.1" max="2" step="0.1">
                                 </div>
                                 <div class="col-md-4">
                                     <label for="threshold_factor" class="form-label">Threshold Factor <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Controls the dynamic threshold based on average frequency energy. Lower values make bars react to quieter sounds in their frequency band."></i></label>
@@ -262,7 +263,7 @@
                             <div class="row mb-3">
                                 <div class="col-md-4">
                                     <label for="bass_threshold_adjust" class="form-label">Bass Threshold Adj. <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Multiplier for the dynamic threshold specifically for bass frequencies (lower 20% of bars). >1 requires louder bass to react, <1 makes bass more sensitive."></i></label>
-                                    <input type="number" class="form-control" id="bass_threshold_adjust" name="bass_threshold_adjust" value="1.2" min="0.5" max="2" step="0.1">
+                                    <input type="number" class="form-control" id="bass_threshold_adjust" name="bass_threshold_adjust" value="1.0" min="0.5" max="2" step="0.1">
                                 </div>
                                 <div class="col-md-4">
                                     <label for="mid_threshold_adjust" class="form-label">Mid Threshold Adj. <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Multiplier for the dynamic threshold for mid-range frequencies (next 50% of bars)."></i></label>

@@ -67,7 +67,10 @@ class DualBarRenderer:
         self.corner_radius = max(0, self.corner_radius)
         self.noise_gate = config["noise_gate"]
         self.effective_amplitude_scale = config["effective_amplitude_scale"]
-        self.pil_alpha = config["pil_alpha"]
+        
+        # Ensure pil_alpha is properly set
+        self.pil_alpha = config.get("pil_alpha", 153)  # Default to 0.6 * 255 if not set
+        
         self.bar_color_rgb = config["bar_color_rgb"]
         self.artist_color_rgb = config["artist_color_rgb"]
         self.title_color_rgb = config["title_color_rgb"]
@@ -281,31 +284,14 @@ class DualBarRenderer:
 
             # Calculate bar height based on signal strength
             # Apply amplitude scale and clamp to max amplitude
-            enhanced_amplitude_scale = self.effective_amplitude_scale * 2.5  # Increased from 2.0 for more extreme effect
+            enhanced_amplitude_scale = self.effective_amplitude_scale * 2.0  # Reduced from 2.5 to prevent maxing out
             bar_height = min(int(signal * self.max_amplitude * enhanced_amplitude_scale), self.max_amplitude)
 
             # Ensure minimum visible height for active bars
             if signal > self.noise_gate:
                 bar_height = max(bar_height, 4)  # Minimum 4px height for visibility
 
-            # Apply edge rolloff effect if enabled
-            if self.edge_rolloff:
-                # Calculate distance from center (0 = center, 1 = edge)
-                center_index = self.n_bars / 2
-                distance_from_center = abs(i - center_index) / center_index
-
-                # Apply rolloff based on distance from center
-                # Use a smooth curve for natural falloff that starts earlier and is more pronounced
-                if distance_from_center > 0.5:  # Start rolloff from 50% distance (instead of 70%)
-                    # Calculate rolloff factor using a quadratic curve for more natural falloff
-                    # This creates a more pronounced curve that falls off faster at the edges
-                    normalized_distance = (distance_from_center - 0.5) / 0.5
-                    # Use quadratic curve for more natural falloff
-                    curve_factor = normalized_distance * normalized_distance
-                    rolloff = 1.0 - (curve_factor * (1.0 - self.edge_rolloff_factor))
-
-                    # Apply rolloff to bar height
-                    bar_height = int(bar_height * rolloff)
+            # Edge rolloff is now disabled in the config, so we skip that code
 
             # Draw the bar (growing both up and down from center)
             self._draw_dual_bar(image, glow_shapes_layer, bar_x, bar_height)

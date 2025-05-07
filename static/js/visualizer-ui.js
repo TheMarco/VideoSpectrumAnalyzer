@@ -90,12 +90,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // Set default values
         const nBarsInput = document.querySelector('#n_bars');
         if (nBarsInput) {
-            nBarsInput.value = '60';
+            nBarsInput.value = '120';
         }
 
         const barWidthInput = document.querySelector('#bar_width');
         if (barWidthInput) {
-            barWidthInput.value = '5';
+            barWidthInput.value = '3';
         }
 
         const barGapInput = document.querySelector('#bar_gap');
@@ -113,28 +113,40 @@ document.addEventListener('DOMContentLoaded', function() {
             cornerRadiusInput.value = '0';
         }
 
-        // Set decay speed for faster response
+        // Set reactivity defaults
+        const sensitivityInput = document.querySelector('#sensitivity');
+        if (sensitivityInput) {
+            sensitivityInput.value = '0.8';
+        }
+
+        const amplitudeScaleInput = document.querySelector('#amplitude_scale');
+        if (amplitudeScaleInput) {
+            amplitudeScaleInput.value = '0.5';
+        }
+
+        const analyzerAlphaInput = document.querySelector('#analyzer_alpha');
+        if (analyzerAlphaInput) {
+            analyzerAlphaInput.value = '0.6';
+        }
+
+        const attackSpeedInput = document.querySelector('#attack_speed');
+        if (attackSpeedInput) {
+            attackSpeedInput.value = '0.95';
+        }
+
         const decaySpeedInput = document.querySelector('#decay_speed');
         if (decaySpeedInput) {
-            decaySpeedInput.value = '0.4';
+            decaySpeedInput.value = '0.25';
         }
 
-        // Set peak hold frames
         const peakHoldFramesInput = document.querySelector('#peak_hold_frames');
         if (peakHoldFramesInput) {
-            peakHoldFramesInput.value = '3';
+            peakHoldFramesInput.value = '5';
         }
 
-        // Set peak decay speed
         const peakDecaySpeedInput = document.querySelector('#peak_decay_speed');
         if (peakDecaySpeedInput) {
-            peakDecaySpeedInput.value = '0.25';
-        }
-
-        // Set silence decay factor
-        const silenceDecayFactorInput = document.querySelector('#silence_decay_factor');
-        if (silenceDecayFactorInput) {
-            silenceDecayFactorInput.value = '0.7';
+            peakDecaySpeedInput.value = '0.15';
         }
     }
 

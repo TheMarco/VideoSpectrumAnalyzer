@@ -5,6 +5,7 @@ This module provides a registry for discovering and managing visualizers.
 import os
 import importlib
 import inspect
+import traceback
 from core.base_visualizer import BaseVisualizer
 
 class VisualizerRegistry:
@@ -26,6 +27,8 @@ class VisualizerRegistry:
         Returns:
             bool: True if registration was successful, False otherwise
         """
+        print(f"Attempting to register visualizer class: {visualizer_class.__name__}")
+        
         if not inspect.isclass(visualizer_class):
             print(f"Error: {visualizer_class} is not a class")
             return False
@@ -47,10 +50,11 @@ class VisualizerRegistry:
                 "description": instance.description,
                 "thumbnail": instance.thumbnail
             }
-            print(f"Registered visualizer: {display_name}")
+            print(f"Successfully registered visualizer: {display_name} (internal name: {name})")
             return True
         except Exception as e:
             print(f"Error registering visualizer {visualizer_class.__name__}: {e}")
+            traceback.print_exc()  # Print the full traceback for debugging
             return False
 
     def discover_visualizers(self, package_name="visualizers"):

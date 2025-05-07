@@ -9,6 +9,8 @@ from visualizers.dual_bar_visualizer.config import process_config
 from visualizers.dual_bar_visualizer.renderer import DualBarRenderer
 import numpy as np
 
+print("Loading DualBarVisualizer module")
+
 class DualBarVisualizer(BaseVisualizer):
     """
     Dual Bar Visualizer with bars growing both up and down from the center.
@@ -17,7 +19,10 @@ class DualBarVisualizer(BaseVisualizer):
     def __init__(self):
         """Initialize the dual bar visualizer."""
         super().__init__()
-        self.name = "Dual Bar Visualizer"
+        print("Initializing DualBarVisualizer")
+        # Keep both name formats for compatibility
+        self.name = "DualBarVisualizer"  # This should match the class name for registry
+        self.display_name = "Dual Bar Visualizer"  # This is what will be shown to users
         self.description = "Visualizer with bars growing both up and down from the center."
         
         # Set thumbnail path - this should be a static image showing what the visualizer looks like
@@ -26,6 +31,7 @@ class DualBarVisualizer(BaseVisualizer):
             self.thumbnail = thumbnail_path
         else:
             self.thumbnail = None
+        print(f"DualBarVisualizer initialized with name={self.name}, display_name={self.display_name}")
     
     def process_config(self, config=None):
         """
@@ -39,25 +45,20 @@ class DualBarVisualizer(BaseVisualizer):
         """
         return process_config(config)
     
-    def initialize_renderer(self, width, height, config):
+    def create_renderer(self, width, height, config):
         """
-        Initialize the renderer for this visualizer.
+        Create a renderer for the dual bar visualizer.
         
         Args:
             width (int): Frame width
             height (int): Frame height
             config (dict): Configuration dictionary
-            
+        
         Returns:
             DualBarRenderer: Renderer instance
         """
-        # Load fonts with the text size from config
-        text_size = config.get("text_size", "large")
-        print(f"Initializing renderer with text_size: {text_size}")
-        artist_font, title_font = load_fonts(text_size=text_size)
-        
-        # Initialize renderer
-        return DualBarRenderer(width, height, config, artist_font, title_font)
+        # For backward compatibility, call the new initialize_renderer method
+        return self.initialize_renderer(width, height, config)
     
     def render_frame(self, renderer, frame_data, background_image, metadata):
         """
@@ -153,3 +154,36 @@ class DualBarVisualizer(BaseVisualizer):
     def get_config_template(self):
         """Returns the path to the visualizer's configuration template."""
         return "dual_bar_visualizer_form.html"
+
+    def initialize_renderer(self, width, height, config):
+        """
+        Initialize the renderer for this visualizer.
+        
+        Args:
+            width (int): Frame width
+            height (int): Frame height
+            config (dict): Configuration dictionary
+        
+        Returns:
+            DualBarRenderer: Renderer instance
+        """
+        # Ensure analyzer_alpha is properly set
+        if "analyzer_alpha" in config:
+            # Make sure it's a float between 0 and 1
+            config["analyzer_alpha"] = float(config.get("analyzer_alpha", 0.6))
+            config["analyzer_alpha"] = max(0.0, min(1.0, config["analyzer_alpha"]))
+            
+            # Recalculate pil_alpha based on analyzer_alpha
+            config["pil_alpha"] = int(config["analyzer_alpha"] * 255)
+        else:
+            # Set default values if analyzer_alpha is not in config
+            config["analyzer_alpha"] = 0.6
+            config["pil_alpha"] = 153  # 0.6 * 255
+        
+        # Load fonts
+        text_size = config.get("text_size", "large")
+        # Use the imported load_fonts function
+        artist_font, title_font = load_fonts(text_size)
+        
+        # Create renderer
+        return DualBarRenderer(width, height, config, artist_font, title_font)
