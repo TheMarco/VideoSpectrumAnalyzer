@@ -1,3 +1,7 @@
+/*
+[C]
+by Marco van Hylckama Vlieg
+[/C]
 // "StarBirth: Fully AI vibe coded simulation of Hubble telescope images"
 // by Marco van Hylckama Vlieg (@AIandDesign on X / YouTube)
 //
