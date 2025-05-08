@@ -15,6 +15,17 @@
     <div class="container mt-5 mb-5 fade-in">
         <h1 class="text-center mb-5">Audio Visualizer Suite</h1>
 
+        {% if dev_mode %}
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    Developer mode is active. Additional experimental visualizers are visible.
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <div class="row mb-5">
             <div class="col-12">
                 <div class="card">
@@ -54,7 +65,7 @@
                     <div class="card-body d-flex flex-column">
                         <h5 class="card-title">{{ visualizer['display_name'] if 'display_name' in visualizer else visualizer['name'] }}</h5>
                         <p class="card-text flex-grow-1">{{ visualizer['description'] }}</p>
-                        <div class="mt-auto">
+                        <div class="mt-auto mb-3">
                             <a href="{{ url_for('visualizer_form', name=visualizer['name']) }}" class="btn btn-primary w-100">
                                 <i class="bi bi-sliders me-2"></i> Configure & Create
                             </a>

@@ -31,7 +31,8 @@ def get_shader_files():
     shader_files = glob.glob("glsl/*.glsl")
 
     # Filter out the optical_deconstruction shader as per user preference
-    shader_files = [f for f in shader_files if "optical_deconstruction" not in f]
+    # Also filter out audioreactive shaders (those starting with "ar_")
+    shader_files = [f for f in shader_files if "optical_deconstruction" not in f and not os.path.basename(f).startswith("ar_")]
 
     return sorted(shader_files)
 

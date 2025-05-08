@@ -832,6 +832,53 @@ class ShaderRenderer:
 
         print(f"Shader initialization complete")
 
+    def update_audio_texture(self, audio_texture_path):
+        """
+        Update the audio texture with a new texture file.
+
+        Args:
+            audio_texture_path (str): Path to the audio texture file
+        """
+        if not os.path.exists(audio_texture_path):
+            print(f"Warning: Audio texture file not found: {audio_texture_path}")
+            return
+
+        try:
+            # Check if we already have an audio texture
+            has_audio_texture = False
+            for i, tex in enumerate(self.textures):
+                if hasattr(tex, 'is_audio_texture') and tex.is_audio_texture:
+                    # Replace the existing audio texture
+                    tex.release()
+
+                    # Load the new audio texture
+                    img = Image.open(audio_texture_path).convert("RGBA")
+                    w, h = img.size
+                    new_tex = self.ctx.texture((w, h), 4, img.tobytes())
+                    new_tex.build_mipmaps()
+                    new_tex.use(location=0)  # Use location 0 for audio texture
+                    new_tex.is_audio_texture = True
+                    self.textures[i] = new_tex
+                    has_audio_texture = True
+                    break
+
+            if not has_audio_texture and 'iChannel0' in self.prog:
+                # Create a new audio texture
+                img = Image.open(audio_texture_path).convert("RGBA")
+                w, h = img.size
+                tex = self.ctx.texture((w, h), 4, img.tobytes())
+                tex.build_mipmaps()
+                tex.use(location=0)  # Use location 0 for audio texture
+                tex.is_audio_texture = True
+                self.textures.append(tex)
+
+                # Set iChannelResolution if needed
+                if 'iChannelResolution' in self.prog:
+                    self.prog['iChannelResolution'].value = ((w, h, 1.0), (1.0, 1.0, 1.0), (1.0, 1.0, 1.0), (1.0, 1.0, 1.0))
+
+        except Exception as e:
+            print(f"Error updating audio texture: {e}")
+
     def render_frame(self, time_value=None):
         """
         Render a frame at the specified time.

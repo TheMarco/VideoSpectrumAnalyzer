@@ -11,12 +11,21 @@ import time
 import argparse
 from tqdm import tqdm
 import subprocess
+import numpy as np
+from PIL import Image
 
 # Add the project root to the Python path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+# Import audio processing functions if available
+try:
+    from modules.audio_processor import load_audio
+except ImportError:
+    print("Warning: Could not import audio_processor module. Audio reactivity will be limited.")
+    load_audio = None
+
 def test_shader(shader_path, output_path, duration=5.0, fps=30, width=1280, height=720,
-                show_preview=False, verbose=False):
+                show_preview=False, verbose=False, audio_file=None, max_frames=None):
     """
     Test a GLSL shader by rendering it to a video file.
 
@@ -29,6 +38,7 @@ def test_shader(shader_path, output_path, duration=5.0, fps=30, width=1280, heig
         height (int): Height of the video
         show_preview (bool): Whether to play the video after rendering
         verbose (bool): Whether to print detailed information
+        audio_file (str, optional): Path to an audio file for audio-reactive shaders
 
     Returns:
         bool: True if successful, False otherwise
@@ -53,6 +63,12 @@ def test_shader(shader_path, output_path, duration=5.0, fps=30, width=1280, heig
 
         # Calculate the number of frames
         total_frames = int(duration * fps)
+
+        # Limit the number of frames if max_frames is specified
+        if max_frames is not None and max_frames > 0 and max_frames < total_frames:
+            print(f"Limiting frames to {max_frames} (from {total_frames})")
+            total_frames = max_frames
+
         print(f"Total frames to render: {total_frames}")
 
         # Build the FFmpeg command with QuickTime-compatible settings
@@ -87,6 +103,118 @@ def test_shader(shader_path, output_path, duration=5.0, fps=30, width=1280, heig
             stderr=subprocess.PIPE if not verbose else None
         )
 
+        # Load audio data if provided
+        audio_data = None
+        audio_texture = None
+        if audio_file and os.path.exists(audio_file):
+            print(f"Loading audio file: {audio_file}")
+            if load_audio:
+                try:
+                    # Load audio using the audio_processor module
+                    y, sr, audio_duration = load_audio(audio_file, duration)
+                    print(f"Audio loaded: {audio_duration:.2f}s at {sr}Hz")
+
+                    # Limit duration if audio is shorter than requested
+                    if audio_duration < duration:
+                        print(f"Audio duration ({audio_duration:.2f}s) is shorter than requested duration ({duration:.2f}s)")
+                        print(f"Limiting video duration to {audio_duration:.2f}s")
+                        duration = audio_duration
+                        total_frames = int(duration * fps)
+
+                    # Create audio frames for each video frame
+                    hop_length = sr // fps
+                    audio_frames = []
+
+                    for i in range(total_frames):
+                        start_sample = i * hop_length
+                        end_sample = min(start_sample + hop_length, len(y))
+                        if start_sample < len(y):
+                            frame_samples = y[start_sample:end_sample]
+                            # Pad with zeros if needed
+                            if len(frame_samples) < hop_length:
+                                frame_samples = np.pad(frame_samples, (0, hop_length - len(frame_samples)))
+                            audio_frames.append(frame_samples)
+                        else:
+                            # Pad with zeros if we've reached the end of the audio
+                            audio_frames.append(np.zeros(hop_length))
+
+                    audio_data = audio_frames
+                    print(f"Created {len(audio_frames)} audio frames")
+                except Exception as e:
+                    print(f"Error loading audio: {e}")
+                    audio_data = None
+            else:
+                print("Audio processing module not available. Using simple audio visualization.")
+                try:
+                    # Simple audio visualization without the audio_processor module
+                    import wave
+                    # numpy is already imported at the top of the file
+
+                    with wave.open(audio_file, 'rb') as wf:
+                        # Get audio parameters
+                        channels = wf.getnchannels()
+                        sample_width = wf.getsampwidth()
+                        sample_rate = wf.getframerate()
+                        n_frames = wf.getnframes()
+                        audio_duration = n_frames / sample_rate
+
+                        # Limit duration if audio is shorter than requested
+                        if audio_duration < duration:
+                            print(f"Audio duration ({audio_duration:.2f}s) is shorter than requested duration ({duration:.2f}s)")
+                            print(f"Limiting video duration to {audio_duration:.2f}s")
+                            duration = audio_duration
+                            total_frames = int(duration * fps)
+
+                        # Read all audio data
+                        raw_data = wf.readframes(n_frames)
+
+                        # Convert to numpy array
+                        if sample_width == 1:
+                            dtype = np.uint8
+                        elif sample_width == 2:
+                            dtype = np.int16
+                        elif sample_width == 4:
+                            dtype = np.int32
+                        else:
+                            raise ValueError(f"Unsupported sample width: {sample_width}")
+
+                        audio_array = np.frombuffer(raw_data, dtype=dtype)
+
+                        # Reshape for multiple channels
+                        if channels > 1:
+                            audio_array = audio_array.reshape(-1, channels)
+                            # Convert to mono by averaging channels
+                            audio_array = audio_array.mean(axis=1)
+
+                        # Normalize to -1.0 to 1.0 range
+                        if dtype == np.uint8:
+                            audio_array = (audio_array.astype(np.float32) - 128) / 128.0
+                        else:
+                            audio_array = audio_array.astype(np.float32) / (2**(sample_width*8-1))
+
+                        # Create audio frames for each video frame
+                        hop_length = sample_rate // fps
+                        audio_frames = []
+
+                        for i in range(total_frames):
+                            start_sample = i * hop_length
+                            end_sample = min(start_sample + hop_length, len(audio_array))
+                            if start_sample < len(audio_array):
+                                frame_samples = audio_array[start_sample:end_sample]
+                                # Pad with zeros if needed
+                                if len(frame_samples) < hop_length:
+                                    frame_samples = np.pad(frame_samples, (0, hop_length - len(frame_samples)))
+                                audio_frames.append(frame_samples)
+                            else:
+                                # Pad with zeros if we've reached the end of the audio
+                                audio_frames.append(np.zeros(hop_length))
+
+                        audio_data = audio_frames
+                        print(f"Created {len(audio_frames)} audio frames using simple audio processing")
+                except Exception as e:
+                    print(f"Error loading audio with simple processing: {e}")
+                    audio_data = None
+
         # Initialize the shader renderer
         print(f"Initializing shader renderer for {shader_path}...")
         start_init_time = time.time()
@@ -101,6 +229,38 @@ def test_shader(shader_path, output_path, duration=5.0, fps=30, width=1280, heig
         for frame_idx in tqdm(range(total_frames), desc="Rendering shader"):
             # Calculate the time for this frame
             frame_time = frame_idx / fps
+
+            # Update audio texture if we have audio data
+            if audio_data and frame_idx < len(audio_data):
+                try:
+                    # Create audio texture for this frame
+                    frame_audio = audio_data[frame_idx]
+
+                    # Create a texture from the audio data
+                    texture_width = 512  # Width of the texture
+                    texture_data = np.zeros((1, texture_width, 4), dtype=np.uint8)
+
+                    # Fill the texture with audio data
+                    for i in range(min(texture_width, len(frame_audio))):
+                        # Normalize to 0-255 range
+                        value = int((frame_audio[i] + 1.0) / 2.0 * 255)
+                        texture_data[0, i, 0] = value  # R channel
+                        texture_data[0, i, 1] = value  # G channel
+                        texture_data[0, i, 2] = value  # B channel
+                        texture_data[0, i, 3] = 255    # A channel
+
+                    # Create a temporary texture file
+                    audio_texture_path = os.path.join(os.path.dirname(shader_path), "textures", "audio_data.png")
+                    os.makedirs(os.path.dirname(audio_texture_path), exist_ok=True)
+
+                    # Save the texture to a file
+                    Image.fromarray(texture_data.reshape(1, texture_width, 4)).save(audio_texture_path)
+
+                    # Update the renderer's audio texture
+                    renderer.update_audio_texture(audio_texture_path)
+                except Exception as e:
+                    print(f"Error creating audio texture: {e}")
+                    # Continue without audio texture
 
             # Render the frame
             if verbose and (frame_idx % 10 == 0 or frame_idx == total_frames - 1):
@@ -198,6 +358,8 @@ def main():
     parser.add_argument("--height", "-H", type=int, default=720, help="Height of the video (default: 720)")
     parser.add_argument("--play", "-p", action="store_true", help="Play the video after rendering")
     parser.add_argument("--verbose", "-v", action="store_true", help="Print detailed information")
+    parser.add_argument("--audio", "-a", help="Path to an audio file for audio-reactive shaders")
+    parser.add_argument("--max_frames", type=int, help="Maximum number of frames to render")
 
     args = parser.parse_args()
 
@@ -226,7 +388,9 @@ def main():
         width=args.width,
         height=args.height,
         show_preview=args.play,
-        verbose=args.verbose
+        verbose=args.verbose,
+        audio_file=args.audio,
+        max_frames=args.max_frames
     )
 
     return 0 if success else 1

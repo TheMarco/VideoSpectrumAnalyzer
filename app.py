@@ -39,7 +39,8 @@ def get_available_shaders():
     """Get a list of all available GLSL shaders in the glsl directory."""
     shader_files = glob.glob("glsl/*.glsl")
     # Filter out optical_deconstruction shader as per user preference
-    shader_files = [f for f in shader_files if "optical_deconstruction" not in f]
+    # Also filter out audioreactive shaders (those starting with "ar_")
+    shader_files = [f for f in shader_files if "optical_deconstruction" not in f and not os.path.basename(f).startswith("ar_")]
     shaders = []
 
     for shader_path in shader_files:
@@ -64,8 +65,15 @@ def get_available_shaders():
 def index():
     """Render the home page with all available visualizers."""
     visualizers = registry.get_all_visualizers()
+
+    # Hide the audioreactive visualizer unless dev=true is in the URL
+    dev_mode = request.args.get('dev', '').lower() == 'true'
+    if not dev_mode:
+        # Filter out the AudioreactiveShaderVisualizer
+        visualizers = [v for v in visualizers if v['name'] != 'AudioreactiveShaderVisualizer']
+
     shaders = get_available_shaders()
-    return render_template("index.html", visualizers=visualizers, shaders=shaders)
+    return render_template("index.html", visualizers=visualizers, shaders=shaders, dev_mode=dev_mode)
 
 @app.route("/visualizer/<name>")
 def visualizer_form(name):
@@ -74,8 +82,11 @@ def visualizer_form(name):
     if not visualizer:
         return render_template("error.html", message=f"Visualizer '{name}' not found")
 
-    # Get available shaders
-    shaders = get_available_shaders()
+    # Get available shaders - for audioreactive shader, use its own method
+    if hasattr(visualizer, 'get_available_shaders'):
+        shaders = visualizer.get_available_shaders()
+    else:
+        shaders = get_available_shaders()
 
     template = visualizer.get_config_template()
     return render_template(template, visualizer=visualizer, shaders=shaders)
@@ -421,20 +432,20 @@ def shader_explorer():
 
     # Get available shaders
     shaders = get_available_shaders()
-    
+
     # Extract credits for each shader
     for shader in shaders:
         shader_path = shader['path']
         try:
             with open(shader_path, 'r') as f:
                 content = f.read()
-                
+
                 # Look for credits between [C] and [/C] markers
                 credit_match = re.search(r'\[C\](.*?)\[/C\]', content, re.DOTALL)
                 if credit_match:
                     credit_line = credit_match.group(1).strip()
                     shader['credits'] = credit_line
-                    
+
                     # Check for URL in the credit line
                     url_match = re.search(r'https?://[^\s"\']+', credit_line)
                     if url_match:
@@ -446,7 +457,7 @@ def shader_explorer():
                 else:
                     shader['credits'] = None
                     shader['credit_url'] = None
-            
+
         except Exception as e:
             print(f"Error extracting credits for {shader_path}: {e}")
             shader['credits'] = None
