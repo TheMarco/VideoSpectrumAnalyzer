@@ -9,6 +9,9 @@ import tempfile
 import subprocess
 from pathlib import Path
 import numpy as np
+import logging
+
+logger = logging.getLogger('audio_visualizer.shader_prerender')
 
 def prerender_shader_background(shader_path, output_path, duration, fps, width, height, progress_callback=None):
     """
@@ -27,19 +30,19 @@ def prerender_shader_background(shader_path, output_path, duration, fps, width, 
         str: Path to the rendered video file, or None if rendering failed
     """
     try:
-        print(f"Pre-rendering shader background: {shader_path}")
-        print(f"Duration: {duration}s, FPS: {fps}, Resolution: {width}x{height}")
+        logger.info(f"Pre-rendering shader background: {shader_path}")
+        logger.info(f"Duration: {duration}s, FPS: {fps}, Resolution: {width}x{height}")
 
         # Calculate the number of frames
         total_frames = int(duration * fps)
-        print(f"Total frames to render: {total_frames}")
+        logger.info(f"Total frames to render: {total_frames}")
 
         # If progress_callback is provided, send an initial progress update
         if progress_callback:
             try:
                 progress_callback(1, f"Starting shader pre-rendering ({total_frames} frames)...")
             except Exception as e:
-                print(f"Error in progress callback: {e}")
+                logger.error(f"Error in progress callback: {e}")
 
         # Build the FFmpeg command
         ffmpeg_cmd = [
@@ -59,7 +62,7 @@ def prerender_shader_background(shader_path, output_path, duration, fps, width, 
         ]
 
         # Start the FFmpeg process
-        print("Starting FFmpeg process...")
+        logger.info("Starting FFmpeg process...")
         ffmpeg_process = subprocess.Popen(
             ffmpeg_cmd,
             stdin=subprocess.PIPE,
@@ -68,16 +71,16 @@ def prerender_shader_background(shader_path, output_path, duration, fps, width, 
         )
 
         # Import the shader module dynamically
-        print("Importing shader module...")
+        logger.info("Importing shader module...")
         sys.path.append(os.path.dirname(os.path.abspath(shader_path)))
         from glsl.shader import ShaderRenderer
 
         # Create the renderer
-        print(f"Creating shader renderer for {shader_path}...")
+        logger.info(f"Creating shader renderer for {shader_path}...")
         renderer = ShaderRenderer(shader_path, width, height)
 
         # Render each frame and pipe it to FFmpeg
-        print("Rendering frames...")
+        logger.info("Rendering frames...")
         start_time = time.time()
 
         # Use tqdm for progress tracking if available
@@ -97,22 +100,16 @@ def prerender_shader_background(shader_path, output_path, duration, fps, width, 
 
             # Render the frame
             if frame_idx % 10 == 0 or frame_idx == total_frames - 1:
-                print(f"Rendering frame {frame_idx+1}/{total_frames} at time {frame_time:.2f}s")
+                logger.info(f"Rendering frame {frame_idx+1}/{total_frames} at time {frame_time:.2f}s")
 
             # Update progress if callback is provided - limit updates to avoid overwhelming the UI
             current_time = time.time()
-            if progress_callback and (current_time - last_update_time >= update_interval or frame_idx == total_frames - 1):
-                # Calculate progress percentage (0-100)
-                # We'll allocate 0-20% of the overall progress to shader pre-rendering
-                progress_percent = int(20 * (frame_idx + 1) / total_frames)
-                progress_message = f"Pre-rendering shader background: {frame_idx+1}/{total_frames} frames"
-                print(f"Updating progress: {progress_percent}%, {progress_message}")
-
-                try:
-                    progress_callback(progress_percent, progress_message)
-                    last_update_time = current_time
-                except Exception as e:
-                    print(f"Error in progress callback: {e}")
+            if current_time - last_update_time >= update_interval:
+                progress = int((frame_idx / total_frames) * 100)
+                message = f"Rendering frame {frame_idx}/{total_frames}"
+                if progress_callback:
+                    progress_callback(progress, message)
+                last_update_time = current_time
 
             # Render the frame
             frame = renderer.render_frame(frame_time)
@@ -127,21 +124,21 @@ def prerender_shader_background(shader_path, output_path, duration, fps, width, 
         try:
             ffmpeg_process.stdin.close()
         except:
-            print("Warning: FFmpeg stdin already closed")
+            logger.warning("Warning: FFmpeg stdin already closed")
 
         # Wait for FFmpeg to finish
         try:
             stdout, stderr = ffmpeg_process.communicate()
         except ValueError:
             # This can happen if stdin is already closed
-            print("Warning: FFmpeg stdin already closed")
+            logger.warning("Warning: FFmpeg stdin already closed")
             # Wait for the process to finish
             ffmpeg_process.wait()
 
         # Check if FFmpeg was successful
         if ffmpeg_process.returncode != 0:
             error_msg = stderr.decode() if 'stderr' in locals() else 'Unknown error'
-            print(f"FFmpeg error: {error_msg}")
+            logger.error(f"FFmpeg error: {error_msg}")
             return None
 
         # Calculate the rendering time
@@ -149,8 +146,8 @@ def prerender_shader_background(shader_path, output_path, duration, fps, width, 
         render_time = end_time - start_time
         fps_rate = total_frames / render_time
 
-        print(f"Shader background pre-rendering completed in {render_time:.2f} seconds")
-        print(f"Average rendering speed: {fps_rate:.2f} fps")
+        logger.info(f"Shader background pre-rendering completed in {render_time:.2f} seconds")
+        logger.info(f"Average rendering speed: {fps_rate:.2f} fps")
 
         # Clean up
         renderer.cleanup()
@@ -160,12 +157,12 @@ def prerender_shader_background(shader_path, output_path, duration, fps, width, 
             try:
                 progress_callback(20, "Shader pre-rendering complete")
             except Exception as e:
-                print(f"Error in final progress callback: {e}")
+                logger.error(f"Error in final progress callback: {e}")
 
         return output_path
 
     except Exception as e:
-        print(f"Error pre-rendering shader background: {e}")
+        logger.error(f"Error pre-rendering shader background: {e}")
         import traceback
         traceback.print_exc()
         return None

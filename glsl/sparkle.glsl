@@ -1,3 +1,10 @@
+/*
+[C]
+by Mirco Müller
+https://www.shadertoy.com/view/3sXSD2
+[/C]
+*/
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Playing around with simplex noise and polar-coords with a lightning-themed
@@ -21,10 +28,6 @@
 // with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 ////////////////////////////////////////////////////////////////////////////////
-/*
-[C]by Mirco Müller
-https://www.shadertoy.com/view/3sXSD2
-[/C]
 
 mat2 r2d (in float degree)
 {

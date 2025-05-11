@@ -38,7 +38,7 @@ def render_shader(shader_path, output_path, duration=5.0, fps=30, width=1280, he
     from glsl.shader_preprocessor import create_fixed_shader, is_problematic_shader
 
     # Check if this is a problematic shader
-    if is_problematic_shader(shader_path) or shader_filename in ["angel.glsl", "nebula.glsl", "blackhole.glsl", "shield.glsl", "ghosts.glsl", "quantum.glsl"]:
+    if is_problematic_shader(shader_path) or shader_filename in ["angel.glsl", "nebula.glsl", "blackhole.glsl", "shield.glsl", "ghosts.glsl", "quantum.glsl", "starnest.glsl", "starbirth.glsl"]:
         print(f"Detected potentially problematic shader: {shader_filename}")
 
         # Create a fixed version of the shader
@@ -57,24 +57,6 @@ def render_shader(shader_path, output_path, duration=5.0, fps=30, width=1280, he
             show_preview=show_preview,
             verbose=verbose
         )
-
-    # For all other shaders, use the regular test_shader.py
-    print(f"Using regular shader renderer for {shader_filename}")
-
-    # Keep MP4 format but ensure it's QuickTime compatible
-    print(f"Using QuickTime-compatible MP4 settings for output: {output_path}")
-
-    from test_shader import test_shader
-    return test_shader(
-        shader_path,
-        output_path,
-        duration=duration,
-        fps=fps,
-        width=width,
-        height=height,
-        show_preview=show_preview,
-        verbose=verbose
-    )
 
 def main():
     """Main entry point."""

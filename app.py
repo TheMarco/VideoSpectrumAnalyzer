@@ -8,6 +8,22 @@ from werkzeug.utils import secure_filename
 import traceback
 import glob
 import re
+import logging
+
+# Set to DEBUG during development, INFO in production
+if os.environ.get('DEBUG') == '1':
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+else:
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+logger = logging.getLogger('audio_visualizer')
 
 # Import core components
 from core.registry import registry
@@ -25,7 +41,7 @@ os.makedirs(os.path.join("static", "images", "thumbnails"), exist_ok=True)
 
 # Discover available visualizers
 registry.discover_visualizers()
-print(f"Discovered visualizers: {registry.get_visualizer_names()}")
+logger.info(f"Discovered visualizers: {registry.get_visualizer_names()}")
 
 jobs = {}
 

@@ -2,6 +2,8 @@
 Configuration handling for the spectrum analyzer.
 """
 from modules.utils import hex_to_rgb
+import logging
+logger = logging.getLogger('audio_visualizer.config')
 
 def process_config(config=None):
     """
@@ -105,7 +107,7 @@ def process_config(config=None):
             conf["glow_effect"] = config["glow_effect"]
 
     # Debug print to verify text_size is being preserved
-    print(f"Text size after config processing: {conf.get('text_size', 'not found')}")
+    logger.debug(f"Config processed: text_size={conf.get('text_size', 'not found')}")
 
     # Derived configuration values
     conf["bar_color_rgb"] = hex_to_rgb(conf.get("bar_color", "#FFFFFF"))
@@ -224,7 +226,7 @@ def process_dual_bar_config(config=None):
             conf["glow_effect"] = config["glow_effect"]
 
     # Debug print to verify text_size is being preserved
-    print(f"Text size after config processing: {conf.get('text_size', 'not found')}")
+    logger.debug(f"Config processed: text_size={conf.get('text_size', 'not found')}")
 
     # Derived configuration values
     conf["bar_color_rgb"] = hex_to_rgb(conf.get("bar_color", "#FFFFFF"))

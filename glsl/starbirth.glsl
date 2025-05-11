@@ -1,12 +1,14 @@
 /*
 [C]
 by Marco van Hylckama Vlieg
+https://www.shadertoy.com/view/wfd3zr
 [/C]
+*/
+
 // "StarBirth: Fully AI vibe coded simulation of Hubble telescope images"
 // by Marco van Hylckama Vlieg (@AIandDesign on X / YouTube)
 //
 // Created using Google Gemini 2.5 Pro and OpenAI o4-mini-high
-// Modified by GPT-4o to add multiple large stars
 
 #define PI 3.14159265359
 #define ITERATIONS_FBM   8
@@ -29,6 +31,20 @@ by Marco van Hylckama Vlieg
 #define BIG_STAR_BRIGHT_MAX 2.8  // Max brightness multiplier for LARGE stars
 #define BIG_STAR_COLOR_WARM vec3(1.0, 0.8, 0.5) // Color option 1 for large stars
 #define BIG_STAR_COLOR_COOL vec3(0.7, 0.8, 1.0) // Color option 2 for large stars
+
+// ── Additional Fixed Large Stars Settings ─────────────────────────────────────
+// Radii here are defined relative to the UV space (center core radius ~0.15)
+// 0.5 * 0.15 = 0.075, 0.7 * 0.15 = 0.105. Radii around 0.08-0.1 are appropriate.
+#define EXTRA_STAR_1_POS vec2(-0.2, 0.15) // Position in uv space relative to center
+#define EXTRA_STAR_1_RADIUS 0.13          // Radius in uv space
+#define EXTRA_STAR_1_COLOR vec3(1.0, 0.9, 0.7) // Color (warm white)
+#define EXTRA_STAR_1_BRIGHTNESS 1.2         // Brightness multiplier
+
+#define EXTRA_STAR_2_POS vec2(0.25, -0.1) // Position in uv space relative to center
+#define EXTRA_STAR_2_RADIUS 0.09          // Radius in uv space
+#define EXTRA_STAR_2_COLOR vec3(0.8, 0.9, 1.0) // Color (cool blueish)
+#define EXTRA_STAR_2_BRIGHTNESS 1.2         // Brightness multiplier
+
 
 // ── Rotation Helper ───────────────────────────────────────────────────────────
 mat2 rotate(float a) {
@@ -199,6 +215,23 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     }
     finalColor += vec3(1.0,0.9,0.75) * comets_val * 0.8;
 
+
+    // --- Add the two additional large stars ---
+    // Star 1
+    float dist1 = length(uv - EXTRA_STAR_1_POS);
+    // Use the same bloom function structure as the random large stars
+    float bloom1 = pow(smoothstep(EXTRA_STAR_1_RADIUS * 0.7, 0.0, dist1), 3.0);
+    bloom1 += pow(smoothstep(EXTRA_STAR_1_RADIUS * 0.4, 0.0, dist1), 5.0) * 0.5;
+    finalColor += EXTRA_STAR_1_COLOR * bloom1 * EXTRA_STAR_1_BRIGHTNESS;
+
+    // Star 2
+    float dist2 = length(uv - EXTRA_STAR_2_POS);
+    // Use the same bloom function structure as the random large stars
+    float bloom2 = pow(smoothstep(EXTRA_STAR_2_RADIUS * 0.7, 0.0, dist2), 3.0);
+    bloom2 += pow(smoothstep(EXTRA_STAR_2_RADIUS * 0.4, 0.0, dist2), 5.0) * 0.5;
+    finalColor += EXTRA_STAR_2_COLOR * bloom2 * EXTRA_STAR_2_BRIGHTNESS;
+
+
     // --- Enhanced Spatial-Density Varying Starfield ---
     // Now generates both small point stars and large bloomy stars
     float small_star_acc = 0.0;
@@ -217,7 +250,19 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             vec2 rnd = hash2(nc);
 
             // Does a star exist in this cell based on local density?
+            // Check if the star position is too close to one of the fixed extra stars
+            vec2 starPosUV = (nc + rnd) * CELL_SIZE / min(iResolution.x, iResolution.y) * 2.0 - iResolution.xy / min(iResolution.x, iResolution.y) ;
+
             if (rnd.x > localD) {
+                 // Check if this random star is too close to the fixed extra stars
+                if (length(starPosUV - EXTRA_STAR_1_POS) < EXTRA_STAR_1_RADIUS * 1.5 ||
+                    length(starPosUV - EXTRA_STAR_2_POS) < EXTRA_STAR_2_RADIUS * 1.5)
+                {
+                    // Skip generating a random star if it's too close to a fixed one
+                    continue;
+                }
+
+
                 vec2 starPos = (nc + rnd) * CELL_SIZE;
                 float d = length(fragCoord.xy - starPos); // Distance from fragment to star center
 
@@ -230,7 +275,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
                     vec3 bigCol = mix(BIG_STAR_COLOR_WARM, BIG_STAR_COLOR_COOL, hash1(starSeed * 1.3));
                     float bigBright = mix(BIG_STAR_BRIGHT_MIN, BIG_STAR_BRIGHT_MAX, hash1(starSeed * 1.4));
 
-                    // Bloom shape similar to the central core
+                    // Bloom shape similar to the central core and added fixed stars
                     float bloom = pow(smoothstep(bigRad * 0.7, 0.0, d), 3.0);
                     bloom += pow(smoothstep(bigRad * 0.4, 0.0, d), 5.0) * 0.5;
 

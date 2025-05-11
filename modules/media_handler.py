@@ -8,6 +8,9 @@ import subprocess
 import numpy as np
 import sys
 import importlib.util
+import logging
+
+logger = logging.getLogger('audio_visualizer.media_handler')
 
 # Define the vertex shader for GLSL rendering
 VERTEX_SHADER = """
@@ -188,15 +191,19 @@ def load_background_media(background_image_path, background_video_path, backgrou
 
             # If pre-rendering was successful, treat it as a regular video
             if prerendered_video_path and os.path.exists(prerendered_video_path):
-                print(f"Pre-rendering successful, using video: {prerendered_video_path}")
-                if progress_callback:
-                    progress_callback(20, "Shader pre-rendering complete, loading video...")
+                # Check if the file has content (not empty)
+                if os.path.getsize(prerendered_video_path) > 0:
+                    print(f"Pre-rendering successful, using video: {prerendered_video_path}")
+                    if progress_callback:
+                        progress_callback(20, "Shader pre-rendering complete, loading video...")
 
-                # Set the background_video_path to the pre-rendered video
-                background_video_path = prerendered_video_path
+                    # Set the background_video_path to the pre-rendered video
+                    background_video_path = prerendered_video_path
 
-                # Clear the shader path to ensure we don't try to use real-time rendering
-                background_shader_path = None
+                    # Clear the shader path to ensure we don't try to use real-time rendering
+                    background_shader_path = None
+                else:
+                    print("Pre-rendered video file is empty, falling back to real-time rendering")
             else:
                 print("Pre-rendering failed, falling back to real-time rendering")
 

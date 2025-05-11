@@ -5,6 +5,9 @@ import argparse
 import pathlib
 import textwrap
 import os
+import logging
+
+logger = logging.getLogger('audio_visualizer.shader')
 
 import numpy as np
 from PIL import Image
@@ -634,22 +637,20 @@ def build_program(ctx, has_main, body, inline):
 
     try:
         program = ctx.program(vertex_shader=VERTEX_SHADER, fragment_shader=src)
-        print("Shader program compiled successfully")
+        logger.info("Shader program compiled successfully")
 
-        # Print available uniforms for debugging
+        # Log available uniforms at debug level only
         try:
-            print(f"Available uniforms: {', '.join(program.uniforms.keys())}")
+            logger.debug(f"Available uniforms: {', '.join(program.uniforms.keys())}")
         except AttributeError:
-            # ModernGL version might not have uniforms attribute
-            print("Uniforms not accessible via .uniforms attribute (ModernGL version difference)")
-
+            logger.debug("Uniforms not accessible via .uniforms attribute")
+        
         return program
     except Exception as e:
-        print(f"Error compiling shader program: {e}")
-        # Print the first few lines of the shader for debugging
-        print("Shader source (first 20 lines):")
+        logger.error(f"Error compiling shader program: {e}")
+        # Only log first few lines at error level
         for i, line in enumerate(src.splitlines()[:20]):
-            print(f"{i+1}: {line}")
+            logger.error(f"{i+1}: {line}")
         raise
 
 def load_texture(ctx, path):
