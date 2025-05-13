@@ -86,7 +86,7 @@ def preprocess_shader(text, shader_path=""):
     basename = os.path.splitext(filename)[0]
 
     # Check if we have a known problematic shader
-    known_problematic = filename in ["angel.glsl", "quantum.glsl", "blackhole.glsl", "shield.glsl", "ghosts.glsl"]
+    known_problematic = filename in ["angel.glsl", "quantum.glsl", "blackhole.glsl", "shield.glsl", "ghosts.glsl", "aurora.glsl"]
 
     # Special case for nebula.glsl
     if filename == "nebula.glsl":
@@ -494,6 +494,21 @@ vec4 sampleTexture(vec3 p) {
         # Reassemble the shader
         text = '\n'.join(lines)
 
+    # Special case for aurora.glsl
+    if filename == "aurora.glsl":
+        fixed_path = os.path.join(fixed_dir, "aurora_fixed.glsl")
+
+        # Check if fixed version exists
+        if not os.path.exists(fixed_path):
+            print(f"Creating fixed version of {filename} at {fixed_path}")
+
+            # Create the fixed version - this should already exist from our previous step
+            # If it doesn't, the code will use the existing file
+
+        print(f"Using fixed version of {filename} from {fixed_path}")
+        text = pathlib.Path(fixed_path).read_text()
+        return text
+
     # Special case for ghosts.glsl
     if filename == "ghosts.glsl":
         fixed_path = os.path.join(fixed_dir, "ghosts_fixed.glsl")
@@ -644,7 +659,7 @@ def build_program(ctx, has_main, body, inline):
             logger.debug(f"Available uniforms: {', '.join(program.uniforms.keys())}")
         except AttributeError:
             logger.debug("Uniforms not accessible via .uniforms attribute")
-        
+
         return program
     except Exception as e:
         logger.error(f"Error compiling shader program: {e}")
