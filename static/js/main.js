@@ -406,10 +406,20 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => response.json().then(data => ({ status: response.status, body: data })))
             .then(({ status, body }) => {
+                console.log("Upload response:", body);
+
+                // Check if we need to redirect to an error page
+                if (body.redirect) {
+                    console.log("Redirecting to error page:", body.redirect);
+                    window.location.href = body.redirect;
+                    return;
+                }
+
                 if (status >= 400 || body.error) {
                     showError(body.error || `Server error: ${status}`);
                     return;
                 }
+
                 currentJobId = body.job_id;
                 if (statusMessage) statusMessage.textContent = 'Upload complete. Starting processing...';
                 startProgressPolling(currentJobId);
@@ -474,18 +484,29 @@ document.addEventListener('DOMContentLoaded', function() {
         createAnotherBtn.addEventListener('click', resetToFormState);
     }
 
-    // Poll for job progress (Unchanged)
+    // Poll for job progress
     function startProgressPolling(jobId) {
         if (progressInterval) clearInterval(progressInterval);
         progressInterval = setInterval(() => {
             fetch(`/job_status/${jobId}`)
                 .then(response => response.json())
                 .then(data => {
+                    console.log("Job status data:", data);
+
+                    // Check if we need to redirect to an error page
+                    if (data.redirect && data.status === 'failed') {
+                        console.log("Redirecting to error page:", data.redirect);
+                        clearInterval(progressInterval);
+                        window.location.href = data.redirect;
+                        return;
+                    }
+
                     if (data.error) {
                         showError(data.error);
                         clearInterval(progressInterval);
                         return;
                     }
+
                     updateProgress(data);
                     if (data.status === 'completed' || data.status === 'failed') {
                         clearInterval(progressInterval);
@@ -508,7 +529,14 @@ document.addEventListener('DOMContentLoaded', function() {
         progressBar.setAttribute('aria-valuenow', progress);
 
         if (data.status === 'queued') statusMessage.textContent = 'Waiting in queue...';
-        else if (data.status === 'processing') statusMessage.textContent = `Processing: ${progress}% complete`;
+        else if (data.status === 'processing') {
+            // Check if there's a message from the server
+            if (data.message) {
+                statusMessage.textContent = data.message;
+            } else {
+                statusMessage.textContent = `Processing: ${progress}% complete`;
+            }
+        }
         else if (data.status === 'completed') {
             statusMessage.textContent = 'Processing complete!';
             if (downloadSection) downloadSection.style.display = 'block';
@@ -521,10 +549,197 @@ document.addEventListener('DOMContentLoaded', function() {
                 submitBtn.disabled = true;
             }
         } else if (data.status === 'failed') {
-            showError(data.error || 'An unknown error occurred during processing.');
+            // Debug: Log the error details to console
+            console.log("ERROR DETAILS:", data.error || 'Unknown error');
+            console.log("FULL JOB DATA:", data);
+
+            // Check if this is a shader error with detailed information
+            if (data.error_type === 'shader_error') {
+                console.log("Detected shader error with details:", data.shader_error_details);
+
+                // Get the shader name
+                const shaderName = data.shader_name ||
+                    (data.shader_error_details ? data.shader_error_details.shader_name : "Unknown Shader");
+
+                // Get the error message
+                const errorMessage = data.error ||
+                    (data.shader_error_details ? data.shader_error_details.error_message : "Unknown error");
+
+                // Redirect to the error page
+                window.location.href = `/shader_error?shader_name=${encodeURIComponent(shaderName)}&error_details=${encodeURIComponent(errorMessage)}`;
+
+                // Stop polling
+                if (progressInterval) clearInterval(progressInterval);
+                return;
+            }
+
+            // For regular errors, use the existing error handling
+            const errorDetails = data.error || 'An unknown error occurred during processing.';
+
+            // Check if we have a shader error in the error message
+            const isShaderError = errorDetails && (
+                errorDetails.includes('SHADER ERROR') ||
+                errorDetails.includes('shader') ||
+                errorDetails.includes('.glsl')
+            );
+
+            // Format the error message for display
+            let formattedError = errorDetails || "No error details available. Check the server logs for more information.";
+
+            // If it's a shader error, format it nicely
+            if (isShaderError) {
+                // Extract the shader name if possible
+                let shaderName = "Unknown shader";
+                const shaderMatch = errorDetails.match(/SHADER ERROR: ([^'\n]+)/);
+                if (shaderMatch && shaderMatch[1]) {
+                    shaderName = shaderMatch[1];
+                }
+
+                // Create a more user-friendly error message
+                formattedError = `<div class="shader-error">
+                    <h4 class="text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Shader Error: ${shaderName}</h4>
+                    <p>The shader failed to render properly. This could be due to:</p>
+                    <ul>
+                        <li>Syntax errors in the shader code</li>
+                        <li>Compatibility issues with your graphics hardware</li>
+                        <li>Resource limitations</li>
+                    </ul>
+                    <div class="alert alert-secondary">
+                        <p><strong>Technical Details:</strong></p>
+                        <pre style="max-height: 200px; overflow-y: auto;">${errorDetails}</pre>
+                    </div>
+                </div>`;
+            }
+
+            // Show the error in a modal
+            if (window.ModalManager) {
+                console.log("Using ModalManager to show error");
+                try {
+                    // Make sure the modal exists
+                    const errorModal = document.getElementById('errorModal');
+                    if (!errorModal) {
+                        console.error("Error modal element not found!");
+                        showError(errorDetails || "Error modal not found");
+                        return;
+                    }
+
+                    // Directly set the content of the modal body
+                    const modalBody = errorModal.querySelector('.modal-body');
+                    if (modalBody) {
+                        console.log("Setting modal body content directly");
+                        modalBody.innerHTML = formattedError;
+                    } else {
+                        console.error("Modal body element not found!");
+                    }
+
+                    // Set the title
+                    const modalTitle = errorModal.querySelector('.modal-title');
+                    if (modalTitle) {
+                        modalTitle.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i>Processing Error';
+                    }
+
+                    // Show the modal using Bootstrap's API
+                    const bsModal = new bootstrap.Modal(errorModal);
+                    bsModal.show();
+
+                    console.log("Modal should be visible now");
+                } catch (e) {
+                    console.error("Error showing modal:", e);
+                    // Fallback to the old error display
+                    showError(errorDetails || "Error showing modal: " + e.message);
+                }
+            } else {
+                console.log("ModalManager not available, using fallback");
+                // Fallback to the old error display
+                showError(errorDetails || "No error details available");
+            }
+
             progressBar.classList.remove('progress-bar-animated');
             progressBar.classList.add('bg-danger');
             statusMessage.textContent = 'Processing Failed';
+        }
+    }
+
+    // Show a custom shader error page
+    function showShaderErrorPage(errorDetails) {
+        console.log("Showing shader error page for:", errorDetails);
+
+        // Add an alert for debugging
+        alert("SHOWING SHADER ERROR PAGE: " + JSON.stringify(errorDetails));
+
+        try {
+            // Hide all existing content
+            const mainContent = document.getElementById('main-content');
+            if (mainContent) {
+                mainContent.style.display = 'none';
+            } else {
+                // If we can't find the main content, hide all containers
+                document.querySelectorAll('.container').forEach(container => {
+                    if (!container.classList.contains('shader-error-container')) {
+                        container.style.display = 'none';
+                    }
+                });
+            }
+
+            // Remove any existing error containers
+            document.querySelectorAll('.shader-error-container').forEach(container => {
+                container.remove();
+            });
+
+            // Create a shader error container
+            const container = document.createElement('div');
+            container.className = 'container mt-5 mb-5 shader-error-container';
+            container.style.display = 'block';
+            container.style.opacity = '1';
+
+            // Get the shader name and error message
+            const shaderName = errorDetails.shader_name || "Unknown Shader";
+            const errorMessage = errorDetails.error_message || "No error details available";
+
+            container.innerHTML = `
+                <div class="error-container" style="max-width: 900px; margin: 0 auto;">
+                    <div class="error-header" style="background-color: #dc3545; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+                        <h2><i class="bi bi-exclamation-triangle-fill me-3"></i>Shader Error</h2>
+                    </div>
+                    <div class="error-body" style="background-color: #2b2b2b; padding: 30px; border-radius: 0 0 8px 8px;">
+                        <h3 class="error-title" style="margin-bottom: 20px;">${shaderName}</h3>
+
+                        <div class="error-message" style="font-size: 1.1rem; margin-bottom: 20px;">
+                            <p>The shader failed to render properly. This could be due to:</p>
+                            <ul>
+                                <li>Syntax errors in the shader code</li>
+                                <li>Compatibility issues with your graphics hardware</li>
+                                <li>Resource limitations</li>
+                            </ul>
+                        </div>
+
+                        <h4>Technical Details:</h4>
+                        <div class="error-details" style="background-color: #1e1e1e; padding: 20px; border-radius: 8px; font-family: monospace; white-space: pre-wrap; overflow-x: auto; margin-top: 20px;">
+                            ${errorMessage}
+                        </div>
+
+                        <div class="back-button text-center" style="margin-top: 30px;">
+                            <a href="/" class="btn btn-primary btn-lg">
+                                <i class="bi bi-house-door me-2"></i>Return to Home
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Add the container to the page
+            document.body.appendChild(container);
+
+            // Stop any ongoing processes
+            if (progressInterval) clearInterval(progressInterval);
+
+            // Scroll to the top of the page
+            window.scrollTo(0, 0);
+
+            console.log("Shader error page added to DOM");
+        } catch (e) {
+            console.error("Error showing shader error page:", e);
+            alert("Error showing shader error page: " + e.message);
         }
     }
 

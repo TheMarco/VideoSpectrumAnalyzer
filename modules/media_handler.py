@@ -9,6 +9,7 @@ import numpy as np
 import sys
 import importlib.util
 import logging
+from modules.shader_error import ShaderError
 
 logger = logging.getLogger('audio_visualizer.media_handler')
 
@@ -166,10 +167,10 @@ def load_background_media(background_image_path, background_video_path, backgrou
 
     # Try to load shader first if specified
     if background_shader_path and os.path.exists(background_shader_path):
-        try:
-            print(f"Loading background shader: {background_shader_path}")
+        print(f"Loading background shader: {background_shader_path}")
 
-            # Try to pre-render the shader as a video
+        # Try to pre-render the shader as a video
+        try:
             print(f"Pre-rendering shader as video: {background_shader_path}")
             if progress_callback:
                 progress_callback(1, "Pre-rendering shader as video...")
@@ -206,32 +207,27 @@ def load_background_media(background_image_path, background_video_path, backgrou
                     print("Pre-rendered video file is empty, falling back to real-time rendering")
             else:
                 print("Pre-rendering failed, falling back to real-time rendering")
+        except Exception as e:
+            print(f"Error pre-rendering shader: {e}")
+            print("Falling back to real-time rendering")
+            # Don't propagate pre-rendering errors, just fall back to real-time rendering
 
-            # Try to use the separate process GPU-based OpenGL renderer
-            try:
-                print("Attempting to use separate process GPU-based OpenGL renderer...")
+        # If pre-rendering failed or was skipped, try real-time rendering
+        if background_shader_path:
+            # No try-except here - let errors propagate to the caller
+            print("Attempting to use separate process GPU-based OpenGL renderer...")
 
-                # Import the ProcessShaderRenderer
-                from modules.process_shader_renderer import ProcessShaderRenderer
+            # Import the ProcessShaderRenderer
+            from modules.process_shader_renderer import ProcessShaderRenderer
 
-                # Create the GPU-based renderer
-                print(f"Creating ProcessShaderRenderer for {background_shader_path}...")
-                shader_renderer = ProcessShaderRenderer(background_shader_path, width, height)
-                print("ProcessShaderRenderer instance created successfully")
-
-            except Exception as gpu_error:
-                print(f"Process-based GPU renderer failed: {gpu_error}")
-                import traceback
-                traceback.print_exc()
-                print("Falling back to CPU-based renderer...")
-
-                # Fall back to the simple CPU-based renderer
-                shader_renderer = SimpleShaderRenderer(background_shader_path, width, height)
-                print("Using CPU-based fallback renderer (slower but more compatible)")
+            # Create the GPU-based renderer - let exceptions propagate
+            print(f"Creating ProcessShaderRenderer for {background_shader_path}...")
+            shader_renderer = ProcessShaderRenderer(background_shader_path, width, height)
+            print("ProcessShaderRenderer instance created successfully")
 
             print(f"Background shader loaded: {background_shader_path}")
 
-            # Test render a frame to make sure it works
+            # Test render a frame to make sure it works - let exceptions propagate
             test_frame = shader_renderer.render_frame(0.0)
             print(f"Test frame rendered: {test_frame.size}, mode: {test_frame.mode}")
 
@@ -240,11 +236,6 @@ def load_background_media(background_image_path, background_video_path, backgrou
             print("Test frame saved to shader_test_frame.png")
 
             return background_pil, video_capture, bg_frame_count, bg_fps, shader_renderer
-        except Exception as e:
-            print(f"Error loading shader: {e}")
-            import traceback
-            traceback.print_exc()
-            shader_renderer = None
 
     # Try to load video if shader failed or not specified
     if not shader_renderer and background_video_path and os.path.exists(background_video_path):
@@ -468,21 +459,75 @@ class ShaderRenderer:
         # Read pixels
         data = self.fbo.read(components=4)
 
-        # Check if data is all zeros
+        # Check if data is all zeros or nearly all zeros (black screen)
         pixel_data = np.frombuffer(data, dtype=np.uint8)
-        if np.all(pixel_data == 0):
-            print("Warning: Rendered frame is completely black")
 
-            # Create a fallback gradient for debugging
-            image = Image.new("RGBA", (self.width, self.height), (0, 0, 0, 255))
-            for y in range(self.height):
-                for x in range(self.width):
-                    r = int(255 * x / self.width)
-                    g = int(255 * y / self.height)
-                    b = int(255 * current_time % 1.0)
-                    image.putpixel((x, y), (r, g, b, 255))
-            print("Created fallback gradient image for debugging")
-            return image
+        # Calculate the average brightness of the image
+        # This is more robust than checking if all pixels are exactly 0
+        avg_brightness = np.mean(pixel_data)
+
+        # Check if the image is completely black or nearly black
+        if avg_brightness < 1.0:
+            print(f"Error: Rendered frame is completely or nearly black (avg brightness: {avg_brightness})")
+
+            # Save the black image for debugging
+            debug_image = Image.frombytes('RGBA', (self.width, self.height), data).transpose(Image.FLIP_TOP_BOTTOM)
+            debug_path = f"shader_debug_black_{os.path.basename(self.shader_path)}.png"
+            debug_image.save(debug_path)
+            print(f"Saved debug black image to {debug_path}")
+
+            # Create a detailed error message
+            error_message = f"""
+The shader '{self.shader_path}' was compiled successfully but produced a black or nearly black image.
+This usually indicates a problem with the shader code.
+
+Error details:
+- Shader path: {self.shader_path}
+- Dimensions: {self.width}x{self.height}
+- Time value: {current_time}
+- Average brightness: {avg_brightness}
+
+Possible solutions:
+1. Check if the shader has logic errors
+2. Create a fixed version in the glsl/fixed directory
+3. Add the shader to the list of known problematic shaders in shader.py
+"""
+            # Log the error
+            print(error_message)
+
+            # Create an error image for the UI
+            from PIL import ImageDraw, ImageFont
+            error_image = Image.new("RGBA", (self.width, self.height), (0, 0, 0, 255))
+            draw = ImageDraw.Draw(error_image)
+
+            # Add error text
+            try:
+                # Try to load a font
+                font = ImageFont.truetype("Arial.ttf", 24)
+            except:
+                # Fall back to default font
+                font = ImageFont.load_default()
+
+            # Draw the error message
+            shader_name = os.path.basename(self.shader_path)
+            draw.text((self.width//2, self.height//2 - 50), f"SHADER ERROR: {shader_name}",
+                     fill=(255, 0, 0), anchor="mm", font=font)
+            draw.text((self.width//2, self.height//2), f"Shader produced a black image (brightness: {avg_brightness:.2f})",
+                     fill=(255, 0, 0), anchor="mm", font=font)
+            draw.text((self.width//2, self.height//2 + 50), "See logs for details",
+                     fill=(255, 0, 0), anchor="mm", font=font)
+
+            # Save the error image for reference
+            error_image_path = f"shader_error_black_{os.path.basename(self.shader_path)}.png"
+            error_image.save(error_image_path)
+            print(f"Saved error image to {error_image_path}")
+
+            # Raise our custom ShaderError exception
+            raise ShaderError(
+                message=f"Shader produced a black image (brightness: {avg_brightness:.2f})",
+                shader_path=self.shader_path,
+                details=error_message
+            )
 
         # Convert to PIL Image
         image = Image.frombytes('RGBA', (self.width, self.height), data).transpose(Image.FLIP_TOP_BOTTOM)
@@ -516,140 +561,100 @@ class ShaderRenderer:
 
 class SimpleShaderRenderer:
     """
-    A simple CPU-based shader renderer that doesn't rely on OpenGL.
-    This is a fallback for when the OpenGL-based renderer fails.
+    A shader renderer that throws immediate errors instead of using fallback patterns.
+    This replaces the previous CPU-based renderer that used checkerboard patterns.
     """
     def __init__(self, shader_path, width, height):
         """
-        Initialize the simple shader renderer.
+        Initialize the shader renderer.
 
         Args:
-            shader_path (str): Path to the shader file (not used, just for identification)
+            shader_path (str): Path to the shader file
             width (int): Width of the output
             height (int): Height of the output
+
+        Raises:
+            RuntimeError: Always raises an error with detailed information about the shader failure
         """
+        import os
+        import traceback
         import time
+        from PIL import Image, ImageDraw, ImageFont
+
         self.shader_path = shader_path
         self.width = width
         self.height = height
-        self.start_time = time.time()
-        print(f"Initializing simple CPU-based shader renderer for {shader_path} at {width}x{height}")
+
+        # Get the shader name for the error message
+        shader_name = os.path.basename(shader_path)
+
+        # Collect error information
+        error_info = {
+            "shader_path": shader_path,
+            "shader_name": shader_name,
+            "width": width,
+            "height": height,
+            "traceback": traceback.format_exc()
+        }
+
+        # Create a detailed error message
+        error_message = f"""
+SHADER ERROR: Failed to render shader '{shader_name}'
+
+The shader '{shader_path}' could not be rendered using the GPU-based renderer.
+Instead of falling back to a CPU-based renderer with checkerboard patterns,
+this error is being thrown immediately to provide better feedback.
+
+Error details:
+- Shader path: {shader_path}
+- Dimensions: {width}x{height}
+- Traceback: {error_info['traceback']}
+
+Possible solutions:
+1. Check if the shader has syntax errors
+2. Create a fixed version in the glsl/fixed directory
+3. Add the shader to the list of known problematic shaders in shader.py
+"""
+
+        # Log the error
+        print(error_message)
+
+        # Create an error image for the UI
+        error_image = Image.new("RGBA", (width, height), (0, 0, 0, 255))
+        draw = ImageDraw.Draw(error_image)
+
+        # Add error text
+        try:
+            # Try to load a font
+            font = ImageFont.truetype("Arial.ttf", 24)
+        except:
+            # Fall back to default font
+            font = ImageFont.load_default()
+
+        # Draw the error message
+        draw.text((width//2, height//2 - 50), f"SHADER ERROR: {shader_name}",
+                 fill=(255, 0, 0), anchor="mm", font=font)
+        draw.text((width//2, height//2), "Shader could not be rendered",
+                 fill=(255, 0, 0), anchor="mm", font=font)
+        draw.text((width//2, height//2 + 50), "See logs for details",
+                 fill=(255, 0, 0), anchor="mm", font=font)
+
+        # Save the error image for reference
+        error_image_path = f"shader_error_{shader_name}.png"
+        error_image.save(error_image_path)
+        print(f"Saved error image to {error_image_path}")
+
+        # Raise the error
+        raise RuntimeError(f"Shader '{shader_name}' failed to render. See logs for details.")
 
     def render_frame(self, current_time=None):
         """
-        Render a frame at the given time using CPU-based rendering.
+        This method should never be called since the constructor always raises an error.
 
-        Args:
-            current_time (float, optional): Time to use for rendering. If None, uses elapsed time.
-
-        Returns:
-            PIL.Image: Rendered frame
+        Raises:
+            RuntimeError: Always raises an error
         """
-        import time
-        from PIL import Image
-        import numpy as np
-        import math
-
-        # Calculate time if not provided
-        if current_time is None:
-            current_time = time.time() - self.start_time
-
-        print(f"SimpleShaderRenderer: Rendering frame at time {current_time:.2f}")
-
-        # Create a new image
-        image = Image.new("RGBA", (self.width, self.height), (0, 0, 0, 255))
-
-        # Extract shader name from path for pattern selection
-        shader_name = os.path.basename(self.shader_path).replace(".glsl", "")
-        print(f"SimpleShaderRenderer: Using pattern for shader: {shader_name}")
-
-        # Render different patterns based on shader name
-        if "simple_test" in shader_name:
-            print("SimpleShaderRenderer: Using simple_test pattern (solid red)")
-            # Simple red background - use a faster approach for large images
-            red_array = np.zeros((self.height, self.width, 4), dtype=np.uint8)
-            red_array[:, :, 0] = 255  # Red channel
-            red_array[:, :, 3] = 255  # Alpha channel
-            image = Image.fromarray(red_array, 'RGBA')
-            print(f"SimpleShaderRenderer: Created red image: {image.size}, mode: {image.mode}")
-
-        elif "test" in shader_name:
-            print("SimpleShaderRenderer: Using test pattern (colorful gradient)")
-            # Colorful gradient based on time - use numpy for faster processing
-            x = np.linspace(0, 1, self.width)
-            y = np.linspace(0, 1, self.height)
-            X, Y = np.meshgrid(x, y)
-
-            R = np.uint8(255 * (0.5 + 0.5 * np.cos(current_time + X * 6.28)))
-            G = np.uint8(255 * (0.5 + 0.5 * np.cos(current_time + Y * 6.28 + 2.1)))
-            B = np.uint8(255 * (0.5 + 0.5 * np.cos(current_time + (X+Y) * 3.14 + 4.2)))
-            A = np.full((self.height, self.width), 255, dtype=np.uint8)
-
-            img_array = np.stack((R, G, B, A), axis=2)
-            image = Image.fromarray(img_array, 'RGBA')
-            print(f"SimpleShaderRenderer: Created gradient image: {image.size}, mode: {image.mode}")
-
-        elif "singularity" in shader_name:
-            print("SimpleShaderRenderer: Using singularity pattern (circular)")
-            # Create coordinate arrays
-            x = np.linspace(-1, 1, self.width)
-            y = np.linspace(-1, 1, self.height)
-            X, Y = np.meshgrid(x, y)
-
-            # Calculate distance and angle
-            dist = np.sqrt(X**2 + Y**2)
-            angle = np.arctan2(Y, X)
-
-            # Calculate RGB values
-            R = np.uint8(255 * (0.5 + 0.5 * np.sin(dist * 10 - current_time)))
-            G = np.uint8(255 * (0.5 + 0.5 * np.sin(angle * 3 + current_time)))
-            B = np.uint8(255 * (0.5 + 0.5 * np.sin(dist * 5 + angle * 2 + current_time * 0.7)))
-            A = np.full((self.height, self.width), 255, dtype=np.uint8)
-
-            img_array = np.stack((R, G, B, A), axis=2)
-            image = Image.fromarray(img_array, 'RGBA')
-            print(f"SimpleShaderRenderer: Created circular pattern image: {image.size}, mode: {image.mode}")
-
-        else:
-            print("SimpleShaderRenderer: Using default pattern (checkerboard)")
-            # Default pattern - checkerboard with moving colors
-            checker_size = 32
-
-            # Create coordinate arrays
-            x = np.arange(self.width)
-            y = np.arange(self.height)
-            X, Y = np.meshgrid(x, y)
-
-            # Create checkerboard pattern
-            checker = ((X // checker_size) + (Y // checker_size)) % 2
-            t_factor = math.sin(current_time) * 0.5 + 0.5
-
-            # Initialize RGB arrays
-            R = np.zeros((self.height, self.width), dtype=np.uint8)
-            G = np.zeros((self.height, self.width), dtype=np.uint8)
-            B = np.zeros((self.height, self.width), dtype=np.uint8)
-
-            # Set colors based on checker pattern
-            R[checker == 1] = int(255 * t_factor)
-            G[checker == 1] = int(128 * (1 - t_factor))
-            B[checker == 1] = int(192 * (0.5 + 0.5 * math.sin(current_time * 2)))
-
-            R[checker == 0] = int(128 * (1 - t_factor))
-            G[checker == 0] = int(255 * t_factor)
-            B[checker == 0] = int(192 * (0.5 + 0.5 * math.sin(current_time * 2 + 3.14)))
-
-            A = np.full((self.height, self.width), 255, dtype=np.uint8)
-
-            img_array = np.stack((R, G, B, A), axis=2)
-            image = Image.fromarray(img_array, 'RGBA')
-            print(f"SimpleShaderRenderer: Created checkerboard image: {image.size}, mode: {image.mode}")
-
-        # Save a copy of the rendered frame for debugging
-        debug_path = f"shader_frame_{current_time:.2f}.png"
-        image.save(debug_path)
-        print(f"SimpleShaderRenderer: Saved debug frame to {debug_path}")
-
-        return image
+        raise RuntimeError("SimpleShaderRenderer.render_frame() should never be called")
 
     def cleanup(self):
         """Clean up resources (no-op for this renderer)."""
@@ -779,25 +784,13 @@ def process_video_frame(video_capture, shader_renderer, width, height, current_t
 
     # If video capture failed or is not available, try shader renderer
     if shader_renderer:
-        try:
-            # Render the frame
-            current_frame_pil = shader_renderer.render_frame(current_time)
+        # Render the frame - don't catch exceptions here to allow them to propagate
+        # This ensures that shader errors are properly displayed to the user
+        current_frame_pil = shader_renderer.render_frame(current_time)
 
-            # Update last good frame
-            last_good_frame = current_frame_pil.copy()
-            return current_frame_pil, last_good_frame
-        except Exception as e:
-            print(f"Error rendering shader frame: {e}")
-            if last_good_frame:
-                return last_good_frame.copy(), last_good_frame
-            else:
-                # Create a fallback frame if shader rendering fails
-                print("Creating fallback frame due to shader rendering failure")
-                from PIL import Image, ImageDraw
-                fallback = Image.new("RGBA", (width, height), (0, 0, 0, 255))
-                draw = ImageDraw.Draw(fallback)
-                draw.text((width//2, height//2), "Shader Error", fill=(255, 0, 0), anchor="mm")
-                return fallback, fallback
+        # Update last good frame
+        last_good_frame = current_frame_pil.copy()
+        return current_frame_pil, last_good_frame
 
     # If we get here, neither video_capture nor shader_renderer worked
     if last_good_frame:

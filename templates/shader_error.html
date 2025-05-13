@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shader Error - Music Visualizer Suite</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .error-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .error-header {
+            background-color: #dc3545;
+            color: white;
+            padding: 20px;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .error-body {
+            background-color: #2b2b2b;
+            padding: 30px;
+            border-radius: 0 0 8px 8px;
+        }
+        
+        .error-title {
+            margin-bottom: 20px;
+        }
+        
+        .error-details {
+            background-color: #1e1e1e;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Fira Code', monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+        
+        .error-message {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+        
+        .back-button {
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5 mb-5">
+        <div class="error-container">
+            <div class="error-header">
+                <h2><i class="bi bi-exclamation-triangle-fill me-3"></i>Shader Error</h2>
+            </div>
+            <div class="error-body">
+                <h3 class="error-title">{{ shader_name }}</h3>
+                
+                <div class="error-message">
+                    <p>The shader failed to render properly. This could be due to:</p>
+                    <ul>
+                        <li>Syntax errors in the shader code</li>
+                        <li>Compatibility issues with your graphics hardware</li>
+                        <li>Resource limitations</li>
+                    </ul>
+                </div>
+                
+                <h4>Technical Details:</h4>
+                <div class="error-details">{{ error_details }}</div>
+                
+                <div class="back-button text-center">
+                    <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-house-door me-2"></i>Return to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="container text-center mt-5 py-4">
+        <div class="mb-3">
+            <i class="bi bi-soundwave" style="font-size: 1.5rem; color: var(--primary-color);"></i>
+        </div>
+        <p class="mb-2">Created by Marco van Hylckama Vlieg</p>
+        <p class="mb-0">
+            <a href="https://x.com/AIandDesign" target="_blank" rel="noopener noreferrer" class="me-3">
+                <i class="bi bi-twitter-x me-1"></i> @AIandDesign
+            </a>
+        </p>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

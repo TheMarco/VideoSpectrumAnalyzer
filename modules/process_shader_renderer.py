@@ -96,13 +96,57 @@ class ProcessShaderRenderer:
                 print(f"Command output: {result.stdout}")
                 print(f"Command error: {result.stderr}")
 
-                # Create a fallback image
-                fallback = Image.new("RGBA", (self.width, self.height), (0, 0, 0, 255))
-                # Add some visual indication this is a fallback
-                from PIL import ImageDraw
-                draw = ImageDraw.Draw(fallback)
-                draw.text((self.width//2, self.height//2), "Shader Error", fill=(255, 0, 0), anchor="mm")
-                return fallback
+                # Create a detailed error message
+                error_message = f"""
+SHADER ERROR: Failed to render shader '{os.path.basename(self.shader_path)}'
+
+The shader '{self.shader_path}' could not be rendered using the GPU-based renderer.
+No output file was produced by the shader rendering process.
+
+Error details:
+- Shader path: {self.shader_path}
+- Dimensions: {self.width}x{self.height}
+- Time value: {time_value}
+- Command output: {result.stdout}
+- Command error: {result.stderr}
+
+Possible solutions:
+1. Check if the shader has syntax errors
+2. Create a fixed version in the glsl/fixed directory
+3. Add the shader to the list of known problematic shaders in shader.py
+"""
+                # Log the error
+                print(error_message)
+
+                # Create an error image for the UI
+                from PIL import Image, ImageDraw, ImageFont
+                error_image = Image.new("RGBA", (self.width, self.height), (0, 0, 0, 255))
+                draw = ImageDraw.Draw(error_image)
+
+                # Add error text
+                try:
+                    # Try to load a font
+                    font = ImageFont.truetype("Arial.ttf", 24)
+                except:
+                    # Fall back to default font
+                    font = ImageFont.load_default()
+
+                # Draw the error message
+                shader_name = os.path.basename(self.shader_path)
+                draw.text((self.width//2, self.height//2 - 50), f"SHADER ERROR: {shader_name}",
+                         fill=(255, 0, 0), anchor="mm", font=font)
+                draw.text((self.width//2, self.height//2), "Shader could not be rendered",
+                         fill=(255, 0, 0), anchor="mm", font=font)
+                draw.text((self.width//2, self.height//2 + 50), "See logs for details",
+                         fill=(255, 0, 0), anchor="mm", font=font)
+
+                # Save the error image for reference
+                error_image_path = f"shader_error_{os.path.basename(self.shader_path)}.png"
+                error_image.save(error_image_path)
+                print(f"Saved error image to {error_image_path}")
+
+                # Raise the error
+                raise RuntimeError(f"Shader '{os.path.basename(self.shader_path)}' failed to render. See logs for details.")
 
             # Load the rendered frame
             try:
@@ -113,6 +157,65 @@ class ProcessShaderRenderer:
                 # Need to reopen after verify
                 image = Image.open(output_path)
 
+                # Check if the image is all black (potential shader failure)
+                if image.mode == "RGBA":
+                    # Convert to numpy array for faster processing
+                    import numpy as np
+                    img_array = np.array(image)
+                    # Check if all pixels are black (RGB = 0,0,0)
+                    if np.all(img_array[:,:,:3] == 0):
+                        print("Warning: Rendered image is completely black, likely a shader error")
+
+                        # Create a detailed error message
+                        error_message = f"""
+SHADER ERROR: Shader '{os.path.basename(self.shader_path)}' rendered a completely black image
+
+The shader '{self.shader_path}' was compiled successfully but produced a completely black image.
+This usually indicates a problem with the shader code.
+
+Error details:
+- Shader path: {self.shader_path}
+- Dimensions: {self.width}x{self.height}
+- Time value: {time_value}
+
+Possible solutions:
+1. Check if the shader has logic errors
+2. Create a fixed version in the glsl/fixed directory
+3. Add the shader to the list of known problematic shaders in shader.py
+"""
+                        # Log the error
+                        print(error_message)
+
+                        # Create an error image for the UI
+                        from PIL import ImageDraw, ImageFont
+                        error_image = Image.new("RGBA", (self.width, self.height), (0, 0, 0, 255))
+                        draw = ImageDraw.Draw(error_image)
+
+                        # Add error text
+                        try:
+                            # Try to load a font
+                            font = ImageFont.truetype("Arial.ttf", 24)
+                        except:
+                            # Fall back to default font
+                            font = ImageFont.load_default()
+
+                        # Draw the error message
+                        shader_name = os.path.basename(self.shader_path)
+                        draw.text((self.width//2, self.height//2 - 50), f"SHADER ERROR: {shader_name}",
+                                 fill=(255, 0, 0), anchor="mm", font=font)
+                        draw.text((self.width//2, self.height//2), "Shader produced a black image",
+                                 fill=(255, 0, 0), anchor="mm", font=font)
+                        draw.text((self.width//2, self.height//2 + 50), "See logs for details",
+                                 fill=(255, 0, 0), anchor="mm", font=font)
+
+                        # Save the error image for reference
+                        error_image_path = f"shader_error_black_{os.path.basename(self.shader_path)}.png"
+                        error_image.save(error_image_path)
+                        print(f"Saved error image to {error_image_path}")
+
+                        # Raise the error
+                        raise RuntimeError(f"Shader '{os.path.basename(self.shader_path)}' produced a black image. See logs for details.")
+
                 # Clean up the temporary file
                 try:
                     os.remove(output_path)
@@ -122,22 +225,166 @@ class ProcessShaderRenderer:
                 return image
             except Exception as img_error:
                 print(f"Error loading image: {img_error}")
-                # Create a fallback image
-                fallback = Image.new("RGBA", (self.width, self.height), (0, 0, 0, 255))
-                from PIL import ImageDraw
-                draw = ImageDraw.Draw(fallback)
-                draw.text((self.width//2, self.height//2), "Image Error", fill=(255, 0, 0), anchor="mm")
-                return fallback
+
+                # Create a detailed error message
+                error_message = f"""
+SHADER ERROR: Failed to load image for shader '{os.path.basename(self.shader_path)}'
+
+The shader '{self.shader_path}' produced an output file, but it could not be loaded as a valid image.
+
+Error details:
+- Shader path: {self.shader_path}
+- Dimensions: {self.width}x{self.height}
+- Time value: {time_value}
+- Error: {img_error}
+
+Possible solutions:
+1. Check if the shader has rendering errors
+2. Create a fixed version in the glsl/fixed directory
+3. Add the shader to the list of known problematic shaders in shader.py
+"""
+                # Log the error
+                print(error_message)
+
+                # Create an error image for the UI
+                from PIL import ImageDraw, ImageFont
+                error_image = Image.new("RGBA", (self.width, self.height), (0, 0, 0, 255))
+                draw = ImageDraw.Draw(error_image)
+
+                # Add error text
+                try:
+                    # Try to load a font
+                    font = ImageFont.truetype("Arial.ttf", 24)
+                except:
+                    # Fall back to default font
+                    font = ImageFont.load_default()
+
+                # Draw the error message
+                shader_name = os.path.basename(self.shader_path)
+                draw.text((self.width//2, self.height//2 - 50), f"SHADER ERROR: {shader_name}",
+                         fill=(255, 0, 0), anchor="mm", font=font)
+                draw.text((self.width//2, self.height//2), "Invalid image produced",
+                         fill=(255, 0, 0), anchor="mm", font=font)
+                draw.text((self.width//2, self.height//2 + 50), "See logs for details",
+                         fill=(255, 0, 0), anchor="mm", font=font)
+
+                # Save the error image for reference
+                error_image_path = f"shader_error_invalid_{os.path.basename(self.shader_path)}.png"
+                error_image.save(error_image_path)
+                print(f"Saved error image to {error_image_path}")
+
+                # Raise the error
+                raise RuntimeError(f"Shader '{os.path.basename(self.shader_path)}' produced an invalid image. See logs for details.")
 
         except subprocess.CalledProcessError as e:
             print(f"Error rendering frame: {e}")
             print(f"Command output: {e.stdout}")
             print(f"Command error: {e.stderr}")
-            return None
+
+            # Create a detailed error message
+            error_message = f"""
+SHADER ERROR: Process error while rendering shader '{os.path.basename(self.shader_path)}'
+
+The shader rendering process failed with an error.
+
+Error details:
+- Shader path: {self.shader_path}
+- Dimensions: {self.width}x{self.height}
+- Time value: {time_value}
+- Error: {e}
+- Command output: {e.stdout}
+- Command error: {e.stderr}
+
+Possible solutions:
+1. Check if the shader has syntax errors
+2. Create a fixed version in the glsl/fixed directory
+3. Add the shader to the list of known problematic shaders in shader.py
+"""
+            # Log the error
+            print(error_message)
+
+            # Create an error image for the UI
+            from PIL import Image, ImageDraw, ImageFont
+            error_image = Image.new("RGBA", (self.width, self.height), (0, 0, 0, 255))
+            draw = ImageDraw.Draw(error_image)
+
+            # Add error text
+            try:
+                # Try to load a font
+                font = ImageFont.truetype("Arial.ttf", 24)
+            except:
+                # Fall back to default font
+                font = ImageFont.load_default()
+
+            # Draw the error message
+            shader_name = os.path.basename(self.shader_path)
+            draw.text((self.width//2, self.height//2 - 50), f"SHADER ERROR: {shader_name}",
+                     fill=(255, 0, 0), anchor="mm", font=font)
+            draw.text((self.width//2, self.height//2), "Process error during rendering",
+                     fill=(255, 0, 0), anchor="mm", font=font)
+            draw.text((self.width//2, self.height//2 + 50), "See logs for details",
+                     fill=(255, 0, 0), anchor="mm", font=font)
+
+            # Save the error image for reference
+            error_image_path = f"shader_error_process_{os.path.basename(self.shader_path)}.png"
+            error_image.save(error_image_path)
+            print(f"Saved error image to {error_image_path}")
+
+            # Raise the error
+            raise RuntimeError(f"Process error while rendering shader '{os.path.basename(self.shader_path)}'. See logs for details.")
 
         except Exception as e:
             print(f"Error rendering frame: {e}")
-            return None
+
+            # Create a detailed error message
+            error_message = f"""
+SHADER ERROR: Unexpected error while rendering shader '{os.path.basename(self.shader_path)}'
+
+An unexpected error occurred while rendering the shader.
+
+Error details:
+- Shader path: {self.shader_path}
+- Dimensions: {self.width}x{self.height}
+- Time value: {time_value}
+- Error: {e}
+
+Possible solutions:
+1. Check if the shader has syntax errors
+2. Create a fixed version in the glsl/fixed directory
+3. Add the shader to the list of known problematic shaders in shader.py
+"""
+            # Log the error
+            print(error_message)
+
+            # Create an error image for the UI
+            from PIL import Image, ImageDraw, ImageFont
+            error_image = Image.new("RGBA", (self.width, self.height), (0, 0, 0, 255))
+            draw = ImageDraw.Draw(error_image)
+
+            # Add error text
+            try:
+                # Try to load a font
+                font = ImageFont.truetype("Arial.ttf", 24)
+            except:
+                # Fall back to default font
+                font = ImageFont.load_default()
+
+            # Draw the error message
+            shader_name = os.path.basename(self.shader_path)
+            draw.text((self.width//2, self.height//2 - 50), f"SHADER ERROR: {shader_name}",
+                     fill=(255, 0, 0), anchor="mm", font=font)
+            draw.text((self.width//2, self.height//2), "Unexpected error during rendering",
+                     fill=(255, 0, 0), anchor="mm", font=font)
+            draw.text((self.width//2, self.height//2 + 50), "See logs for details",
+                     fill=(255, 0, 0), anchor="mm", font=font)
+
+            # Save the error image for reference
+            error_image_path = f"shader_error_unexpected_{os.path.basename(self.shader_path)}.png"
+            error_image.save(error_image_path)
+            print(f"Saved error image to {error_image_path}")
+
+            # Raise the error
+            raise RuntimeError(f"Unexpected error while rendering shader '{os.path.basename(self.shader_path)}'. See logs for details.")
 
     def cleanup(self):
         """Clean up resources."""

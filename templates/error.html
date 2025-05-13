@@ -29,6 +29,27 @@
                     </div>
                     <div class="card-body">
                         <div class="error-pre mb-4">{{ message }}</div>
+
+                        {% if error_type == 'shader_error' %}
+                        <div class="alert alert-danger">
+                            <h5 class="alert-heading">Shader Error</h5>
+                            <p>{{ error_message }}</p>
+
+                            <p>This could be due to:</p>
+                            <ul>
+                                <li>Syntax errors in the shader code</li>
+                                <li>Compatibility issues with your graphics hardware</li>
+                                <li>Resource limitations</li>
+                            </ul>
+
+                            {% if error_details %}
+                            <hr>
+                            <h6>Technical Details:</h6>
+                            <pre class="bg-dark text-light p-3 rounded" style="max-height: 300px; overflow-y: auto;">{{ error_details }}</pre>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
                         <div class="d-grid gap-3">
                             <a href="{{ url_for('index') }}" class="btn btn-primary">
                                 <i class="bi bi-house-fill me-2"></i> Return to Home

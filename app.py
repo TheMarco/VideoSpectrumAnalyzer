@@ -1,7 +1,7 @@
 import os
 import uuid
 import json
-from flask import Flask, request, render_template, jsonify, send_from_directory, url_for
+from flask import Flask, request, render_template, jsonify, send_from_directory, url_for, redirect
 import subprocess
 import threading
 from werkzeug.utils import secure_filename
@@ -9,6 +9,7 @@ import traceback
 import glob
 import re
 import logging
+from modules.shader_error import ShaderError
 
 # Set to DEBUG during development, INFO in production
 if os.environ.get('DEBUG') == '1':
@@ -108,6 +109,26 @@ def visualizer_form(name):
     return render_template(template, visualizer=visualizer, shaders=shaders)
 
 
+@app.route("/shader_error")
+def shader_error():
+    """Display a shader error page."""
+    shader_name = request.args.get("shader_name", "Unknown Shader")
+    error_details = request.args.get("error_details", "No error details available")
+
+    # Log the error
+    print(f"Displaying shader error page for {shader_name}")
+    print(f"Error details: {error_details}")
+
+    # Use the error.html template instead
+    return render_template(
+        "error.html",
+        error_title=f"Shader Error: {shader_name}",
+        error_type="shader_error",
+        error_message=f"The shader '{shader_name}' failed to render properly.",
+        error_details=error_details,
+        message=f"The shader '{shader_name}' failed to render properly."
+    )
+
 @app.route("/upload", methods=["POST"])
 def upload_file():
     # Get the visualizer name from the form
@@ -119,6 +140,15 @@ def upload_file():
     visualizer = registry.get_visualizer(visualizer_name)
     if not visualizer:
         return jsonify({"error": f"Visualizer '{visualizer_name}' not found"}), 404
+
+    # Check if a shader is specified and if it exists
+    background_shader_path = request.form.get("background_shader_path")
+    if background_shader_path and not os.path.exists(background_shader_path):
+        error_message = f"Shader file not found: {background_shader_path}"
+        return jsonify({
+            "error": error_message,
+            "redirect": url_for("shader_error", shader_name=os.path.basename(background_shader_path), error_details=error_message)
+        }), 400
 
     # --- Basic File Handling (Audio) ---
     if "file" not in request.files:
@@ -326,25 +356,131 @@ def process_video(
             )
             jobs[job_id]["status"] = "completed"
             jobs[job_id]["progress"] = 100
-        except Exception as e:
+        except ShaderError as e:
+            # Handle our custom ShaderError exception
+            print(f"Shader error in job {job_id}: {e}")
+
+            # Get the shader name and error details
+            shader_name = e.get_shader_name()
+            error_details = str(e)
+
+            # Set detailed error information in the job data
             jobs[job_id]["status"] = "failed"
-            jobs[job_id]["error"] = f"{str(e)}\n{traceback.format_exc()}"
+            jobs[job_id]["error"] = error_details
+            jobs[job_id]["error_type"] = "shader_error"
+            jobs[job_id]["shader_name"] = shader_name
+
+            # Store the error details directly in the job data
+            jobs[job_id]["shader_error_details"] = {
+                "shader_name": shader_name,
+                "error_message": error_details,
+                "shader_path": e.shader_path
+            }
+
+            # Log that we're setting the error
+            print(f"Setting shader error in job data: {jobs[job_id]['error']}")
+
+        except Exception as e:
+            error_message = f"{str(e)}\n{traceback.format_exc()}"
             print(f"Error processing job {job_id}: {e}")
+            print(f"Full error details: {error_message}")
             traceback.print_exc()
-    except Exception as e:
+
+            # Set detailed error information in the job data
+            jobs[job_id]["status"] = "failed"
+            jobs[job_id]["error"] = error_message
+
+            # Check if this is a shader error
+            is_shader_error = "shader" in str(e).lower() or ".glsl" in str(e).lower()
+            jobs[job_id]["error_type"] = "shader_error" if is_shader_error else "processing_error"
+
+            # If it's a shader error, store the details directly
+            if is_shader_error and background_shader_file:
+                shader_name = os.path.basename(background_shader_file)
+                jobs[job_id]["shader_name"] = shader_name
+                jobs[job_id]["shader_error_details"] = {
+                    "shader_name": shader_name,
+                    "error_message": str(e),
+                    "shader_path": background_shader_file
+                }
+
+            # Log that we're setting the error
+            print(f"Setting error in job data: {jobs[job_id]['error']}")
+    except ShaderError as e:
+        # Handle our custom ShaderError exception
+        print(f"Shader error in job {job_id}: {e}")
+
+        # Get the shader name and error details
+        shader_name = e.get_shader_name()
+        error_details = str(e)
+
+        # Set detailed error information in the job data
         jobs[job_id]["status"] = "failed"
-        jobs[job_id]["error"] = f"{str(e)}\n{traceback.format_exc()}"
+        jobs[job_id]["error"] = error_details
+        jobs[job_id]["error_type"] = "shader_error"
+        jobs[job_id]["shader_name"] = shader_name
+
+        # Store the error details directly in the job data
+        jobs[job_id]["shader_error_details"] = {
+            "shader_name": shader_name,
+            "error_message": error_details,
+            "shader_path": e.shader_path
+        }
+
+        # Log that we're setting the error
+        print(f"Setting shader error in job data: {jobs[job_id]['error']}")
+
+    except Exception as e:
+        error_message = f"{str(e)}\n{traceback.format_exc()}"
         print(f"Error processing job {job_id}: {e}")
+        print(f"Full error details: {error_message}")
         traceback.print_exc()
+
+        # Set detailed error information in the job data
+        jobs[job_id]["status"] = "failed"
+        jobs[job_id]["error"] = error_message
+
+        # Check if this is a shader error
+        is_shader_error = "shader" in str(e).lower() or ".glsl" in str(e).lower()
+        jobs[job_id]["error_type"] = "shader_error" if is_shader_error else "processing_error"
+
+        # If it's a shader error, store the details directly
+        if is_shader_error and background_shader_file:
+            shader_name = os.path.basename(background_shader_file)
+            jobs[job_id]["shader_name"] = shader_name
+            jobs[job_id]["shader_error_details"] = {
+                "shader_name": shader_name,
+                "error_message": str(e),
+                "shader_path": background_shader_file
+            }
+
+        # Log that we're setting the error
+        print(f"Setting error in job data: {jobs[job_id]['error']}")
 
 
 @app.route("/job_status/<job_id>", methods=["GET"])
 def job_status(job_id):
     if job_id not in jobs:
         return jsonify({"error": "Job not found"}), 404
+
     job_data = jobs[job_id].copy()
+
+    # Make sure error information is properly included
+    if job_data.get("status") == "failed" and "error" in job_data:
+        # Ensure the error is properly formatted for JSON
+        error_message = job_data["error"]
+        print(f"DEBUG: Error message in job data: {error_message}")
+
+        # Make sure the error message is a string
+        if not isinstance(error_message, str):
+            error_message = str(error_message)
+
+        # Update the job data with the formatted error
+        job_data["error"] = error_message
+
     # Debug: Print job data being sent to client
     print(f"DEBUG: Sending job data to client: {job_data}")
+
     # Ensure sensitive paths aren't sent to client if needed, but okay for now
     return jsonify(job_data)
 
