@@ -607,6 +607,40 @@ void mainImage(out vec4 o, vec2 u) {
         text = pathlib.Path(fixed_path).read_text()
         return text
 
+    # Special case for mandelbulb.glsl
+    if filename == "mandelbulb.glsl":
+        fixed_path = os.path.join(fixed_dir, "mandelbulb_fixed.glsl")
+        buffer_path = os.path.join(fixed_dir, "mandelbulb-buffer_fixed.glsl")
+
+        # Check if fixed versions exist
+        if not os.path.exists(fixed_path) or not os.path.exists(buffer_path):
+            print(f"Creating fixed versions for mandelbulb shader")
+
+            # Create the fixed buffer version if it doesn't exist
+            if not os.path.exists(buffer_path):
+                # Get the buffer content
+                buffer_content_path = os.path.join(os.path.dirname(shader_path), "mandelbulb-buffer.glsl")
+                if os.path.exists(buffer_content_path):
+                    buffer_content = pathlib.Path(buffer_content_path).read_text()
+                    # Write the fixed buffer version
+                    with open(buffer_path, 'w') as f:
+                        f.write(buffer_content)
+                    print(f"Created fixed buffer version: {buffer_path}")
+                else:
+                    print(f"Error: Buffer file not found: {buffer_content_path}")
+                    return text
+
+            # Create the fixed main version if it doesn't exist
+            if not os.path.exists(fixed_path):
+                # Create the fixed version
+                with open(fixed_path, 'w') as f:
+                    f.write(text)
+                print(f"Created fixed main version: {fixed_path}")
+
+        print(f"Using fixed version of {filename} from {fixed_path}")
+        text = pathlib.Path(fixed_path).read_text()
+        return text
+
     # Special case for color_cloud_tunnel.glsl
     if filename == "color_cloud_tunnel.glsl":
         fixed_path = os.path.join(fixed_dir, "color_cloud_tunnel.glsl")
@@ -1126,6 +1160,10 @@ class ShaderRenderer:
         self.width = width
         self.height = height
         self.start_time = time.time()
+        self.buffer_shader = None
+        self.buffer_fbo = None
+        self.buffer_vao = None
+        self.buffer_prog = None
 
         print(f"Initializing shader renderer for {shader_path} at {width}x{height}")
 
@@ -1153,11 +1191,58 @@ class ShaderRenderer:
         self.ctx = moderngl.create_context()
         print(f"ModernGL context created: {self.ctx}")
 
+        # Check if this is a shader that needs a buffer
+        self.check_for_buffer_shader()
+
         # Load shader from file
         has_main, body, inline = load_snippet(shader_path)
 
         # Build shader program
         self.prog = build_program(self.ctx, has_main, body, inline)
+
+    def check_for_buffer_shader(self):
+        """
+        Check if this shader needs a buffer shader and set it up if needed.
+        """
+        filename = os.path.basename(self.shader_path)
+
+        # Check for mandelbulb shader
+        if filename == "mandelbulb.glsl":
+            print("Detected mandelbulb shader, setting up buffer shader")
+
+            # Get the buffer shader path
+            fixed_dir = os.path.join(os.path.dirname(self.shader_path), "fixed")
+            buffer_path = os.path.join(fixed_dir, "mandelbulb-buffer_fixed.glsl")
+
+            if os.path.exists(buffer_path):
+                # Load buffer shader
+                has_main_buffer, body_buffer, inline_buffer = load_snippet(buffer_path)
+
+                # Build buffer shader program
+                self.buffer_prog = build_program(self.ctx, has_main_buffer, body_buffer, inline_buffer)
+
+                # Create buffer VAO
+                self.quad = self.ctx.buffer(np.array([
+                    -1, -1,   1, -1,   -1, 1,
+                    -1,  1,   1, -1,    1, 1,
+                ], dtype='f4').tobytes())
+                self.buffer_vao = self.ctx.simple_vertex_array(self.buffer_prog, self.quad, 'in_vert')
+
+                # Create framebuffer for buffer shader
+                self.buffer_fbo = self.ctx.framebuffer(
+                    color_attachments=[self.ctx.texture((self.width, self.height), 4)]
+                )
+
+                # Set uniforms for buffer shader
+                self.buffer_prog['iResolution'].value = (self.width, self.height, 1.0)
+                if 'iMouse' in self.buffer_prog:
+                    self.buffer_prog['iMouse'].value = (0.0, 0.0, 0.0, 0.0)
+
+                print("Buffer shader setup complete")
+            else:
+                print(f"Warning: Buffer shader not found at {buffer_path}")
+
+        # Add more buffer shader cases here as needed
 
         # Create vertex buffer and VAO
         self.quad = self.ctx.buffer(np.array([
@@ -1167,7 +1252,7 @@ class ShaderRenderer:
         self.vao = self.ctx.simple_vertex_array(self.prog, self.quad, 'in_vert')
 
         # Set uniforms
-        self.prog['iResolution'].value = (width, height, 1.0)
+        self.prog['iResolution'].value = (self.width, self.height, 1.0)
         if 'iMouse' in self.prog:
             self.prog['iMouse'].value = (0.0, 0.0, 0.0, 0.0)
         if 'iFrame' in self.prog:
@@ -1177,10 +1262,10 @@ class ShaderRenderer:
         self.textures = []
         if 'iChannel0' in self.prog:
             # Use the high-quality noise texture for iChannel0
-            noise_path = os.path.join(os.path.dirname(shader_path), "textures", "noise_hq.png")
+            noise_path = os.path.join(os.path.dirname(self.shader_path), "textures", "noise_hq.png")
             # Fall back to regular noise.png if high-quality version doesn't exist
             if not os.path.exists(noise_path):
-                noise_path = os.path.join(os.path.dirname(shader_path), "textures", "noise.png")
+                noise_path = os.path.join(os.path.dirname(self.shader_path), "textures", "noise.png")
             if os.path.exists(noise_path):
                 try:
                     # Load the noise texture
@@ -1215,7 +1300,7 @@ class ShaderRenderer:
 
         # Create framebuffer for offscreen rendering
         self.fbo = self.ctx.framebuffer(
-            color_attachments=[self.ctx.texture((width, height), 4)]
+            color_attachments=[self.ctx.texture((self.width, self.height), 4)]
         )
 
         print(f"Shader initialization complete")
@@ -1281,7 +1366,29 @@ class ShaderRenderer:
         if time_value is None:
             time_value = time.time() - self.start_time
 
-        # Set time uniform
+        # Process GLFW events to keep the context alive
+        glfw.poll_events()
+
+        # Check if we need to render a buffer shader first
+        if self.buffer_prog is not None and self.buffer_vao is not None and self.buffer_fbo is not None:
+            # Set time uniform for buffer shader
+            if 'iTime' in self.buffer_prog:
+                self.buffer_prog['iTime'].value = time_value
+
+            # Set mouse uniform for buffer shader if needed
+            if 'iMouse' in self.buffer_prog:
+                # Use default values for offscreen rendering
+                self.buffer_prog['iMouse'].value = (0.0, 0.0, 0.0, 0.0)
+
+            # Render buffer shader to its framebuffer
+            self.buffer_fbo.use()
+            self.ctx.clear(0.0, 0.0, 0.0, 1.0)
+            self.buffer_vao.render()
+
+            # Use buffer texture as iChannel0 for main shader
+            self.buffer_fbo.color_attachments[0].use(location=0)
+
+        # Set time uniform for main shader
         if 'iTime' in self.prog:
             self.prog['iTime'].value = time_value
 
@@ -1292,10 +1399,7 @@ class ShaderRenderer:
             self.prog['iFrame'].value = self.frame_count
             self.frame_count += 1
 
-        # Process GLFW events to keep the context alive
-        glfw.poll_events()
-
-        # Render to framebuffer
+        # Render main shader to framebuffer
         self.fbo.use()
         self.ctx.clear(0.0, 0.0, 0.0, 1.0)
         self.vao.render()
@@ -1318,6 +1422,12 @@ class ShaderRenderer:
                 self.quad.release()
             if hasattr(self, 'prog'):
                 self.prog.release()
+
+            # Clean up buffer shader resources
+            if hasattr(self, 'buffer_fbo') and self.buffer_fbo:
+                self.buffer_fbo.release()
+            if hasattr(self, 'buffer_prog') and self.buffer_prog:
+                self.buffer_prog.release()
 
             # Release texture resources
             if hasattr(self, 'textures'):
