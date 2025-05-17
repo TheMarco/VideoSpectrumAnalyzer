@@ -119,14 +119,11 @@ def shader_error():
     print(f"Displaying shader error page for {shader_name}")
     print(f"Error details: {error_details}")
 
-    # Use the error.html template instead
+    # Use the dedicated shader error page template
     return render_template(
-        "error.html",
-        error_title=f"Shader Error: {shader_name}",
-        error_type="shader_error",
-        error_message=f"The shader '{shader_name}' failed to render properly.",
-        error_details=error_details,
-        message=f"The shader '{shader_name}' failed to render properly."
+        "shader_error_page.html",
+        shader_name=shader_name,
+        error_details=error_details
     )
 
 @app.route("/upload", methods=["POST"])

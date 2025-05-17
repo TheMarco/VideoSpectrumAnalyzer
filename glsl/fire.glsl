@@ -6,19 +6,20 @@ https://www.shadertoy.com/view/3XXSWS
 
 // Fork of "3D Fire [340]" by Xor. https://shadertoy.com/view/3XXSWS
 // 2025-05-06 22:13:32
+*/
 
 
 void mainImage(out vec4 fragColor, vec2 fragCoord)
 {
     // Time for animation
     float t = iTime;
-    
+
     // Raymarch loop iterator
     float i = 0.0;
-    
+
     // Raymarched depth (rayDepth)
     float rayDepth = 0.0;
-    
+
     // Raymarch step size and "Turbulence" frequency (stepSize)
     float stepSize;
 
@@ -35,8 +36,8 @@ void mainImage(out vec4 fragColor, vec2 fragCoord)
 
     // Calculate ray direction based on screen UV
     vec3 rd = normalize(
-        dir0 
-        + up * (uv.y + 1.0 / iResolution.y) 
+        dir0
+        + up * (uv.y + 1.0 / iResolution.y)
         + right * (uv.x + 1.0 / iResolution.x)
     );
 
@@ -63,7 +64,7 @@ void mainImage(out vec4 fragColor, vec2 fragCoord)
         float turbulenceFrequency = 2.0;
         for (int turbulenceIter = 0; turbulenceIter < 5; turbulenceIter++) {
             vec3 turbulenceOffset = cos(
-                (hitPoint.yzx - vec3(t / 0.1, t, turbulenceFrequency)) 
+                (hitPoint.yzx - vec3(t / 0.1, t, turbulenceFrequency))
                 * turbulenceFrequency
             );
             hitPoint += turbulenceOffset / turbulenceFrequency;

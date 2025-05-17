@@ -1,9 +1,7 @@
-/*
-[C]
-by mrange
-https://www.shadertoy.com/view/dtfSzs
-[/C]
-
+// Techno-plankton in alien ocean - Fixed version
+// Original by mrange
+// https://www.shadertoy.com/view/dtfSzs
+//
 // CC0: Techno-plankton in alien ocean
 //  Rethemed the colors of an earlier shader. 
 //  Original shader: https://www.shadertoy.com/view/dtSGWh
@@ -104,6 +102,7 @@ vec2 hextile(inout vec2 p) {
 float hash(vec2 co) {
   return fract(sin(dot(co.xy ,vec2(12.9898,58.233))) * 13758.5453);
 }
+
 vec3 effect0(vec2 p, float aa) {
   const float zz = 2.75;
   p /= zz;
@@ -171,10 +170,17 @@ vec2 transform(vec2 p) {
 }
 
 vec3 effect(vec2 p, vec2 np, vec2 pp) {
+  // Add a brightness multiplier to make the shader more visible
+  float brightness = 5.0;
+  
   p = transform(p);
   np = transform(np);
   float aa = distance(p, np)*sqrt(2.0); 
   vec3 col = effect0(p, aa);
+  
+  // Apply brightness boost
+  col *= brightness;
+  
   return col;
 }
 
@@ -189,5 +195,3 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
   col = sRGB(col);
   fragColor = vec4(col, 1.0);
 }
-
-

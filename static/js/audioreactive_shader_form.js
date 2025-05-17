@@ -154,7 +154,38 @@ function submitFormBasic(form) {
                         }
                     } else if (statusData.status === 'failed') {
                         clearInterval(pollInterval);
-                        showErrorBasic(statusData.error || 'An error occurred during processing.');
+
+                        // Check if this is a shader error
+                        if (statusData.error_type === 'shader_error' ||
+                            (statusData.error && (statusData.error.includes('shader') || statusData.error.includes('.glsl')))) {
+
+                            console.log("Detected shader error - redirecting to error page");
+
+                            // Get shader name
+                            let shaderName = "Unknown Shader";
+                            if (statusData.shader_name) {
+                                shaderName = statusData.shader_name;
+                            } else if (statusData.shader_path) {
+                                const pathParts = statusData.shader_path.split('/');
+                                shaderName = pathParts[pathParts.length - 1];
+                            } else if (statusData.error) {
+                                const match = statusData.error.match(/shader ['"]([^'"]+)['"]/i);
+                                if (match && match[1]) {
+                                    shaderName = match[1];
+                                }
+                            }
+
+                            // Get error message
+                            const errorMessage = statusData.error ||
+                                "The shader failed to render. This could be due to compatibility issues with your graphics hardware or syntax errors in the shader code.";
+
+                            // Redirect to the shader error page
+                            window.location.href = `/shader_error?shader_name=${encodeURIComponent(shaderName)}&error_details=${encodeURIComponent(errorMessage)}`;
+                            return;
+                        } else {
+                            // Fall back to basic error display for non-shader errors
+                            showErrorBasic(statusData.error || 'An error occurred during processing.');
+                        }
                     }
                 })
                 .catch(error => {

@@ -90,6 +90,31 @@ function getTabNameFromField(field) {
  * @param {string} [errorOptions.tabId] - The ID of the tab containing the error field
  */
 function showErrorModal(errorOptions) {
+    // Handle undefined message
+    if (errorOptions.message === undefined) {
+        console.log("Form validation: Detected undefined error message");
+
+        // Try to use the shader error handler first
+        if (window.ShaderErrorHandler) {
+            const shaderPath = document.getElementById('shader_path');
+            const shaderName = shaderPath ? shaderPath.options[shaderPath.selectedIndex].text : "Unknown Shader";
+
+            window.ShaderErrorHandler.showShaderError(
+                shaderName,
+                "The shader failed to render. This could be due to compatibility issues with your graphics hardware or syntax errors in the shader code."
+            );
+            return;
+        }
+
+        // If shader error handler is not available, use a generic error message
+        errorOptions.message = "An error occurred while processing the shader. Please try a different shader or check the console for more details.";
+    }
+
+    // Handle undefined title
+    if (errorOptions.title === undefined) {
+        errorOptions.title = "Error";
+    }
+
     console.error("Error displayed:", errorOptions.message);
 
     // Use the modal manager if available
@@ -145,161 +170,8 @@ function showErrorModal(errorOptions) {
     }
 
     // Fallback if modal manager is not available
-    const errorModal = document.getElementById('errorModal');
-    if (!errorModal) {
-        console.error("Error modal not found in the DOM");
-        showErrorFallback(errorOptions.message);
-        return;
-    }
-
-    // Get modal elements
-    const modalTitle = errorModal.querySelector('.modal-title');
-    const modalBody = errorModal.querySelector('.modal-body');
-
-    // Set modal content
-    if (modalTitle) {
-        modalTitle.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i>${errorOptions.title}`;
-    }
-
-    if (modalBody) {
-        // Check if the message contains HTML
-        if (errorOptions.message.includes('<') && errorOptions.message.includes('>')) {
-            // It's HTML content, use innerHTML
-            modalBody.innerHTML = errorOptions.message;
-        } else {
-            // It's plain text, use textContent for security
-            modalBody.textContent = errorOptions.message;
-        }
-    }
-
-    // Configure the "Go to Field" button if we have field and tab information
-    if (goToFieldBtn) {
-        if (errorOptions.field && errorOptions.tabButton) {
-            goToFieldBtn.style.display = 'inline-block';
-
-            // Remove any existing event listeners
-            const newGoToFieldBtn = goToFieldBtn.cloneNode(true);
-            goToFieldBtn.parentNode.replaceChild(newGoToFieldBtn, goToFieldBtn);
-
-            // Add click event listener
-            newGoToFieldBtn.addEventListener('click', function() {
-                // Store references to elements we need after closing the modal
-                const fieldToFocus = errorOptions.field;
-                const tabButtonToActivate = errorOptions.tabButton;
-
-                // Close the modal manually using the shared function
-                closeModalManually();
-
-                // Continue with navigation after a short delay
-                setTimeout(function() {
-
-                        // Activate the tab
-                        const tab = new bootstrap.Tab(tabButtonToActivate);
-                        tab.show();
-
-                        // Focus and scroll to the field
-                        setTimeout(() => {
-                            fieldToFocus.focus();
-                            fieldToFocus.classList.add('is-invalid');
-                            fieldToFocus.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-                            // Remove the invalid class after 5 seconds
-                            setTimeout(() => {
-                                fieldToFocus.classList.remove('is-invalid');
-                            }, 5000);
-                        }, 300);
-                }, 100);
-            });
-        } else {
-            // Hide the button if we don't have field information
-            goToFieldBtn.style.display = 'none';
-        }
-    }
-
-    // Make sure any existing modal is disposed first
-    try {
-        const existingModal = bootstrap.Modal.getInstance(errorModal);
-        if (existingModal) {
-            existingModal.dispose();
-        }
-    } catch (e) {
-        console.error("Error disposing modal:", e);
-    }
-
-    // Remove any existing backdrops that might be causing issues
-    document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
-        backdrop.parentNode.removeChild(backdrop);
-    });
-
-    // Add a new backdrop manually
-    const backdrop = document.createElement('div');
-    backdrop.className = 'modal-backdrop fade show';
-    backdrop.style.zIndex = '99998';
-    backdrop.style.position = 'fixed';
-    backdrop.style.top = '0';
-    backdrop.style.left = '0';
-    backdrop.style.width = '100%';
-    backdrop.style.height = '100%';
-    backdrop.style.opacity = '0.5';
-    document.body.appendChild(backdrop);
-
-    // Make the modal visible - do this after adding the backdrop
-    errorModal.style.display = 'block';
-    errorModal.style.zIndex = '99999';
-    errorModal.classList.add('show');
-
-    // Add the modal-open class to the body to prevent scrolling
-    document.body.classList.add('modal-open');
-
-    // We're using our own custom modal implementation
-    // No need to create a Bootstrap modal instance
-
-    // Function to close the modal manually
-    function closeModalManually() {
-        // Hide the modal
-        errorModal.style.display = 'none';
-        errorModal.classList.remove('show');
-
-        // Remove backdrop
-        document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
-            backdrop.parentNode.removeChild(backdrop);
-        });
-
-        // Restore body scrolling
-        document.body.classList.remove('modal-open');
-        document.body.style.overflow = '';
-        document.body.style.paddingRight = '';
-    }
-
-    // Add event listener to the close button in footer
-    const closeBtn = errorModal.querySelector('#closeModalBtn');
-    if (closeBtn) {
-        // Remove any existing event listeners
-        const newCloseBtn = closeBtn.cloneNode(true);
-        closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
-
-        // Add click event listener
-        newCloseBtn.addEventListener('click', closeModalManually);
-    }
-
-    // Add event listener to the X button in header
-    const closeXBtn = errorModal.querySelector('#closeModalXBtn');
-    if (closeXBtn) {
-        // Remove any existing event listeners
-        const newCloseXBtn = closeXBtn.cloneNode(true);
-        closeXBtn.parentNode.replaceChild(newCloseXBtn, closeXBtn);
-
-        // Add click event listener
-        newCloseXBtn.addEventListener('click', closeModalManually);
-    }
-
-    // Add click handler to close when clicking outside the modal content
-    errorModal.addEventListener('click', function(event) {
-        // Only close if clicking directly on the modal (not its children)
-        if (event.target === errorModal) {
-            closeModalManually();
-        }
-    });
+    console.log("Fallback error modal display");
+    showErrorFallback(errorOptions.message);
 
     // Handle any ongoing processes
     const progressInterval = window.progressInterval; // Access from window scope
@@ -385,6 +257,26 @@ function showErrorFallback(message) {
  * @param {string} message - The error message to display
  */
 function showError(message) {
+    // Handle undefined message
+    if (message === undefined) {
+        console.log("showError: Detected undefined error message");
+
+        // Try to use the shader error handler first
+        if (window.ShaderErrorHandler) {
+            const shaderPath = document.getElementById('shader_path');
+            const shaderName = shaderPath ? shaderPath.options[shaderPath.selectedIndex].text : "Unknown Shader";
+
+            window.ShaderErrorHandler.showShaderError(
+                shaderName,
+                "The shader failed to render. This could be due to compatibility issues with your graphics hardware or syntax errors in the shader code."
+            );
+            return;
+        }
+
+        // If shader error handler is not available, use a generic error message
+        message = "An error occurred while processing the shader. Please try a different shader or check the console for more details.";
+    }
+
     // Create a simple error object for the modal
     showErrorModal({
         title: 'Error',

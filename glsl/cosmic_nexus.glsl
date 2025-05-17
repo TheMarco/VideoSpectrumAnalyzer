@@ -1,9 +1,7 @@
-/*
-[C]
-by Marco van Hylckama Vlieg
-https://www.shadertoy.com/view/wX2SWc
-[/C]
-
+// Cosmic Nexus shader - Fixed version
+// Original by Marco van Hylckama Vlieg
+// https://www.shadertoy.com/view/wX2SWc
+//
 // Vibe Coded with AI by Marco van Hylckama Vlieg
 // info@ai-created.com
 //
@@ -105,10 +103,15 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     vec2 uv = fragCoord/iResolution.xy;
     vec2 p = (uv * 2.0 - 1.0) * vec2(iResolution.x/iResolution.y, 1.0);
     
-    // Audio reactivity
+    // Audio reactivity - fixed to handle missing audio texture
     float audioBoost = 1.0;
+    
+    // Safe audio texture sampling
     if (textureSize(iChannel0, 0).x > 0) {
-        audioBoost = 1.0 + texture(iChannel0, vec2(0.1, 0.0)).x * 2.0;
+        vec4 audioSample = texture(iChannel0, vec2(0.1, 0.0));
+        if (audioSample.x > 0.0) {
+            audioBoost = 1.0 + audioSample.x * 2.0;
+        }
     }
     
     // Time variables

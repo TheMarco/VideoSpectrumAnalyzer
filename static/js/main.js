@@ -553,21 +553,9 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log("ERROR DETAILS:", data.error || 'Unknown error');
             console.log("FULL JOB DATA:", data);
 
-            // Check if this is a shader error with detailed information
-            if (data.error_type === 'shader_error') {
-                console.log("Detected shader error with details:", data.shader_error_details);
-
-                // Get the shader name
-                const shaderName = data.shader_name ||
-                    (data.shader_error_details ? data.shader_error_details.shader_name : "Unknown Shader");
-
-                // Get the error message
-                const errorMessage = data.error ||
-                    (data.shader_error_details ? data.shader_error_details.error_message : "Unknown error");
-
-                // Redirect to the error page
-                window.location.href = `/shader_error?shader_name=${encodeURIComponent(shaderName)}&error_details=${encodeURIComponent(errorMessage)}`;
-
+            // Try to handle shader errors with our dedicated handler
+            if (window.ShaderErrorHandler && window.ShaderErrorHandler.handleShaderError(data)) {
+                console.log("Shader error handled by ShaderErrorHandler");
                 // Stop polling
                 if (progressInterval) clearInterval(progressInterval);
                 return;
@@ -575,84 +563,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // For regular errors, use the existing error handling
             const errorDetails = data.error || 'An unknown error occurred during processing.';
-
-            // Check if we have a shader error in the error message
-            const isShaderError = errorDetails && (
-                errorDetails.includes('SHADER ERROR') ||
-                errorDetails.includes('shader') ||
-                errorDetails.includes('.glsl')
-            );
-
-            // Format the error message for display
-            let formattedError = errorDetails || "No error details available. Check the server logs for more information.";
-
-            // If it's a shader error, format it nicely
-            if (isShaderError) {
-                // Extract the shader name if possible
-                let shaderName = "Unknown shader";
-                const shaderMatch = errorDetails.match(/SHADER ERROR: ([^'\n]+)/);
-                if (shaderMatch && shaderMatch[1]) {
-                    shaderName = shaderMatch[1];
-                }
-
-                // Create a more user-friendly error message
-                formattedError = `<div class="shader-error">
-                    <h4 class="text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Shader Error: ${shaderName}</h4>
-                    <p>The shader failed to render properly. This could be due to:</p>
-                    <ul>
-                        <li>Syntax errors in the shader code</li>
-                        <li>Compatibility issues with your graphics hardware</li>
-                        <li>Resource limitations</li>
-                    </ul>
-                    <div class="alert alert-secondary">
-                        <p><strong>Technical Details:</strong></p>
-                        <pre style="max-height: 200px; overflow-y: auto;">${errorDetails}</pre>
-                    </div>
-                </div>`;
-            }
-
-            // Show the error in a modal
-            if (window.ModalManager) {
-                console.log("Using ModalManager to show error");
-                try {
-                    // Make sure the modal exists
-                    const errorModal = document.getElementById('errorModal');
-                    if (!errorModal) {
-                        console.error("Error modal element not found!");
-                        showError(errorDetails || "Error modal not found");
-                        return;
-                    }
-
-                    // Directly set the content of the modal body
-                    const modalBody = errorModal.querySelector('.modal-body');
-                    if (modalBody) {
-                        console.log("Setting modal body content directly");
-                        modalBody.innerHTML = formattedError;
-                    } else {
-                        console.error("Modal body element not found!");
-                    }
-
-                    // Set the title
-                    const modalTitle = errorModal.querySelector('.modal-title');
-                    if (modalTitle) {
-                        modalTitle.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i>Processing Error';
-                    }
-
-                    // Show the modal using Bootstrap's API
-                    const bsModal = new bootstrap.Modal(errorModal);
-                    bsModal.show();
-
-                    console.log("Modal should be visible now");
-                } catch (e) {
-                    console.error("Error showing modal:", e);
-                    // Fallback to the old error display
-                    showError(errorDetails || "Error showing modal: " + e.message);
-                }
-            } else {
-                console.log("ModalManager not available, using fallback");
-                // Fallback to the old error display
-                showError(errorDetails || "No error details available");
-            }
+            showError(errorDetails);
 
             progressBar.classList.remove('progress-bar-animated');
             progressBar.classList.add('bg-danger');

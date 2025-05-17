@@ -1,11 +1,4 @@
-/*
-[C]
-by Kali
-https://www.shadertoy.com/view/XlfGRj
-[/C]
-*/
-
-// Star Nest by Pablo Roman Andrioli
+// Star Nest by Pablo Roman Andrioli - Fixed version
 // License: MIT
 // Based on https://www.shadertoy.com/view/XlfGRj
 
@@ -16,7 +9,7 @@ https://www.shadertoy.com/view/XlfGRj
 #define stepsize 0.1
 #define zoom 0.800
 #define tile 0.850
-#define speed 0.010
+#define speed 0.010 
 #define brightness 0.0015
 #define darkmatter 0.300
 #define distfading 0.730
@@ -41,35 +34,35 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
     from += vec3(t*2.,t,-2.);
     from.xz *= rot1;
     from.xy *= rot2;
-
+    
     // Volumetric rendering
     float s = 0.1;
     float fade = 1.;
     vec3 v = vec3(0.);
-
+    
     for (int r=0; r<volsteps; r++) {
         vec3 p = from + s*dir*.5;
         p = abs(vec3(tile) - mod(p, vec3(tile*2.))); // tiling fold
         float pa = 0.;
         float a = 0.;
-
-        for (int i=0; i<iterations; i++) {
+        
+        for (int i=0; i<iterations; i++) { 
             p = abs(p)/dot(p,p) - formuparam; // the magic formula
             a += abs(length(p)-pa); // absolute sum of average change
             pa = length(p);
         }
-
+        
         float dm = max(0., darkmatter-a*a*.001); // dark matter
         a *= a*a; // add contrast
-
+        
         if (r>6) fade *= 1.-dm; // dark matter, don't render near
-
+        
         v += fade;
         v += vec3(s, s*s, s*s*s*s)*a*brightness*fade; // coloring based on distance
         fade *= distfading; // distance fading
         s += stepsize;
     }
-
+    
     v = mix(vec3(length(v)), v, saturation); // color adjust
     fragColor = vec4(v*.01, 1.);
 }

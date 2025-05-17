@@ -1,6 +1,6 @@
 /*
     "Ionize" by @XorDev
-     
+
      https://x.com/XorDev/status/1921224922166104360
 */
 void mainImage(out vec4 O, in vec2 I)
@@ -15,9 +15,10 @@ void mainImage(out vec4 O, in vec2 I)
     d,
     //Signed distance for coloring
     s;
-    
+
     //Clear fragcolor and raymarch loop 100 times
-    for (O *= i; i++ < 1e2; )
+    O = vec4(0.0);
+    for (i = 0.0; i++ < 1e2; )
     {
         //Raymarch sample point
         vec3 p = z * normalize(vec3(I+I,0) - iResolution.xyy),

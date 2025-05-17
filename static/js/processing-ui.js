@@ -209,11 +209,55 @@ function initProcessingUI(options = {}) {
             fetch(`/job_status/${jobId}`)
                 .then(response => response.json())
                 .then(data => {
+                    console.log("Job status data:", data);
+
+                    // If we have a shader error, redirect to the shader error page
+                    if (data.error_type === 'shader_error' ||
+                        (data.error && (data.error.includes('shader') || data.error.includes('.glsl')))) {
+
+                        console.log("Detected shader error - redirecting to error page");
+
+                        // Get shader name
+                        let shaderName = "Unknown Shader";
+                        if (data.shader_name) {
+                            shaderName = data.shader_name;
+                        } else if (data.shader_path) {
+                            const pathParts = data.shader_path.split('/');
+                            shaderName = pathParts[pathParts.length - 1];
+                        } else if (data.error) {
+                            const match = data.error.match(/shader ['"]([^'"]+)['"]/i);
+                            if (match && match[1]) {
+                                shaderName = match[1];
+                            }
+                        }
+
+                        // Get error message
+                        const errorMessage = data.error ||
+                            "The shader failed to render. This could be due to compatibility issues with your graphics hardware or syntax errors in the shader code.";
+
+                        // Redirect to the shader error page
+                        window.location.href = `/shader_error?shader_name=${encodeURIComponent(shaderName)}&error_details=${encodeURIComponent(errorMessage)}`;
+
+                        clearInterval(progressInterval);
+                        return;
+                    }
+
+                    // Try to handle shader errors with the handler
+                    if (data.status === 'failed') {
+                        if (window.ShaderErrorHandler && window.ShaderErrorHandler.handleShaderError(data)) {
+                            console.log("Shader error handled by ShaderErrorHandler");
+                            clearInterval(progressInterval);
+                            return;
+                        }
+                    }
+
+                    // Handle regular errors
                     if (data.error) {
                         showError(data.error);
                         clearInterval(progressInterval);
                         return;
                     }
+
                     updateProgress(data);
                     if (data.status === 'completed' || data.status === 'failed') {
                         clearInterval(progressInterval);
@@ -291,7 +335,14 @@ function initProcessingUI(options = {}) {
                 submitBtn.disabled = true;
             }
         } else if (data.status === 'failed') {
-            showError(data.error || 'An unknown error occurred during processing.');
+            // Try to use the shader error handler first
+            if (window.ShaderErrorHandler && window.ShaderErrorHandler.handleShaderError(data)) {
+                console.log("Shader error handled by ShaderErrorHandler");
+            } else {
+                // Fall back to regular error handling
+                showError(data.error || 'An unknown error occurred during processing.');
+            }
+
             if (elements.progressBar) {
                 elements.progressBar.classList.remove('progress-bar-animated');
                 elements.progressBar.classList.add('bg-danger');
@@ -307,6 +358,26 @@ function initProcessingUI(options = {}) {
      * @param {string} message - The error message to display
      */
     function showError(message) {
+        // Handle undefined error
+        if (message === undefined) {
+            console.log("Processing UI: Detected undefined error message");
+
+            // Try to use the shader error handler first
+            if (window.ShaderErrorHandler) {
+                const shaderPath = document.getElementById('shader_path');
+                const shaderName = shaderPath ? shaderPath.options[shaderPath.selectedIndex].text : "Unknown Shader";
+
+                window.ShaderErrorHandler.showShaderError(
+                    shaderName,
+                    "The shader failed to render. This could be due to compatibility issues with your graphics hardware or syntax errors in the shader code."
+                );
+                return;
+            }
+
+            // If shader error handler is not available, use a generic error message
+            message = "An error occurred while processing the shader. Please try a different shader or check the console for more details.";
+        }
+
         // Use the shared error handling function if available
         if (typeof window.showErrorModal === 'function') {
             window.showErrorModal(message);

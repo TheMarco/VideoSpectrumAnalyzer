@@ -1,11 +1,6 @@
-/*
-[C]
-by Holtsetio
-https://www.shadertoy.com/user/holtsetio
-[/C]
-
+// Neon Tunnel shader - Fixed version
 // by Holtsetio https://www.shadertoy.com/user/holtsetio
-//quick and dirty code for prototyping
+// Fixed to remove unclosed comment
 
 #define MAXSTEPS 256
 #define MAXDIST 30.0
@@ -24,24 +19,24 @@ vec3 cubeColor = vec3(0);
 float ringOffset = +0.6;
 
 mat4 rotationX( in float angle ) {
-	return mat4(	1.0,		0,			0,			0,
-			 		0, 	cos(angle),	-sin(angle),		0,
-					0, 	sin(angle),	 cos(angle),		0,
-					0, 			0,			  0, 		1);
+    return mat4(	1.0,		0,			0,			0,
+                    0, 	cos(angle),	-sin(angle),		0,
+                    0, 	sin(angle),	 cos(angle),		0,
+                    0, 			0,			  0, 		1);
 }
 
 mat4 rotationY( in float angle ) {
-	return mat4(	cos(angle),		0,		sin(angle),	0,
-			 				0,		1.0,			 0,	0,
-					-sin(angle),	0,		cos(angle),	0,
-							0, 		0,				0,	1);
+    return mat4(	cos(angle),		0,		sin(angle),	0,
+                    0,		1.0,			 0,	0,
+                    -sin(angle),	0,		cos(angle),	0,
+                    0, 		0,				0,	1);
 }
 
 mat4 rotationZ( in float angle ) {
-	return mat4(	cos(angle),		-sin(angle),	0,	0,
-			 		sin(angle),		cos(angle),		0,	0,
-							0,				0,		1,	0,
-							0,				0,		0,	1);
+    return mat4(	cos(angle),		-sin(angle),	0,	0,
+                    sin(angle),		cos(angle),		0,	0,
+                    0,				0,		1,	0,
+                    0,				0,		0,	1);
 }
 
 vec3 displacement(float p) {
@@ -53,28 +48,30 @@ vec3 displacement(float p) {
 //sdf functions taken from iq
 float opSmoothUnion( float d1, float d2, float k ) {
     float h = clamp( 0.5 + 0.5*(d2-d1)/k, 0.0, 1.0 );
-    return mix( d2, d1, h ) - k*h*(1.0-h); }
+    return mix( d2, d1, h ) - k*h*(1.0-h); 
+}
 
 
 float sdBox( vec3 p, vec3 b )
 {    
-	float interval = DISTANCEPERPHASE/CUBENUM;
-  	vec3 offset = displacement(round(p.z / interval +0.5)*interval - ringOffset);
-  	p -= offset;
+    float interval = DISTANCEPERPHASE/CUBENUM;
+    vec3 offset = displacement(round(p.z / interval +0.5)*interval - ringOffset);
+    p -= offset;
     
     float num = mod(floor(p.z/interval)+1.0,DISTANCEPERPHASE/interval)*4.0;
     cubeColor = normalize(texture(iChannel0, vec2((num+0.5)/256.0,0.2/256.0)).xyz);
-  	p.z = mod(p.z,interval) - interval*0.5;
+    p.z = mod(p.z,interval) - interval*0.5;
     p = mat3(rotationX(PHASE*TWOPI*5.0) * rotationZ(PHASE*TWOPI*18.0))*p;
     
-  	vec3 d = abs(p) - b;
-  	float res = length(max(d,0.0)) + min(max(d.x,max(d.y,d.z)),0.0);
+    vec3 d = abs(p) - b;
+    float res = length(max(d,0.0)) + min(max(d.x,max(d.y,d.z)),0.0);
 
     lastglow = pow(max(0.0,(1.0-(res/2.0))),4.0) * cubeColor * 0.1;
     glow += lastglow;
     
     return res;
 }
+
 float sdTube(vec3 p, float r)
 {
     p.y += 0.8;
@@ -137,11 +134,11 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     target += displacement(target.z*1.0);
     origin += displacement(origin.z*1.0);
 
-	vec3 forward = normalize(target - origin);
- 	vec3 right = normalize(cross(forward, vec3(0.0, 1.0, 0.0)));   
+    vec3 forward = normalize(target - origin);
+    vec3 right = normalize(cross(forward, vec3(0.0, 1.0, 0.0)));   
     vec3 up = cross(right, forward);
     vec3 dir = normalize(uv.x * right + uv.y * up + fov * forward);
     
     intersect(origin, dir);
-	fragColor = vec4(glow, 1.0);
+    fragColor = vec4(glow, 1.0);
 }

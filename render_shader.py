@@ -38,7 +38,7 @@ def render_shader(shader_path, output_path, duration=5.0, fps=30, width=1280, he
     from glsl.shader_preprocessor import create_fixed_shader, is_problematic_shader
 
     # Check if this is a problematic shader
-    if is_problematic_shader(shader_path) or shader_filename in ["angel.glsl", "nebula.glsl", "blackhole.glsl", "shield.glsl", "ghosts.glsl", "quantum.glsl", "starnest.glsl", "starbirth.glsl"]:
+    if is_problematic_shader(shader_path) or shader_filename in ["angel.glsl", "nebula.glsl", "blackhole.glsl", "shield.glsl", "ghosts.glsl", "quantum.glsl", "starnest.glsl", "starbirth.glsl", "biomine.glsl"]:
         print(f"Detected potentially problematic shader: {shader_filename}")
 
         # Create a fixed version of the shader

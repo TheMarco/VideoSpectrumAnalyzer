@@ -8,6 +8,7 @@ https://www.shadertoy.com/view/tlySzm
 // Email: Philippe.desgranges@gmail.com
 // License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
 //
+*/
 
 #define MUSIC_REACTION 0.2
 

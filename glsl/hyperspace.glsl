@@ -6,6 +6,7 @@ https://www.shadertoy.com/view/wtd3zM
 
 // Based on theGiallo's https://www.shadertoy.com/view/MttSz2
 // MIT License. Use freely; but attribution is expected.
+*/
 #define TAU 6.28318
 #define PI 3.141592
 const float period = 1.0;
@@ -31,21 +32,21 @@ float simplexNoise(vec3 p)
 {
     const float K1 = 0.333333333;
     const float K2 = 0.166666667;
-    
+
     vec3 i = floor(p + (p.x + p.y + p.z) * K1);
     vec3 d0 = p - (i - (i.x + i.y + i.z) * K2);
-    
+
     vec3 e = step(vec3(0.0), d0 - d0.yzx);
 	vec3 i1 = e * (1.0 - e.zxy);
 	vec3 i2 = 1.0 - e.zxy * (1.0 - e);
-    
+
     vec3 d1 = d0 - (i1 - 1.0 * K2);
     vec3 d2 = d0 - (i2 - 2.0 * K2);
     vec3 d3 = d0 - (1.0 - 3.0 * K2);
-    
+
     vec4 h = max(0.6 - vec4(dot(d0, d0), dot(d1, d1), dot(d2, d2), dot(d3, d3)), 0.0);
     vec4 n = h * h * h * h * vec4(dot(d0, hash33(i)), dot(d1, hash33(i + i1)), dot(d2, hash33(i + i2)), dot(d3, hash33(i + 1.0)));
-    
+
     return dot(vec4(31.316), n);
 }
 
@@ -57,7 +58,7 @@ float fBm3(in vec3 p)
 	float scale = 5.0;
     p = mod(p, scale);
 	float amp   = 0.75;
-	
+
 	for (int i = 0; i < 5; i++)
 	{
 		f += simplexNoise(p * scale) * amp;
@@ -89,7 +90,7 @@ vec4 taylorInvSqrt(vec4 r)
 }
 
 float snoise(vec3 v)
-  { 
+  {
   const vec2  C = vec2(0.1666666666666667, 0.3333333333333333) ; // 1.0/6.0, 1.0/3.0
   const vec4  D = vec4(0.0, 0.5, 1.0, 2.0);
 
@@ -108,10 +109,10 @@ float snoise(vec3 v)
   vec3 x3 = x0 - D.yyy;      // -1.0+3.0*C.x = -0.5 = -D.y
 
 // Permutations
-  i = mod289(i); 
-  vec4 p = permute( permute( permute( 
+  i = mod289(i);
+  vec4 p = permute( permute( permute(
              i.z + vec4(0.0, i1.z, i2.z, 1.0 ))
-           + i.y + vec4(0.0, i1.y, i2.y, 1.0 )) 
+           + i.y + vec4(0.0, i1.y, i2.y, 1.0 ))
            + i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
 
 // Gradients: 7x7 points over a square, mapped onto an octahedron.
@@ -155,7 +156,7 @@ float snoise(vec3 v)
 // Mix final noise value
   vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
   m = m * m;
-  return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), 
+  return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1),
                                 dot(p2,x2), dot(p3,x3) ) );
   }
 
@@ -164,18 +165,18 @@ float snoise(vec3 v)
 
 float getnoise(int octaves, float persistence, float freq, vec3 coords) {
 
-    float amp= 1.; 
+    float amp= 1.;
     float maxamp = 0.;
     float sum = 0.;
 
     for (int i=0; i < octaves; ++i) {
 
-        sum += amp * snoise(coords*freq); 
+        sum += amp * snoise(coords*freq);
         freq *= 2.;
         maxamp += amp;
         amp *= persistence;
     }
-    
+
     return (sum / maxamp) * .5 + .5;
 }
 
@@ -183,13 +184,13 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
     float t = mod(iTime, t2);
     t = t / t2; // Normalized time
-    
+
     vec4 col = vec4(0.0);
 	vec2 q = fragCoord.xy / iResolution.xy;
 	vec2 p = ( 2.0 * fragCoord.xy - iResolution.xy ) / min( iResolution.y, iResolution.x );
     vec2 mo = (2.0 * iMouse.xy - iResolution.xy) / min(iResolution.x, iResolution.y);
     p += vec2(0.0, -0.1);
-    
+
     //float ay = TAU * mod(iTime, 8.0) / 8.0;
     //ay = 45.0 * 0.01745;
     float ay = 0.0, ax = 0.0, az = 0.0;
@@ -202,26 +203,26 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
          0.0,     1.0,      0.0,
         -sin(ay), 0.0,  cos(ay)
     );
-    
+
     mat3 mX = mat3(
         1.0,      0.0,     0.0,
         0.0,  cos(ax), sin(ax),
         0.0, -sin(ax), cos(ax)
     );
     mat3 m = mX * mY;
-    
+
     vec3 v = vec3(p, 1.0);
     v = m * v;
     float v_xy = length(v.xy);
     float z = v.z / v_xy;
-    
+
     // The focal_depth controls how "deep" the tunnel looks. Lower values
 	// provide more depth.
 	float focal_depth = 0.15;
     #ifdef WHITEOUT
     focal_depth = mix(0.15, 0.015, smoothstep(0.65, 0.9, t));
     #endif
-    
+
     vec2 polar;
     //float p_len = length(p);
     float p_len = length(v.xy);
@@ -238,19 +239,19 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     // Remove the seam by reflecting the u coordinate around 0.5:
     if (x >= 0.5) x = 1.0 - x;
     polar.x = x;
-    
+
     // Colorize blue
     float val = 0.45 + 0.55 * fBm3(
         vec3(vec2(2.0, 0.5) * polar, 0.15 * iTime));
     //float val = getnoise(8, 0.65, 1.0, vec3(polar, 0));
     val = clamp(val, 0.0, 1.0);
     col.rgb = vec3(0.15, 0.4, 0.9) * vec3(val);
-    
+
     // Add white spots
     vec3 white = 0.35 * vec3(smoothstep(0.55, 1.0, val));
     col.rgb += white;
     col.rgb = clamp(col.rgb, 0.0, 1.0);
-    
+
     float w_total = 0.0, w_out = 0.0;
     #ifdef WHITEOUT
     // Fade in and out from white every t2 seconds
@@ -259,20 +260,20 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     w_out = abs(1.0 * smoothstep(0.8, 1.0, t));
     w_total = max(w_in, w_out);
     #endif
-    
-    
+
+
     // Add the white disk at the center
     float disk_size = max(0.025, 1.5 * w_out);
     //disk_size = 0.001;
     float disk_col = exp(-(p_len - disk_size) * 4.0);
     //col.rgb += mix(col.xyz, vec3(1,1,1), disk_col);
     col.rgb += clamp(vec3(disk_col), 0.0, 1.0);
-    
-    
+
+
     #ifdef WHITEOUT
     col.rgb = mix(col.rgb, vec3(1.0), w_total);
     #endif
-    
+
     fragColor = vec4(col.rgb,1);
 }
 

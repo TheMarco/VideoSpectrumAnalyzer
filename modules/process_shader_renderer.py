@@ -112,8 +112,6 @@ Error details:
 
 Possible solutions:
 1. Check if the shader has syntax errors
-2. Create a fixed version in the glsl/fixed directory
-3. Add the shader to the list of known problematic shaders in shader.py
 """
                 # Log the error
                 print(error_message)
@@ -180,8 +178,6 @@ Error details:
 
 Possible solutions:
 1. Check if the shader has logic errors
-2. Create a fixed version in the glsl/fixed directory
-3. Add the shader to the list of known problematic shaders in shader.py
 """
                         # Log the error
                         print(error_message)
@@ -240,8 +236,6 @@ Error details:
 
 Possible solutions:
 1. Check if the shader has rendering errors
-2. Create a fixed version in the glsl/fixed directory
-3. Add the shader to the list of known problematic shaders in shader.py
 """
                 # Log the error
                 print(error_message)
@@ -297,8 +291,6 @@ Error details:
 
 Possible solutions:
 1. Check if the shader has syntax errors
-2. Create a fixed version in the glsl/fixed directory
-3. Add the shader to the list of known problematic shaders in shader.py
 """
             # Log the error
             print(error_message)
@@ -350,8 +342,6 @@ Error details:
 
 Possible solutions:
 1. Check if the shader has syntax errors
-2. Create a fixed version in the glsl/fixed directory
-3. Add the shader to the list of known problematic shaders in shader.py
 """
             # Log the error
             print(error_message)

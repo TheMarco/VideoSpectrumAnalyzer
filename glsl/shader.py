@@ -62,16 +62,16 @@ void main() {{
 
 def preprocess_shader(text, shader_path=""):
     """
-    Preprocess shader code to fix common issues.
+    No preprocessing needed. Shaders should be self-contained.
 
     Args:
         text (str): Original shader code
-        shader_path (str): Path to the shader file (for debugging)
+        shader_path (str): Path to the shader file (unused)
 
     Returns:
-        str: Preprocessed shader code
+        str: Unmodified shader source code
     """
-    import re
+    return text
 
     # Get the filename for special case handling
     filename = os.path.basename(shader_path)
@@ -1191,14 +1191,14 @@ class ShaderRenderer:
         self.ctx = moderngl.create_context()
         print(f"ModernGL context created: {self.ctx}")
 
-        # Check if this is a shader that needs a buffer
-        self.check_for_buffer_shader()
-
         # Load shader from file
         has_main, body, inline = load_snippet(shader_path)
 
         # Build shader program
         self.prog = build_program(self.ctx, has_main, body, inline)
+
+        # Check for buffer shader and set up VAOs, framebuffers, and textures
+        self.check_for_buffer_shader()
 
     def check_for_buffer_shader(self):
         """
