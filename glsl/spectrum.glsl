@@ -1,4 +1,8 @@
-
+/*
+[C]by @XorDev
+https://www.shadertoy.com/view/wXjSRt
+[/C]
+*/
 
 int hexid;
 vec3 hpos;

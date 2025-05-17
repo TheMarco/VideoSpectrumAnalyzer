@@ -1,4 +1,8 @@
 /*
+    [C]
+    by Shane
+    https://www.shadertoy.com/view/4scXz2
+    [/C]
     Biomine
     -------
 

@@ -1,3 +1,10 @@
+/*
+[C]
+by boldo
+https://www.shadertoy.com/view/ddKSDd
+[/C]
+*/
+
 // Aurora shader - Fixed version
 // Original by boldo
 // https://www.shadertoy.com/view/ddKSDd

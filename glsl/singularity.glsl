@@ -1,4 +1,7 @@
 /*
+[C]by @XorDev
+https://www.shadertoy.com/view/3csSWB
+[/C]
     "Singularity" by @XorDev
 
     A whirling blackhole.

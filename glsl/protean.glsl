@@ -1,9 +1,8 @@
-
-
-
-
-
-
+/*
+[C]by nimitz
+https://www.shadertoy.com/view/3l23Rh
+[/C]
+*/
 
 mat2 rot(in float a){
     float c = cos(a);

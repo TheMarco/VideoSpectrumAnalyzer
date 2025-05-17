@@ -1,3 +1,8 @@
+/*
+[C]by @XorDev
+https://www.shadertoy.com/view/tXlXDX
+[/C]
+*/
 // Ghosts shader - Fixed version
 // Original by @XorDev
 

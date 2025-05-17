@@ -1,3 +1,8 @@
+/*
+[C]by @XorDev
+https://www.shadertoy.com/view/wXSXzV
+[/C]
+*/
 // Nebula shader - Fixed version
 // Original by @XorDev
 // Based on tweet shader: https://x.com/XorDev/status/1918766627828515190

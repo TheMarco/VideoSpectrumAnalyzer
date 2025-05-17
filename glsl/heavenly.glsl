@@ -1,4 +1,7 @@
 /*
+[C]by @XorDev
+https://www.shadertoy.com/view/W3BSzy
+[/C]
     "Heavenly" by @XorDev
 */
 void mainImage(out vec4 O, vec2 I)

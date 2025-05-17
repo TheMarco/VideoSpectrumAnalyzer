@@ -1,3 +1,9 @@
+/*
+[C]
+by @XorDev
+https://www.shadertoy.com/view/7dsBRB
+[/C]
+*/
 // Molten Cube shader - Fixed version
 // Original by @XorDev
 

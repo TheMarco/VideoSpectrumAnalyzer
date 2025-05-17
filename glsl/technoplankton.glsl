@@ -1,3 +1,9 @@
+/*
+[C]
+by mrange
+https://www.shadertoy.com/view/dtfSzs
+[/C]
+*/
 // Techno-plankton in alien ocean - Fixed version
 // Original by mrange
 // https://www.shadertoy.com/view/dtfSzs

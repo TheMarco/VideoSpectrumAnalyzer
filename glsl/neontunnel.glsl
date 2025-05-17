@@ -1,3 +1,9 @@
+/*
+[C]
+by Holtsetio
+https://www.shadertoy.com/user/holtsetio
+[/C]
+*/
 // Neon Tunnel shader - Fixed version
 // by Holtsetio https://www.shadertoy.com/user/holtsetio
 // Fixed to remove unclosed comment

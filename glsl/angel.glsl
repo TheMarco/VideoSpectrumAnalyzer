@@ -1,3 +1,8 @@
+/*
+    [C]by @XorDev 
+    https://www.shadertoy.com/user/Xor
+    [/C]
+*/
 // Angel shader - Fixed version
 // Original by @XorDev
 // An experiment based on "3D Fire": https://www.shadertoy.com/view/3XXSWS

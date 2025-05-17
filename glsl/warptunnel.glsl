@@ -1,3 +1,8 @@
+/*
+[C]by fizzer
+https://www.shadertoy.com/view/tll3zB
+[/C]
+*/
 // Warp Tunnel shader - Ultra Smooth Version
 // Original by Shadertoy user
 
