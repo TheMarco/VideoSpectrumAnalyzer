@@ -35,8 +35,10 @@ out vec4 f_color;
 
 uniform vec3 iResolution;
 uniform float iTime;
+uniform float iTimeDelta;
 uniform vec4 iMouse;
 uniform sampler2D iChannel0;
+uniform sampler2D iChannel1;
 uniform int iFrame;
 uniform vec3 iChannelResolution[4];
 
@@ -1242,6 +1244,50 @@ class ShaderRenderer:
             else:
                 print(f"Warning: Buffer shader not found at {buffer_path}")
 
+        # Check for ar_spectrum shader
+        elif filename == "ar_spectrum.glsl":
+            print("Detected ar_spectrum shader, setting up buffer shader")
+
+            # Get the buffer shader path
+            buffer_path = os.path.join(os.path.dirname(self.shader_path), "ar_spectrum_buffer.glsl")
+
+            if os.path.exists(buffer_path):
+                # Load buffer shader
+                has_main_buffer, body_buffer, inline_buffer = load_snippet(buffer_path)
+
+                # Build buffer shader program
+                self.buffer_prog = build_program(self.ctx, has_main_buffer, body_buffer, inline_buffer)
+
+                # Create buffer VAO
+                self.quad = self.ctx.buffer(np.array([
+                    -1, -1,   1, -1,   -1, 1,
+                    -1,  1,   1, -1,    1, 1,
+                ], dtype='f4').tobytes())
+                self.buffer_vao = self.ctx.simple_vertex_array(self.buffer_prog, self.quad, 'in_vert')
+
+                # Create framebuffer for buffer shader
+                self.buffer_fbo = self.ctx.framebuffer(
+                    color_attachments=[self.ctx.texture((24, 1), 4)]  # Buffer A is 24x1 for spectrum bars
+                )
+
+                # Create a texture for feedback (previous frame)
+                self.prev_buffer_texture = self.ctx.texture((24, 1), 4)
+                # Initialize with zeros
+                self.prev_buffer_texture.write(bytes(24 * 1 * 4))
+
+                # Set uniforms for buffer shader
+                self.buffer_prog['iResolution'].value = (24, 1, 1.0)  # Buffer A resolution
+                if 'iMouse' in self.buffer_prog:
+                    self.buffer_prog['iMouse'].value = (0.0, 0.0, 0.0, 0.0)
+
+                # Set frame counter to 0
+                if 'iFrame' in self.buffer_prog:
+                    self.buffer_frame_count = 0
+
+                print("Buffer shader setup complete")
+            else:
+                print(f"Warning: Buffer shader not found at {buffer_path}")
+
         # Add more buffer shader cases here as needed
 
         # Create vertex buffer and VAO
@@ -1375,18 +1421,71 @@ class ShaderRenderer:
             if 'iTime' in self.buffer_prog:
                 self.buffer_prog['iTime'].value = time_value
 
+            # Set time delta uniform for buffer shader if needed
+            if 'iTimeDelta' in self.buffer_prog:
+                # Calculate actual time delta based on previous frame time
+                if not hasattr(self, 'prev_frame_time'):
+                    self.prev_frame_time = time_value
+                    time_delta = 1.0 / 30.0  # Default for first frame
+                else:
+                    time_delta = time_value - self.prev_frame_time
+                    # Clamp to reasonable values to avoid extreme jumps
+                    time_delta = max(min(time_delta, 0.1), 0.001)
+                    self.prev_frame_time = time_value
+
+                self.buffer_prog['iTimeDelta'].value = time_delta
+
             # Set mouse uniform for buffer shader if needed
             if 'iMouse' in self.buffer_prog:
                 # Use default values for offscreen rendering
                 self.buffer_prog['iMouse'].value = (0.0, 0.0, 0.0, 0.0)
+
+            # Set frame counter for buffer shader if needed
+            if 'iFrame' in self.buffer_prog:
+                if not hasattr(self, 'buffer_frame_count'):
+                    self.buffer_frame_count = 0
+                self.buffer_prog['iFrame'].value = self.buffer_frame_count
+                self.buffer_frame_count += 1
+
+            # Special handling for ar_spectrum.glsl - pass audio texture to buffer shader
+            filename = os.path.basename(self.shader_path)
+            if filename == "ar_spectrum.glsl" and 'iChannel0' in self.buffer_prog and len(self.textures) > 0:
+                # Use the audio texture as iChannel0 for buffer shader
+                self.textures[0].use(location=0)
+
+                # Use the buffer's own output as iChannel1 (feedback)
+                if hasattr(self, 'prev_buffer_texture'):
+                    self.prev_buffer_texture.use(location=1)
 
             # Render buffer shader to its framebuffer
             self.buffer_fbo.use()
             self.ctx.clear(0.0, 0.0, 0.0, 1.0)
             self.buffer_vao.render()
 
-            # Use buffer texture as iChannel0 for main shader
-            self.buffer_fbo.color_attachments[0].use(location=0)
+            # For ar_spectrum.glsl, save the current buffer output for feedback in next frame
+            if filename == "ar_spectrum.glsl":
+                # Create a copy of the buffer output for feedback
+                if not hasattr(self, 'prev_buffer_texture'):
+                    self.prev_buffer_texture = self.ctx.texture((24, 1), 4)
+                    # Initialize with zeros for the first frame
+                    self.prev_buffer_texture.write(bytes(24 * 1 * 4))
+                    print("Initialized prev_buffer_texture for ar_spectrum.glsl")
+
+                # Copy the current buffer output to prev_buffer_texture
+                self.buffer_fbo.color_attachments[0].use(location=0)
+                data = self.buffer_fbo.read(components=4)
+                if data:  # Make sure we have valid data
+                    self.prev_buffer_texture.write(data)
+                    # Print debug info for the first few frames
+                    if hasattr(self, 'buffer_frame_count') and self.buffer_frame_count < 5:
+                        print(f"Updated buffer texture at frame {self.buffer_frame_count}, time: {time_value:.2f}")
+
+            # Use buffer texture as iChannel1 for main shader if it's ar_spectrum.glsl
+            if filename == "ar_spectrum.glsl":
+                self.buffer_fbo.color_attachments[0].use(location=1)
+            else:
+                # For other shaders, use buffer texture as iChannel0
+                self.buffer_fbo.color_attachments[0].use(location=0)
 
         # Set time uniform for main shader
         if 'iTime' in self.prog:

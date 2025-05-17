@@ -9,15 +9,9 @@ import shutil
 
 from core.base_visualizer import BaseVisualizer
 from modules.audio_processor import load_audio
-from modules.ffmpeg_handler import add_audio_to_video
+# Import add_audio_to_video where it's used to avoid circular imports
 from visualizers.audioreactive_shader.config import process_config
 from visualizers.audioreactive_shader.renderer import AudioreactiveShaderRenderer
-
-# Try to import soundfile, which is needed for audio processing
-try:
-    import soundfile as sf
-except ImportError:
-    sf = None
 
 class AudioreactiveShaderVisualizer(BaseVisualizer):
     """
@@ -227,16 +221,42 @@ class AudioreactiveShaderVisualizer(BaseVisualizer):
             if progress_callback:
                 progress_callback(95, "Video generation complete!")
 
-            # Skip audio merging entirely to avoid hanging
-            print("INFO: Audio merging is disabled to prevent hanging. The video will be generated without audio.")
-            print("INFO: You can add audio to the video manually using a video editing tool.")
-
             # Check if the output file exists
             if not os.path.exists(output_file):
                 print(f"WARNING: Output file {output_file} does not exist. Creating an empty file.")
                 # Create an empty file to prevent errors
                 with open(output_file, 'w') as f:
                     f.write('')
+                if progress_callback:
+                    progress_callback(100, "Visualization complete!")
+                return output_file
+
+            # Add audio to the video
+            if progress_callback:
+                progress_callback(96, "Adding audio to video...")
+
+            try:
+                # Import the add_audio_to_video function
+                from modules.ffmpeg_handler import add_audio_to_video
+
+                # Create a temporary file for the output with audio
+                temp_output_file = f"{output_file}.with_audio.mp4"
+
+                # Add audio to the video with a timeout
+                print(f"Adding audio from {audio_file} to {output_file}")
+                success = add_audio_to_video(output_file, audio_file, temp_output_file)
+
+                if success and os.path.exists(temp_output_file) and os.path.getsize(temp_output_file) > 0:
+                    # Replace the original file with the one with audio
+                    if os.path.exists(output_file):
+                        os.remove(output_file)
+                    os.rename(temp_output_file, output_file)
+                    print("Successfully added audio to the video")
+                else:
+                    print("WARNING: Failed to add audio to the video. Using video without audio.")
+            except Exception as e:
+                print(f"ERROR: Failed to add audio to the video: {e}")
+                print("Using video without audio.")
 
             if progress_callback:
                 progress_callback(98, "Finalizing video...")
@@ -255,6 +275,7 @@ class AudioreactiveShaderVisualizer(BaseVisualizer):
         """Get a list of all available audioreactive GLSL shaders in the glsl directory."""
         import glob
         import os
+        import re
 
         # Get all shader files that start with "ar_" (audioreactive)
         shader_files = glob.glob("glsl/ar_*.glsl")
@@ -263,8 +284,34 @@ class AudioreactiveShaderVisualizer(BaseVisualizer):
         for shader_path in shader_files:
             # Get just the filename without extension
             shader_name = os.path.basename(shader_path).replace(".glsl", "")
-            # Convert to title case for display (e.g., "ar_acidjam" -> "Acidjam")
-            display_name = shader_name.replace("ar_", "").replace("_", " ").title()
+
+            # Skip buffer files (they are support files, not visualizers)
+            if "_buffer" in shader_name:
+                continue
+
+            # Skip any other support files that shouldn't be in the picker
+            if any(suffix in shader_name for suffix in ["_support", "_helper", "_common", "_util"]):
+                continue
+
+            # Try to extract name from [C] tag in shader file
+            display_name = None
+            try:
+                with open(shader_path, 'r') as f:
+                    shader_content = f.read()
+                    # Look for [C] tag pattern
+                    c_tag_match = re.search(r'\[\s*C\s*\](.*?)\[\s*/\s*C\s*\]', shader_content, re.DOTALL)
+                    if c_tag_match:
+                        # Extract the first line after [C] as the name
+                        c_tag_content = c_tag_match.group(1).strip().split('\n')
+                        if c_tag_content and c_tag_content[0].strip():
+                            # Remove any comment markers and whitespace
+                            display_name = c_tag_content[0].strip().lstrip('/').lstrip('*').strip()
+            except Exception as e:
+                print(f"Error reading shader file {shader_path}: {e}")
+
+            # If no name found in [C] tag, use the filename
+            if not display_name:
+                display_name = shader_name.replace("ar_", "").replace("_", " ").title()
 
             # Check if a preview video exists for this shader
             preview_path = f"glsl/previews/{shader_name}.mp4"
