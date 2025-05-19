@@ -748,16 +748,27 @@ def process_video_frame(video_capture, shader_renderer, width, height, current_t
 
     # First check if video_capture is available (prioritize pre-rendered video)
     if video_capture:
-        # Get the frame from the video
-        ret, frame_bgr = video_capture.read()
+        try:
+            # Calculate the frame position based on current_time and FPS
+            fps = video_capture.get(cv2.CAP_PROP_FPS)
+            total_frames = int(video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
 
-        # If we reached the end of the video, loop back to the beginning
-        if not ret:
-            video_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            if fps > 0 and total_frames > 0:
+                # Calculate the frame index based on time
+                frame_idx = int(current_time * fps) % total_frames
+
+                # Set the frame position directly instead of reading sequentially
+                video_capture.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
+
+            # Get the frame from the video
             ret, frame_bgr = video_capture.read()
 
-        if ret:
-            try:
+            # If we reached the end of the video, loop back to the beginning
+            if not ret:
+                video_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                ret, frame_bgr = video_capture.read()
+
+            if ret:
                 # Convert BGR to RGB
                 frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
 
@@ -771,12 +782,12 @@ def process_video_frame(video_capture, shader_renderer, width, height, current_t
                 # Update last good frame
                 last_good_frame = current_frame_pil.copy()
                 return current_frame_pil, last_good_frame
-            except Exception as e:
-                print(f"Error processing video frame: {e}")
-                # Fall through to shader renderer if video processing fails
-        else:
-            print("Failed to read video frame after looping. Falling back to shader renderer if available.")
-            # Fall through to shader renderer if video read fails
+            else:
+                print("Failed to read video frame after looping. Falling back to shader renderer if available.")
+                # Fall through to shader renderer if video read fails
+        except Exception as e:
+            print(f"Error processing video frame: {e}")
+            # Fall through to shader renderer if video processing fails
 
     # If video capture failed or is not available, try shader renderer
     if shader_renderer:

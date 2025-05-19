@@ -35,9 +35,21 @@ def load_audio(audio_file, duration=None, progress_callback=None):
     audio_duration = librosa.get_duration(y=y, sr=sr)
 
     # Trim audio if duration is specified
-    if duration is not None and duration > 0 and duration < audio_duration:
-        sample_count = int(duration * sr)
-        y = y[:sample_count]
+    if duration is not None:
+        # Convert duration to float if it's a string
+        if isinstance(duration, str):
+            try:
+                duration = float(duration)
+            except (ValueError, TypeError):
+                print(f"Warning: Invalid duration value '{duration}', using full audio duration")
+                duration = None
+
+        # Now check if we need to trim
+        if duration is not None and duration > 0 and duration < audio_duration:
+            sample_count = int(duration * sr)
+            y = y[:sample_count]
+        else:
+            duration = audio_duration
     else:
         duration = audio_duration
 

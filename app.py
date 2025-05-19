@@ -83,11 +83,12 @@ def index():
     """Render the home page with all available visualizers."""
     visualizers = registry.get_all_visualizers()
 
-    # Hide the audioreactive visualizer unless dev=true is in the URL
+    # Hide development visualizers unless dev=true is in the URL
     dev_mode = request.args.get('dev', '').lower() == 'true'
     if not dev_mode:
-        # Filter out the AudioreactiveShaderVisualizer
-        visualizers = [v for v in visualizers if v['name'] != 'AudioreactiveShaderVisualizer']
+        # Filter out development visualizers
+        visualizers = [v for v in visualizers if v['name'] != 'AudioreactiveShaderVisualizer'
+                      and v['name'] != 'CircularSpectrumVisualizer']
 
     shaders = get_available_shaders()
     return render_template("index.html", visualizers=visualizers, shaders=shaders, dev_mode=dev_mode)

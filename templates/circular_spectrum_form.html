@@ -14,7 +14,7 @@
 <body>
     <div class="container mt-5 mb-5 fade-in">
         <h1 class="text-center mb-3">{{ visualizer.name }}</h1>
-        <p class="text-center mb-5" style="max-width: 700px; margin-left: auto; margin-right: auto; color: var(--text-secondary);">Displays a raw audio waveform similar to an oscilloscope.</p>
+        <p class="text-center mb-5" style="max-width: 700px; margin-left: auto; margin-right: auto; color: var(--text-secondary);">{{ visualizer.description }}</p>
 
         <div class="mb-4">
             <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
@@ -22,9 +22,10 @@
             </a>
         </div>
 
-        <form id="upload-form" action="/upload" method="post" enctype="multipart/form-data" novalidate>
+        <form id="upload-form" action="/upload" method="POST" enctype="multipart/form-data" novalidate>
             <!-- Hidden fields -->
             <input type="hidden" name="visualizer_name" value="{{ visualizer.name }}">
+            <input type="hidden" name="submitted" value="{{ submitted }}">
 
             <!-- Nav Tabs -->
             <ul class="nav nav-tabs nav-fill mb-4" id="configTabs" role="tablist">
@@ -39,15 +40,14 @@
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="output-tab" data-bs-toggle="tab" data-bs-target="#output-tab-pane" type="button" role="tab" aria-controls="output-tab-pane" aria-selected="false">
-                        <i class="bi bi-gear me-2"></i> 3. Output Settings
+                    <button class="nav-link" id="advanced-tab" data-bs-toggle="tab" data-bs-target="#advanced-tab-pane" type="button" role="tab" aria-controls="advanced-tab-pane" aria-selected="false">
+                        <i class="bi bi-gear me-2"></i> 3. Advanced & Output
                     </button>
                 </li>
             </ul>
 
             <!-- Tab Content -->
             <div class="tab-content" id="configTabsContent">
-
                 <!-- ======================= -->
                 <!--      INPUT TAB PANE     -->
                 <!-- ======================= -->
@@ -59,7 +59,7 @@
                             <div class="row mb-3">
                                 <div class="col-12">
                                     <label for="file" class="form-label">Audio File* <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="right" title="Select the primary audio track (MP3, WAV, FLAC, etc.). Max 1.6GB."></i></label>
-                                    <input type="file" class="form-control" id="file" name="file" accept="audio/*">
+                                    <input type="file" class="form-control" id="file" name="file" accept="audio/*" required>
                                 </div>
                             </div>
 
@@ -101,23 +101,23 @@
                                 </div>
                             </div>
 
-                            <!-- Text Settings -->
+                            <!-- Text Colors -->
                             <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <label for="text_size" class="form-label">Text Size <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Size of the artist name and track title text."></i></label>
-                                    <select class="form-select" id="text_size" name="text_size">
-                                        <option value="small">Small</option>
-                                        <option value="medium">Medium</option>
-                                        <option value="large" selected>Large</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="artist_color" class="form-label">Artist Name Color <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Color of the artist name text."></i></label>
+                                <div class="col-md-6">
+                                    <label for="artist_color" class="form-label">Artist Text Color <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Color for the artist name text."></i></label>
                                     <input type="color" class="form-control form-control-color w-100" id="artist_color" name="artist_color" value="#FFFFFF">
                                 </div>
-                                <div class="col-md-4">
-                                    <label for="title_color" class="form-label">Track Title Color <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Color of the track title text."></i></label>
-                                    <input type="color" class="form-control form-control-color w-100" id="title_color" name="title_color" value="#CCCCCC">
+                                <div class="col-md-6">
+                                    <label for="title_color" class="form-label">Title Text Color <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Color for the track title text."></i></label>
+                                    <input type="color" class="form-control form-control-color w-100" id="title_color" name="title_color" value="#FFFFFF">
+                                </div>
+                            </div>
+
+                            <!-- Font Size -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="font_size" class="form-label">Font Size <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Size of the text in pixels."></i></label>
+                                    <input type="number" class="form-control" id="font_size" name="font_size" value="24" min="12" max="48">
                                 </div>
                             </div>
                         </div> <!-- End Card Body -->
@@ -128,68 +128,92 @@
                 <!--    APPEARANCE TAB PANE  -->
                 <!-- ======================= -->
                 <div class="tab-pane fade" id="appearance-tab-pane" role="tabpanel" aria-labelledby="appearance-tab" tabindex="0">
-                     <div class="card">
+                    <div class="card">
                         <div class="card-body">
-                             <h5 class="card-title mb-3">Waveform Appearance</h5>
-                             <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="use_standard_settings" class="form-label">Waveform Settings <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Choose between standard settings (recommended) or custom settings."></i></label>
-                                    <select class="form-select mb-2" id="use_standard_settings" name="use_standard_settings">
-                                        <option value="true" selected>Standard Settings (Recommended)</option>
-                                        <option value="false">Custom Settings</option>
-                                    </select>
-                                    <div id="custom_color_container">
-                                        <label for="line_color" class="form-label">Custom Color <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Custom color for the waveform if not using standard settings."></i></label>
-                                        <input type="color" class="form-control form-control-color w-100" id="line_color" name="line_color" value="#ffffe5">
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="line_thickness" class="form-label">Line Thickness <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Thickness of the waveform line in pixels (1-10). Higher values make the line thicker."></i></label>
-                                    <input type="number" class="form-control" id="line_thickness" name="line_thickness" value="10" min="1" max="10">
-                                </div>
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <label for="scale" class="form-label">Amplitude Scale <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Scale factor for the waveform amplitude. Higher values make the waveform taller."></i></label>
-                                    <input type="number" class="form-control" id="scale" name="scale" value="4.0" step="0.1" min="0.1">
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="thickness_scale" class="form-label">Thickness Scale <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Scale factor for the waveform thickness. Smaller values make the waveform thicker."></i></label>
-                                    <input type="number" class="form-control" id="thickness_scale" name="thickness_scale" value="0.1" step="0.05" min="0.05" max="1.0">
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="smoothing_factor" class="form-label">Smoothing Factor <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="How much to smooth the waveform (0.0 for no smoothing, 1.0 for maximum smoothing)."></i></label>
-                                    <input type="number" class="form-control" id="smoothing_factor" name="smoothing_factor" value="0.8" step="0.05" min="0.0" max="1.0">
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="persistence" class="form-label">Persistence <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Controls the trailing effect. Higher values create longer trails and reduce the 'double waveform' effect."></i></label>
-                                    <input type="number" class="form-control" id="persistence" name="persistence" value="0.7" step="0.05" min="0.0" max="0.95">
-                                </div>
-                            </div>
+                            <h5 class="card-title mb-3">Circular Spectrum Settings</h5>
+
                             <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <label for="waveform_update_rate" class="form-label">Waveform Update Rate <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="How many times per second the waveform updates. Lower values (10-15) reduce the 'double waveform' effect."></i></label>
-                                    <input type="number" class="form-control" id="waveform_update_rate" name="waveform_update_rate" value="15" step="1" min="5" max="60">
+                                    <label for="num_bars" class="form-label">Number of Bars <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Number of bars around the circle (12-72)"></i></label>
+                                    <input type="number" id="num_bars" name="num_bars" min="12" max="72" value="36" class="form-control">
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="vertical_offset" class="form-label">Vertical Position <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Vertical position of the waveform. Negative values move it down, positive values move it up."></i></label>
-                                    <input type="number" class="form-control" id="vertical_offset" name="vertical_offset" value="-1.5" step="0.05" min="-2.0" max="0.9">
+                                    <label for="segments_per_bar" class="form-label">Segments Per Bar <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Number of segments in each bar (5-30)"></i></label>
+                                    <input type="number" id="segments_per_bar" name="segments_per_bar" min="5" max="30" value="15" class="form-control">
                                 </div>
                             </div>
-                            <h6 class="mt-4">Text Glow Effect</h6>
+
                             <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <label for="glow_effect" class="form-label">Text Glow Effect <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Add a glow effect to the artist name and track title text (not the waveform)."></i></label>
-                                    <select class="form-select" id="glow_effect" name="glow_effect">
-                                        <option value="white">White</option>
-                                        <option value="black" selected>Black</option>
-                                        <option value="match_line">Match Line Color</option>
-                                    </select>
+                                    <label for="inner_radius" class="form-label">Inner Radius <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Inner radius of the circle (0.05-0.4)"></i></label>
+                                    <input type="range" id="inner_radius" name="inner_radius" min="0.05" max="0.4" step="0.01" value="0.20" class="form-range">
+                                    <small class="form-text text-muted">Value: <span id="inner_radius_value">0.20</span></small>
                                 </div>
                                 <div class="col-md-6">
-                                    <!-- Hidden field to maintain compatibility with the backend -->
-                                    <input type="hidden" id="glow_blur_radius" name="glow_blur_radius" value="3">
-                                    <input type="hidden" id="glow_intensity" name="glow_intensity" value="1.0">
+                                    <label for="outer_radius" class="form-label">Outer Radius <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Outer radius of the circle (0.2-0.8)"></i></label>
+                                    <input type="range" id="outer_radius" name="outer_radius" min="0.2" max="0.8" step="0.01" value="0.40" class="form-range">
+                                    <small class="form-text text-muted">Value: <span id="outer_radius_value">0.40</span></small>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="border_size" class="form-label">Border Size <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Size of borders between segments (0-0.2)"></i></label>
+                                    <input type="range" id="border_size" name="border_size" min="0" max="0.2" step="0.01" value="0.08" class="form-range">
+                                    <small class="form-text text-muted">Value: <span id="border_size_value">0.08</span></small>
+                                </div>
+                            </div>
+
+                            <h6 class="mt-4">Sensitivity Settings</h6>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="overall_master_gain" class="form-label">Master Gain <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Overall gain multiplier (0.1-3)"></i></label>
+                                    <input type="range" id="overall_master_gain" name="overall_master_gain" min="0.1" max="3" step="0.1" value="1.0" class="form-range">
+                                    <small class="form-text text-muted">Value: <span id="overall_master_gain_value">1.0</span></small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="bar_height_power" class="form-label">Bar Height Power <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Non-linear height mapping (0.5-2)"></i></label>
+                                    <input type="range" id="bar_height_power" name="bar_height_power" min="0.5" max="2" step="0.1" value="1.1" class="form-range">
+                                    <small class="form-text text-muted">Value: <span id="bar_height_power_value">1.1</span></small>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="freq_gain_min_mult" class="form-label">Low Frequency Gain <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Gain multiplier for lowest frequencies (0.1-2)"></i></label>
+                                    <input type="range" id="freq_gain_min_mult" name="freq_gain_min_mult" min="0.1" max="2" step="0.1" value="0.4" class="form-range">
+                                    <small class="form-text text-muted">Value: <span id="freq_gain_min_mult_value">0.4</span></small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="freq_gain_max_mult" class="form-label">High Frequency Gain <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Gain multiplier for highest frequencies (0.1-3)"></i></label>
+                                    <input type="range" id="freq_gain_max_mult" name="freq_gain_max_mult" min="0.1" max="3" step="0.1" value="1.8" class="form-range">
+                                    <small class="form-text text-muted">Value: <span id="freq_gain_max_mult_value">1.8</span></small>
+                                </div>
+                            </div>
+
+                            <h6 class="mt-4">Color Settings</h6>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="color_lit_dark" class="form-label">Inner Segment Color <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Color for inner lit segments"></i></label>
+                                    <input type="color" id="color_lit_dark" name="color_lit_dark" value="#666666" class="form-control form-control-color w-100">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="color_lit_bright" class="form-label">Outer Segment Color <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Color for outer lit segments"></i></label>
+                                    <input type="color" id="color_lit_bright" name="color_lit_bright" value="#FFFFFF" class="form-control form-control-color w-100">
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="color_unlit" class="form-label">Unlit Segment Color <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Color for unlit segments"></i></label>
+                                    <input type="color" id="color_unlit" name="color_unlit" value="#141414" class="form-control form-control-color w-100">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="lit_brightness_multiplier" class="form-label">Brightness Multiplier <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Brightness multiplier for lit segments (0.5-3)"></i></label>
+                                    <input type="range" id="lit_brightness_multiplier" name="lit_brightness_multiplier" min="0.5" max="3" step="0.1" value="1.3" class="form-range">
+                                    <small class="form-text text-muted">Value: <span id="lit_brightness_multiplier_value">1.3</span></small>
                                 </div>
                             </div>
                         </div> <!-- End Card Body -->
@@ -197,22 +221,48 @@
                 </div> <!-- End Appearance Tab Pane -->
 
                 <!-- ======================= -->
-                <!--    OUTPUT TAB PANE      -->
+                <!--    ADVANCED TAB PANE    -->
                 <!-- ======================= -->
-                <div class="tab-pane fade" id="output-tab-pane" role="tabpanel" aria-labelledby="output-tab" tabindex="0">
-                     <div class="card">
+                <div class="tab-pane fade" id="advanced-tab-pane" role="tabpanel" aria-labelledby="advanced-tab" tabindex="0">
+                    <div class="card">
                         <div class="card-body">
-                            <h5 class="card-title mb-3">Output Settings</h5>
+                            <h5 class="card-title mb-3">Advanced & Output</h5>
+
+                            <h6>Frequency & Amplitude Settings</h6>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="min_freq" class="form-label">Min Frequency (Hz) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Lowest audio frequency the visualizer responds to."></i></label>
+                                    <input type="number" class="form-control" id="min_freq" name="min_freq" value="30" min="20" max="500">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="max_freq" class="form-label">Max Frequency (Hz) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Highest audio frequency the visualizer responds to."></i></label>
+                                    <input type="number" class="form-control" id="max_freq" name="max_freq" value="16000" min="5000" max="22050">
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="freq_gain_curve_power" class="form-label">Frequency Gain Curve <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Shapes the transition curve between low and high frequency gain (lower = more gain towards high frequencies)"></i></label>
+                                    <input type="range" id="freq_gain_curve_power" name="freq_gain_curve_power" min="0.1" max="2.0" step="0.1" value="0.6" class="form-range">
+                                    <small class="form-text text-muted">Value: <span id="freq_gain_curve_power_value">0.6</span></small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="amplitude_compression_power" class="form-label">Amplitude Compression <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Amplitude compression power (1.0 disables compression)"></i></label>
+                                    <input type="range" id="amplitude_compression_power" name="amplitude_compression_power" min="0.5" max="2.0" step="0.1" value="1.0" class="form-range">
+                                    <small class="form-text text-muted">Value: <span id="amplitude_compression_power_value">1.0</span></small>
+                                </div>
+                            </div>
+
+                            <h6 class="mt-4">Video Output Settings</h6>
                             <div class="row mb-3">
                                 <div class="col-md-4">
                                     <label for="duration" class="form-label">Duration (sec) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Maximum output video duration in seconds. Set to 0 or leave empty to process the full audio track."></i></label>
                                     <input type="number" class="form-control" id="duration" name="duration" value="0" min="0" step="1">
                                 </div>
                                 <div class="col-md-4">
-                                    <label for="fps" class="form-label">FPS <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Frames per second for the entire output video (including background video). Lower values (15-20) recommended for oscilloscope to reduce 'double waveform' effect."></i></label>
+                                    <label for="fps" class="form-label">FPS <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Frames per second for the output video (e.g., 30, 60). Higher FPS means smoother animation but larger file size and longer processing."></i></label>
                                     <input type="number" class="form-control" id="fps" name="fps" value="30" min="15" max="60">
                                 </div>
-                                <div class="col-md-4"></div> <!-- Placeholder -->
                             </div>
                             <div class="row mb-3">
                                 <div class="col-md-6">
@@ -226,9 +276,8 @@
                             </div>
                         </div> <!-- End Card Body -->
                     </div> <!-- End Card -->
-                </div> <!-- End Output Tab Pane -->
-
-            </div> <!-- End Tab Content -->
+                </div> <!-- End Advanced Tab Pane -->
+            </div>
 
             <!-- Submit Button -->
             <div class="d-grid mt-5">
@@ -239,8 +288,7 @@
                     <i class="bi bi-info-circle me-1"></i> Processing may take a few minutes depending on file size and settings
                 </p>
             </div>
-
-        </form> <!-- End Form -->
+        </form>
 
         <!-- Processing Card -->
         <div id="processing-card" class="card my-5" style="display: none;">
@@ -248,7 +296,6 @@
                 <h5 class="mb-0"><i class="bi bi-cpu me-2"></i> Processing</h5>
             </div>
             <div class="card-body text-center py-4">
-                <!-- Processing Animation (shown during processing) -->
                 <div id="processing-animation" class="mb-4">
                     <i class="bi bi-waveform pulse" style="font-size: 3rem; color: var(--primary-color);"></i>
                 </div>
@@ -257,14 +304,12 @@
                 </div>
                 <p id="status-message" class="mb-4">Processing your audio file...</p>
 
-                <!-- Video Player (hidden until processing completes) -->
                 <div id="video-player-container" style="display: none;" class="mb-4">
                     <video id="result-video" class="w-100 rounded shadow" controls>
                         Your browser does not support the video tag.
                     </video>
                 </div>
 
-                <!-- Download and Create Another Buttons -->
                 <div id="download-section" style="display: none;">
                     <div class="d-flex justify-content-center gap-3 mt-4">
                         <a id="download-link" href="#" class="btn btn-success btn-lg px-4">
@@ -276,41 +321,8 @@
                     </div>
                 </div>
             </div>
-        </div> <!-- End Processing Card -->
-
-        <!-- Error Card (Fallback for when modal can't be used) -->
-        <div id="error-card" class="card my-5" style="display: none;">
-            <div class="card-header" style="background: linear-gradient(90deg, rgba(255, 82, 82, 0.1), rgba(255, 82, 82, 0.2));">
-                <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i> Error</h5>
-            </div>
-            <div class="card-body">
-                <div class="text-center mb-3">
-                    <i class="bi bi-x-circle" style="font-size: 2.5rem; color: var(--error-color);"></i>
-                </div>
-                <p class="text-center mb-3"><strong>An error occurred during processing:</strong></p>
-                <pre id="error-message" class="error-pre mb-4"></pre>
-                <div class="d-grid">
-                    <button type="button" class="btn btn-outline-secondary" id="back-btn">
-                        <i class="bi bi-arrow-left me-2"></i> Back to Form
-                    </button>
-                </div>
-            </div>
-        </div> <!-- End Error Card -->
-
-    </div> <!-- End Container -->
-
-    <!-- Footer -->
-    <footer class="container text-center mt-5 py-4">
-        <div class="mb-3">
-            <i class="bi bi-soundwave" style="font-size: 1.5rem; color: var(--primary-color);"></i>
         </div>
-        <p class="mb-2">Created by Marco van Hylckama Vlieg</p>
-        <p class="mb-0">
-            <a href="https://x.com/AIandDesign" target="_blank" rel="noopener noreferrer" class="me-3">
-                <i class="bi bi-twitter-x me-1"></i> @AIandDesign
-            </a>
-        </p>
-    </footer>
+    </div>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -323,15 +335,13 @@
     <script src="{{ url_for('static', filename='js/tooltip-manager.js') }}"></script>
     <script src="{{ url_for('static', filename='js/form-validation.js') }}"></script>
     <script src="{{ url_for('static', filename='js/processing-ui.js') }}"></script>
-
-    <!-- Oscilloscope Waveform Form JS -->
-    <script src="{{ url_for('static', filename='js/oscilloscope_waveform_form.js') }}"></script>
-
-    <!-- Shader Selector JS -->
     <script src="{{ url_for('static', filename='js/shader-selector.js') }}"></script>
 
     <!-- Background Media Handler JS -->
     <script src="{{ url_for('static', filename='js/background-media-handler.js') }}"></script>
+
+    <!-- Circular Spectrum Form JS -->
+    <script src="{{ url_for('static', filename='js/circular_spectrum_form.js') }}"></script>
 
     <!-- Include the shared error modal -->
     {% include 'partials/error_modal.html' %}

@@ -50,12 +50,27 @@
                         <img src="{{ url_for('static', filename=visualizer['thumbnail'].replace('static/', '')) }}" class="card-img-top" alt="{{ visualizer['name'] }}">
                         <div class="position-absolute top-0 end-0 m-2">
                             <span class="badge bg-primary bg-opacity-75 px-3 py-2 rounded-pill">
-                                <i class="bi bi-soundwave me-1"></i> Visualizer
+                                <i class="bi bi-soundwave me-1"></i>
+                                {% if 'GL' in visualizer['display_name'] %}
+                                GL Visualizer
+                                {% else %}
+                                Visualizer
+                                {% endif %}
                             </span>
                         </div>
                     </div>
                     {% else %}
                     <div class="card-img-top position-relative" style="height: 200px; background: linear-gradient(135deg, var(--dark-surface-2), var(--dark-surface-3));">
+                        <div class="position-absolute top-0 end-0 m-2">
+                            <span class="badge bg-primary bg-opacity-75 px-3 py-2 rounded-pill">
+                                <i class="bi bi-soundwave me-1"></i>
+                                {% if 'GL' in visualizer['display_name'] %}
+                                GL Visualizer
+                                {% else %}
+                                Visualizer
+                                {% endif %}
+                            </span>
+                        </div>
                         <div class="position-absolute top-50 start-50 translate-middle text-center">
                             <i class="bi bi-music-note-beamed" style="font-size: 3rem; opacity: 0.5;"></i>
                             <p class="mt-2">No Preview Available</p>

@@ -25,8 +25,8 @@ class AudioreactiveShaderVisualizer(BaseVisualizer):
         super().__init__()
 
         # Set visualizer metadata
-        self.display_name = "Audioreactive Shader"
-        self.description = "Visualize audio using GLSL shaders that react to sound. Create mesmerizing visual effects that pulse and transform with your music."
+        self.display_name = "Audioreactive Shader (GL)"
+        self.description = "Visualize audio using GLSL shaders that react to sound using GL rendering. Create mesmerizing visual effects that pulse and transform with your music."
         self.thumbnail = "audioreactive_shader_thumb.jpg"  # Will need to be created
 
     def process_config(self, config=None):
