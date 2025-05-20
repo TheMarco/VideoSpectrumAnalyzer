@@ -11,14 +11,34 @@
 // REMOVED: Inner segment is no longer 'always on'.
 // REMOVED: Unlit segments are now black instead of faintly visible.
 //
-// Forward declaration of constants
+// Forward declaration of uniforms
+// These will be set from the renderer
+uniform int uNumBars;           // Number of bars around the circle
+uniform int uSegmentsPerBar;    // Number of segments per bar
+uniform float uInnerRadius;     // Inner radius of the circle (0-1)
+uniform float uOuterRadius;     // Outer radius of the circle (0-1)
+uniform float uBorderSize;      // Border size for segments (0-1)
+uniform float uBarWidth;        // Width of bars (0-1, where 1 means bars touch)
+uniform float uRectangularBars; // Use rectangular bars (0=radial/trapezoid, 1=rectangular)
+uniform float uDebugMode;       // Debug mode (0=off, 1=on)
+uniform float uTime;            // Current time in seconds (for animation)
+
+// Sensitivity and gain uniforms
+uniform float uOverallMasterGain;
+uniform float uFreqGainMinMult;
+uniform float uFreqGainMaxMult;
+uniform float uFreqGainCurvePower;
+uniform float uBarHeightPower;
+uniform float uAmplitudeCompressionPower;
+
+// Fallback constants in case uniforms aren't set
 const int NUM_BARS = 36;
 const int SEGMENTS_PER_BAR = 15;
 
-// Debug function to visualize the audio texture at the bottom of the screen
+// Enhanced debug function to visualize the audio texture at the bottom of the screen
 vec4 debugAudioTexture(vec2 uv) {
-    // Only show in the bottom 10% of the screen
-    if (uv.y > 0.1) return vec4(0.0);
+    // Only show in the bottom 15% of the screen
+    if (uv.y > 0.15) return vec4(0.0);
 
     // Map x coordinate to audio texture position
     float x_pos = uv.x;
@@ -27,20 +47,56 @@ vec4 debugAudioTexture(vec2 uv) {
     float amplitude = texture(iChannel0, vec2(x_pos, 0.0)).x;
 
     // Draw a simple bar graph
-    float bar_height = amplitude * 0.1; // Scale to fit in the bottom 10%
+    float bar_height = amplitude * 0.15; // Scale to fit in the bottom 15%
 
-    if (uv.y < bar_height) {
-        // Color based on amplitude (red for low, green for high)
-        return vec4(1.0 - amplitude, amplitude, 0.0, 1.0);
+    // Draw the bar - only if amplitude is above a threshold
+    // This prevents the solid bar at the bottom
+    if (uv.y < bar_height && amplitude > 0.01) {
+        // Color based on amplitude (blue for low, green for high)
+        return vec4(0.0, amplitude, 1.0 - amplitude, 1.0);
     }
 
     // Draw a reference line at the top
-    if (abs(uv.y - 0.1) < 0.002) {
+    if (abs(uv.y - 0.15) < 0.002) {
         return vec4(1.0, 1.0, 1.0, 1.0);
     }
 
-    // Background
-    return vec4(0.1, 0.1, 0.1, 0.5);
+    // Draw a reference line at the bottom
+    if (abs(uv.y - 0.001) < 0.001) {
+        return vec4(0.5, 0.5, 0.5, 1.0);
+    }
+
+    // Draw markers for each bar's sampling position
+    // Use uNumBars if set, otherwise fall back to NUM_BARS constant
+    int numBars = (uNumBars > 0) ? uNumBars : NUM_BARS;
+
+    for (int i = 0; i < numBars; i++) {
+        // Calculate the texel position for this bar (same calculation as in mainImage)
+        float texels_per_bar = 512.0 / float(numBars);
+        float texel_pos = (float(i) + 0.5) * texels_per_bar;
+        float marker_pos = texel_pos / 512.0; // Normalize to 0-1
+
+        // Draw a vertical line at each bar's sampling position
+        if (abs(uv.x - marker_pos) < 0.001) {
+            // Alternate colors for better visibility
+            if (i % 2 == 0) {
+                return vec4(1.0, 1.0, 0.0, 1.0); // Yellow
+            } else {
+                return vec4(0.0, 1.0, 1.0, 1.0); // Cyan
+            }
+        }
+
+        // Draw bar index numbers for every 5th bar
+        if (i % 5 == 0) {
+            // Draw a small horizontal line
+            if (abs(uv.x - marker_pos) < 0.005 && abs(uv.y - 0.02) < 0.002) {
+                return vec4(1.0, 1.0, 1.0, 1.0);
+            }
+        }
+    }
+
+    // Background - more transparent and darker
+    return vec4(0.05, 0.05, 0.05, 0.5);
 }
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
@@ -53,8 +109,9 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
     // Define the radial bounds of the analyzer ring (normalized 0-1 from center to edge)
     // These are relative to the distance from the center to the NEAREST screen edge after aspect correction.
-    const float INNER_RADIUS = 0.20; // Inner edge of the segments (0 is center)
-    const float OUTER_RADIUS = 0.40; // Outer edge of the segments (0.5 would reach top/bottom/left/right edge)
+    // Use uniform values if set, otherwise fall back to constants
+    float innerRadius = (uInnerRadius > 0.0) ? uInnerRadius : 0.20;
+    float outerRadius = (uOuterRadius > 0.0) ? uOuterRadius : 0.40;
 
     // Angle offset for the start of the spectrum (e.g., 0.0 for right, PI/2.0 for top, PI for left, 3*PI/2.0 for bottom)
     // Let's start the lowest frequency bar at the bottom (3*PI/2) and go counter-clockwise.
@@ -62,16 +119,15 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
     // Define spacing/borders relative to the SIZE OF THE RECTANGULAR CELL (0.0 to 1.0)
     // This refers to the local coordinate system within a single segment rectangle.
-    const float BORDER_SIZE = 0.08; // How much of the local cell is border space
+    float borderSize = (uBorderSize > 0.0) ? uBorderSize : 0.08;
 
-    // --- Sensitivity and Gain Settings (Tune these!) ---
-    const float OVERALL_MASTER_GAIN = 1.0; // *** Set to 1.0 as requested ***
-    const float FREQ_GAIN_MIN_MULT = 0.4; // Gain multiplier for lowest freq bar
-    const float FREQ_GAIN_MAX_MULT = 1.8; // Gain multiplier for highest freq bar
-    const float FREQ_GAIN_CURVE_POWER = 0.6; // Shapes the transition (lower = more gain towards high freqs)
-
-    const float BAR_HEIGHT_POWER = 1.1; // Non-linear height mapping (>1.0 makes high segments harder to light)
-    const float AMPLITUDE_COMPRESSION_POWER = 1.0; // Amplitude compression (1.0 disables)
+    // --- Sensitivity and Gain Settings (Use uniforms if set, otherwise use defaults) ---
+    float overallMasterGain = (uOverallMasterGain > 0.0) ? uOverallMasterGain : 0.8;
+    float freqGainMinMult = (uFreqGainMinMult > 0.0) ? uFreqGainMinMult : 0.3;
+    float freqGainMaxMult = (uFreqGainMaxMult > 0.0) ? uFreqGainMaxMult : 1.2;
+    float freqGainCurvePower = (uFreqGainCurvePower > 0.0) ? uFreqGainCurvePower : 0.7;
+    float barHeightPower = (uBarHeightPower > 0.0) ? uBarHeightPower : 1.2;
+    float amplitudeCompressionPower = (uAmplitudeCompressionPower > 0.0) ? uAmplitudeCompressionPower : 0.9;
 
     // --- Color Settings ---
     const vec3 COLOR_LIT_DARK    = vec3(0.4, 0.4, 0.4); // Base color for lit segments (inner)
@@ -114,9 +170,44 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
     // --- Check if pixel is within the analyzer ring ---
     // r_normalized is 0 at center, 0.5 at nearest edge.
-    if (r_normalized < INNER_RADIUS || r_normalized > OUTER_RADIUS) {
+    if (r_normalized < innerRadius || r_normalized > outerRadius) {
         // Outside the analyzer ring: show background
         fragColor = bg_color;
+        return;
+    }
+
+    // Debug visualization - only shown when debug mode is enabled
+    if (uDebugMode > 1.5) {
+        // Show a simple colored ring to verify the ring dimensions are correct
+        vec3 debug_color = vec3(0.0);
+
+        // Divide the ring into 8 sectors with different colors
+        // Add time-based rotation to verify animation is working
+        float rotating_theta = theta + uTime * 0.5; // Rotate slowly over time
+        float angle_sector = mod(rotating_theta + PI, 2.0 * PI) / (PI / 4.0);
+        int sector = int(floor(angle_sector));
+
+        // Assign different colors to each sector
+        if (sector == 0) debug_color = vec3(1.0, 0.0, 0.0); // Red
+        else if (sector == 1) debug_color = vec3(1.0, 0.5, 0.0); // Orange
+        else if (sector == 2) debug_color = vec3(1.0, 1.0, 0.0); // Yellow
+        else if (sector == 3) debug_color = vec3(0.0, 1.0, 0.0); // Green
+        else if (sector == 4) debug_color = vec3(0.0, 1.0, 1.0); // Cyan
+        else if (sector == 5) debug_color = vec3(0.0, 0.0, 1.0); // Blue
+        else if (sector == 6) debug_color = vec3(0.5, 0.0, 1.0); // Purple
+        else debug_color = vec3(1.0, 0.0, 1.0); // Magenta
+
+        // Add a pulsing effect based on time to verify animation
+        float pulse = 0.5 + 0.5 * sin(uTime * 2.0);
+
+        // Vary brightness based on radius and pulse
+        float brightness = ((r_normalized - innerRadius) / (outerRadius - innerRadius)) * (0.7 + 0.3 * pulse);
+        debug_color *= brightness;
+
+        // Show the debug visualization
+        fragColor = vec4(debug_color, 1.0);
+
+        // Exit early in full debug mode
         return;
     }
 
@@ -129,26 +220,32 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     float final_angle = mod(angle_0_2PI + START_ANGLE_OFFSET, 2.0 * PI); // Add offset and wrap
     float normalized_angle = final_angle / (2.0 * PI); // Normalize to [0, 1)
 
+    // Use uNumBars if set, otherwise fall back to NUM_BARS constant
+    int numBars = (uNumBars > 0) ? uNumBars : NUM_BARS;
+
     // Integer index for bar (based on angle)
-    int bar_index = int(floor(normalized_angle * float(NUM_BARS)));
+    int bar_index = int(floor(normalized_angle * float(numBars)));
 
     // Check valid bar index (shouldn't be needed if r_normalized check is right, but good practice)
-     if (bar_index < 0 || bar_index >= NUM_BARS) {
+     if (bar_index < 0 || bar_index >= numBars) {
          fragColor = vec4(0.0, 0.0, 0.0, 1.0);
          return;
      }
 
     // --- Determine Segment Index based on Radial Position ---
 
-    // Normalize radial position within the ring (0.0 at INNER_RADIUS, 1.0 at OUTER_RADIUS)
-    float normalized_radial_pos_in_ring = (r_normalized - INNER_RADIUS) / (OUTER_RADIUS - INNER_RADIUS);
+    // Normalize radial position within the ring (0.0 at innerRadius, 1.0 at outerRadius)
+    float normalized_radial_pos_in_ring = (r_normalized - innerRadius) / (outerRadius - innerRadius);
+
+    // Use uSegmentsPerBar if set, otherwise fall back to SEGMENTS_PER_BAR constant
+    int segmentsPerBar = (uSegmentsPerBar > 0) ? uSegmentsPerBar : SEGMENTS_PER_BAR;
 
     // Integer index for the segment (based on this normalized radial position)
     // Segment 0 is innermost.
-    int segment_index = int(floor(normalized_radial_pos_in_ring * float(SEGMENTS_PER_BAR)));
+    int segment_index = int(floor(normalized_radial_pos_in_ring * float(segmentsPerBar)));
 
     // Check valid segment index (shouldn't be needed if r_normalized check is right, but good practice)
-    if (segment_index < 0 || segment_index >= SEGMENTS_PER_BAR) {
+    if (segment_index < 0 || segment_index >= segmentsPerBar) {
         // Invalid segment index: show background
         fragColor = bg_color;
         return;
@@ -157,33 +254,61 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     // --- Calculate Local UV and Bar Shape ---
 
     // The 'vertical' local coordinate (0..1) is based on the radial position within the segment's radial band
-    float local_radial_uv = fract(normalized_radial_pos_in_ring * float(SEGMENTS_PER_BAR)); // Position within the segment's radial slice
+    float local_radial_uv = fract(normalized_radial_pos_in_ring * float(segmentsPerBar)); // Position within the segment's radial slice
 
-    // --- Calculate Local Horizontal UV for Constant Width Bars ---
-    // We need a horizontal coordinate that maps the arc length within the bar's sector
-    // to a 0-1 range, such that the total arc length corresponding to 0-1 is constant
-    // regardless of radius. Let this constant total arc length be the arc length of
-    // the bar sector at the INNER_RADIUS.
+    // --- Calculate Local Horizontal UV ---
+    // We support two modes: rectangular bars (consistent width) or radial bars (trapezoid)
 
-    float bar_angle_span = 2.0 * PI / float(NUM_BARS);
-    float total_slot_arc_width = bar_angle_span * INNER_RADIUS; // Constant width based on inner radius
+    // Calculate the angle span for each bar
+    float bar_angle_span = 2.0 * PI / float(numBars);
 
-    // Calculate the angle within the current bar's sector (range 0 to bar_angle_span)
-    // Use the fact that normalized_angle * NUM_BARS has an integer part (bar_index)
-    // and a fractional part (position within the angular sector).
-    float angle_within_bar_sector = fract(normalized_angle * float(NUM_BARS)) * bar_angle_span;
+    // Calculate the center angle for this bar
+    float bar_center_angle = (float(bar_index) * bar_angle_span) + (bar_angle_span * 0.5) + START_ANGLE_OFFSET;
 
-    // Calculate the arc length at the current radius corresponding to this angle
-    float arc_length_at_current_radius = angle_within_bar_sector * r_normalized;
+    // Get the bar width factor (how much of the available space each bar takes)
+    float barWidthFactor = (uBarWidth > 0.0) ? clamp(uBarWidth, 0.1, 0.95) : 0.8;
 
-    // Map this arc length to a local horizontal coordinate (0..1), where 1.0 corresponds
-    // to the total_slot_arc_width.
-    float local_horizontal_uv = arc_length_at_current_radius / total_slot_arc_width;
+    float local_horizontal_uv;
+
+    // Calculate the current angle relative to the bar's center angle
+    float angle_diff = theta - bar_center_angle;
+
+    // Wrap the angle difference to ensure it's in the range [-PI, PI]
+    while (angle_diff > PI) angle_diff -= 2.0 * PI;
+    while (angle_diff < -PI) angle_diff += 2.0 * PI;
+
+    // --- SIMPLE RADIAL BAR MODE ---
+    // This is a simplified version that we know works
+
+    // Calculate the half-width of the bar in radians
+    float half_bar_angle = (bar_angle_span * 0.5) * barWidthFactor;
+
+    // Normalize the position within the bar to [0,1] range
+    // 0 = left edge, 0.5 = center, 1 = right edge
+    local_horizontal_uv = (angle_diff + half_bar_angle) / (2.0 * half_bar_angle);
+
+    // Debug: Force local_horizontal_uv to be in valid range for testing
+    // Uncomment this line to make all pixels within the ring show as part of a bar
+    if (uDebugMode > 1.5) {
+        // Full debug mode - show all pixels in the ring
+        local_horizontal_uv = 0.5;
+    }
 
     // --- Determine pixel color based on position within the constant-width bar rectangle ---
 
-    // If the pixel is outside the conceptual constant-width bar slot (i.e., in the gap), draw black.
-    // The constant-width bar slot occupies the local_horizontal_uv range [0, 1].
+    // Debug: Show a solid color for all bars to verify bar geometry
+    if (uDebugMode > 0.5 && uDebugMode < 1.0) {
+        // Show a solid color based on the bar index
+        vec3 bar_color = vec3(0.5);
+        if (bar_index % 2 == 0) {
+            bar_color = vec3(0.8, 0.8, 0.8); // Lighter for even bars
+        }
+        fragColor = vec4(bar_color, 1.0);
+        return;
+    }
+
+    // If the pixel is outside the conceptual bar slot (i.e., in the gap), draw black.
+    // The bar slot occupies the local_horizontal_uv range [0, 1].
     if (local_horizontal_uv < 0.0 || local_horizontal_uv > 1.0) {
         // Gap between bars: show background
         fragColor = bg_color;
@@ -192,8 +317,9 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
     // If we are within the bar slot [0, 1] horizontally, check if it's a border pixel.
     // Show background in the border area instead of a solid color.
-    if (local_horizontal_uv < BORDER_SIZE || local_horizontal_uv > 1.0 - BORDER_SIZE ||
-        local_radial_uv < BORDER_SIZE || local_radial_uv > 1.0 - BORDER_SIZE)
+    float border = max(0.01, borderSize); // Ensure border is at least 0.01
+    if (local_horizontal_uv < border || local_horizontal_uv > 1.0 - border ||
+        local_radial_uv < border || local_radial_uv > 1.0 - border)
     {
         fragColor = bg_color; // Show background in border areas
         return;
@@ -206,26 +332,70 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     // --- Get Audio Data for the Current Bar ---
 
     // Map the bar index directly to a position in the audio texture
-    // We need to map the bar index to the correct position in the audio texture
-    // The audio texture has 512 pixels, but we only have NUM_BARS bars
-    // So we need to sample at specific positions to get the right data
+    // The audio texture has 512 pixels, and we've distributed our NUM_BARS bars across it
+    // Each bar occupies multiple texels in the texture, so we need to sample from the correct position
 
-    // Calculate the exact texel position for this bar
-    // This ensures we sample exactly at the center of each texel
-    float texel_pos = float(bar_index) / float(NUM_BARS) * 512.0;
+    // Calculate how many texels each bar occupies in the texture
+    float texels_per_bar = 512.0 / float(numBars);
 
-    // Add 0.5 to sample at the center of the texel
-    texel_pos = texel_pos + 0.5;
+    // Calculate the center position for this bar's texels
+    // This ensures we sample from the middle of the bar's range in the texture
+    // Add a small offset to avoid edge cases at the first and last bars
+    float texel_pos = (float(bar_index) + 0.5) * texels_per_bar;
 
-    // Convert to normalized texture coordinates
+    // Adjust the first and last bars to ensure they get proper data
+    if (bar_index == 0) {
+        // First bar - sample a bit further in to avoid edge effects
+        texel_pos = max(texel_pos, 2.0);
+    } else if (bar_index == numBars - 1) {
+        // Last bar - sample a bit before the edge
+        texel_pos = min(texel_pos, 510.0);
+    }
+
+    // Convert to normalized texture coordinates (0-1 range)
     float freq_pos = texel_pos / 512.0;
 
     // Ensure freq_pos is within valid range [0,1]
-    freq_pos = clamp(freq_pos, 0.0, 1.0);
+    freq_pos = clamp(freq_pos, 0.01, 0.99); // Avoid the very edges
 
     // Sample raw amplitude from the audio texture
     // The audio texture has frequencies mapped along the X-axis
     float raw_amplitude = texture(iChannel0, vec2(freq_pos, 0.0)).r;
+
+    // Debug: Force amplitude for testing
+    if (uDebugMode > 0.0 && uDebugMode < 0.5) {
+        // Create a pattern where every 4th bar is fully lit
+        if (bar_index % 4 == 0) {
+            raw_amplitude = 1.0;  // Full amplitude
+        } else if (bar_index % 4 == 1) {
+            raw_amplitude = 0.75;  // 75% amplitude
+        } else if (bar_index % 4 == 2) {
+            raw_amplitude = 0.5;  // 50% amplitude
+        } else {
+            raw_amplitude = 0.25;  // 25% amplitude
+        }
+    }
+
+    // Simple debug mode for testing
+    if (uDebugMode > 0.5) {
+        // Create a test pattern
+        if (bar_index % 4 == 0) {
+            raw_amplitude = 1.0;  // Full amplitude
+        } else if (bar_index % 4 == 1) {
+            raw_amplitude = 0.75;  // 75% amplitude
+        } else if (bar_index % 4 == 2) {
+            raw_amplitude = 0.5;  // 50% amplitude
+        } else {
+            raw_amplitude = 0.25;  // 25% amplitude
+        }
+    }
+
+    // Debug: Uncomment to verify bar index to texture mapping
+    // if (bar_index == 0) raw_amplitude = 1.0;  // Force first bar to full amplitude
+    // if (bar_index == NUM_BARS/4) raw_amplitude = 0.8;  // Force quarter-way bar to 80%
+    // if (bar_index == NUM_BARS/2) raw_amplitude = 0.6;  // Force half-way bar to 60%
+    // if (bar_index == 3*NUM_BARS/4) raw_amplitude = 0.4;  // Force three-quarter-way bar to 40%
+    // if (bar_index == NUM_BARS-1) raw_amplitude = 0.2;  // Force last bar to 20%
 
     // Debug mode: Force specific bars to light up
     // This helps identify if the issue is with the shader or the audio data
@@ -252,19 +422,19 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     // This ensures bars with no audio signal remain off
 
     // --- Apply Sensitivity and Frequency-Dependent Gain ---
-    float processed_amplitude = pow(raw_amplitude, AMPLITUDE_COMPRESSION_POWER);
-    float bar_norm = float(bar_index) / float(NUM_BARS - 1); // 0 for first bar, 1 for last
-    float curved_bar_norm = pow(bar_norm, FREQ_GAIN_CURVE_POWER);
-    float freq_gain_multiplier = mix(FREQ_GAIN_MIN_MULT, FREQ_GAIN_MAX_MULT, curved_bar_norm);
-    float amplitude_after_gain = processed_amplitude * OVERALL_MASTER_GAIN * freq_gain_multiplier;
-    float final_amplitude = pow(amplitude_after_gain, BAR_HEIGHT_POWER); // Height 0.0 to 1.0 after power curve
+    float processed_amplitude = pow(raw_amplitude, amplitudeCompressionPower);
+    float bar_norm = float(bar_index) / float(numBars - 1); // 0 for first bar, 1 for last
+    float curved_bar_norm = pow(bar_norm, freqGainCurvePower);
+    float freq_gain_multiplier = mix(freqGainMinMult, freqGainMaxMult, curved_bar_norm);
+    float amplitude_after_gain = processed_amplitude * overallMasterGain * freq_gain_multiplier;
+    float final_amplitude = pow(amplitude_after_gain, barHeightPower); // Height 0.0 to 1.0 after power curve
 
     // Clamp the final amplitude to be between 0 and 1
     final_amplitude = clamp(final_amplitude, 0.0, 1.0);
 
     // --- Determine how many segments are lit based on final amplitude ---
-    // Note: This will be a float value between 0 and SEGMENTS_PER_BAR
-    float lit_segments_float = final_amplitude * float(SEGMENTS_PER_BAR);
+    // Note: This will be a float value between 0 and segmentsPerBar
+    float lit_segments_float = final_amplitude * float(segmentsPerBar);
 
     // Don't force the innermost segment to be lit - only light segments based on amplitude
     // Use ceiling to ensure proper segment lighting
@@ -279,7 +449,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
     // --- Determine the final pixel color ---
 
-    vec3 segment_color;
+    // Simple segment color calculation
+    vec3 final_segment_color;
 
     // Lighting logic: segment_index 0 is innermost.
     // Check if the current segment index is less than the count of segments that should be lit.
@@ -287,15 +458,15 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     // Only light segments if there's actual audio signal
     if (segment_index < lit_segments_count) { // Only light segments based on amplitude
         // This segment should be lit.
-        // Choose color based on segment index (0=inner, SEGMENTS_PER_BAR-1=outer segment)
-        float segment_norm_height = float(segment_index) / float(SEGMENTS_PER_BAR -1); // 0 for inner segment, approaches 1 for outer
+        // Choose color based on segment index (0=inner, segmentsPerBar-1=outer segment)
+        float segment_norm_height = float(segment_index) / float(segmentsPerBar - 1); // 0 for inner segment, approaches 1 for outer
 
-        // Lit color gradient (from inner dark to outer bright teal/cyan)
-        segment_color = mix(COLOR_LIT_DARK, COLOR_LIT_BRIGHT, segment_norm_height);
+        // Normal mode: Lit color gradient (from inner dark to outer bright teal/cyan)
+        final_segment_color = mix(COLOR_LIT_DARK, COLOR_LIT_BRIGHT, segment_norm_height);
 
         // Apply brightness multiplier for lit segments
-        segment_color *= LIT_BRIGHTNESS_MULTIPLIER;
-        segment_color = clamp(segment_color, 0.0, 1.0); // Clamp after multiplying
+        final_segment_color *= LIT_BRIGHTNESS_MULTIPLIER;
+        final_segment_color = clamp(final_segment_color, 0.0, 1.0); // Clamp after multiplying
 
         // Optional: Add a subtle glow effect towards the edges of the lit bars
         // This makes the transition slightly smoother and glowier.
@@ -304,15 +475,15 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
         // Option A: Based on position within the currently lit segment band (local_radial_uv)
         // float glow_edge = smoothstep(1.0 - BORDER_SIZE * 3.0, 1.0 - BORDER_SIZE, local_radial_uv); // Glow near the outer edge of the segment cell
-        // segment_color = mix(segment_color, COLOR_LIT_BRIGHT * LIT_BRIGHTNESS_MULTIPLIER, glow_edge * 0.5); // Mix in some extra bright glow
+        // final_segment_color = mix(final_segment_color, COLOR_LIT_BRIGHT * LIT_BRIGHTNESS_MULTIPLIER, glow_edge * 0.5); // Mix in some extra bright glow
 
         // Option B: Based on how close the *amplitude* is to the *next* segment threshold
         // This creates a glow effect on the *top* segment of the bar.
         float fractional_segment = fract(lit_segments_float); // How far into lighting the next segment we are
         if (segment_index == lit_segments_count - 1 && lit_segments_count > 0) { // Only apply glow to the topmost lit segment (if any)
              float glow_intensity = pow(fractional_segment, 2.0); // Power curve makes glow stronger when closer to full
-             segment_color = mix(segment_color, COLOR_LIT_BRIGHT * LIT_BRIGHTNESS_MULTIPLIER * 1.5, glow_intensity); // Mix in bright glow
-             segment_color = clamp(segment_color, 0.0, 1.0); // Clamp again
+             final_segment_color = mix(final_segment_color, COLOR_LIT_BRIGHT * LIT_BRIGHTNESS_MULTIPLIER * 1.5, glow_intensity); // Mix in bright glow
+             final_segment_color = clamp(final_segment_color, 0.0, 1.0); // Clamp again
         }
 
 
@@ -323,5 +494,5 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     }
 
     // Output the final lit segment color
-    fragColor = vec4(segment_color, 1.0);
+    fragColor = vec4(final_segment_color, 1.0);
 }

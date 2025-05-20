@@ -17,7 +17,7 @@ from .renderer import OscilloscopeWaveformRenderer
 from .simple_gl_renderer import SimpleGLOscilloscopeRenderer
 
 class OscilloscopeWaveformVisualizer(BaseVisualizer):
-    name = "OscilloscopeWaveformVisualizer"  # This must match the class name for proper registration
+    name = "Oscilloscope Waveform Visualizer"  # Updated to be more user-friendly
     display_name = "Oscilloscope Waveform (GL)"   # This is what will be shown to users
     description = "Displays a raw audio waveform similar to an oscilloscope using GL rendering."
     thumbnail = "static/images/thumbnails/oscilloscope_waveform.jpg"

@@ -162,6 +162,31 @@
                                     <input type="range" id="border_size" name="border_size" min="0" max="0.2" step="0.01" value="0.08" class="form-range">
                                     <small class="form-text text-muted">Value: <span id="border_size_value">0.08</span></small>
                                 </div>
+                                <div class="col-md-6">
+                                    <label for="bar_width" class="form-label">Bar Width <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Width of bars (0.1-1.0, where 1.0 means bars touch, lower values create gaps)"></i></label>
+                                    <input type="range" id="bar_width" name="bar_width" min="0.1" max="1.0" step="0.05" value="0.8" class="form-range">
+                                    <small class="form-text text-muted">Value: <span id="bar_width_value">0.8</span></small>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="rectangular_bars" name="rectangular_bars">
+                                        <label class="form-check-label" for="rectangular_bars">Use Rectangular Bars <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="When enabled, bars have consistent width. When disabled, bars fan out radially (trapezoid shape)."></i></label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="debug_mode" name="debug_mode">
+                                        <label class="form-check-label" for="debug_mode">Debug Mode <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Enable debug mode to help troubleshoot issues with the visualizer."></i></label>
+                                    </div>
+                                    <div id="debug_level_container" style="display: none;">
+                                        <label for="debug_level" class="form-label mt-2">Debug Level <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Higher values show more debug information (0.3=test pattern, 0.7=bar identification, 2=full debug)"></i></label>
+                                        <input type="range" id="debug_level" name="debug_level" min="0" max="2" step="0.1" value="0.7" class="form-range">
+                                        <small class="form-text text-muted">Value: <span id="debug_level_value">0.7</span></small>
+                                    </div>
+                                </div>
                             </div>
 
                             <h6 class="mt-4">Sensitivity Settings</h6>

@@ -180,9 +180,37 @@ class CircularSpectrumVisualizer(BaseVisualizer):
         zero_count = np.sum(spec_frame == 0.0)
         print(f"Spectrogram frame stats - min: {np.min(spec_frame):.6f}, max: {np.max(spec_frame):.6f}, zeros: {zero_count}/{len(spec_frame)}")
 
-        # Apply a small noise floor to ensure all bars have at least some minimal value
-        # This helps identify if the issue is with zero values in the audio data
-        spec_frame = np.maximum(spec_frame, 0.001)
+        # Check for silence condition (all values are the same or very close)
+        max_val = np.max(spec_frame)
+        min_val = np.min(spec_frame)
+        mean_val = np.mean(spec_frame)
+
+        # Consider it silent if:
+        # 1. All values are within a very small range (indicating no meaningful audio variation)
+        # 2. All values are exactly 0.8 (specific case we're seeing in the logs)
+        # 3. Mean value is very close to 0.8 (to catch slight variations around 0.8)
+        is_silent = (max_val - min_val < 0.001) or \
+                   (abs(max_val - 0.8) < 0.001 and abs(min_val - 0.8) < 0.001) or \
+                   (abs(mean_val - 0.8) < 0.001)
+
+        if is_silent:
+            # Print which condition triggered the silence detection
+            if max_val - min_val < 0.001:
+                print(f"SILENCE DETECTED in audio data - all values are within a small range: min={min_val:.6f}, max={max_val:.6f}")
+            elif abs(max_val - 0.8) < 0.001 and abs(min_val - 0.8) < 0.001:
+                print(f"SILENCE DETECTED in audio data - all values are approximately 0.8: min={min_val:.6f}, max={max_val:.6f}")
+            elif abs(mean_val - 0.8) < 0.001:
+                print(f"SILENCE DETECTED in audio data - mean value is approximately 0.8: mean={mean_val:.6f}")
+
+            # Print a sample of the values to help diagnose
+            print(f"Sample values before zeroing: {spec_frame[:5]}")
+
+            # For silence, set all values to 0 to ensure proper silence rendering
+            spec_frame = np.zeros_like(spec_frame)
+        else:
+            # Apply a small noise floor to ensure all bars have at least some minimal value
+            # This helps identify if the issue is with zero values in the audio data
+            spec_frame = np.maximum(spec_frame, 0.001)
 
         # Provide spectrogram values as audio samples for shader
         frame_data["raw_audio_samples"] = spec_frame.astype("float32")

@@ -7,6 +7,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // Get form element
     const uploadForm = document.getElementById('upload-form');
 
+    // Handle blur radius slider value display
+    const blurRadiusSlider = document.getElementById('glow_blur_radius');
+    const blurRadiusValue = document.getElementById('glow_blur_radius_value');
+
+    if (blurRadiusSlider && blurRadiusValue) {
+        // Update the value display when the slider changes
+        blurRadiusSlider.addEventListener('input', function() {
+            blurRadiusValue.textContent = this.value;
+        });
+    }
+
     // Add event listener for background shader selection
     const backgroundShaderSelect = document.getElementById('background_shader');
     const backgroundMediaInput = document.getElementById('background_media');
@@ -20,11 +31,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     note.id = 'shader-note';
                     note.className = 'form-text text-warning';
                     note.innerHTML = '<i class="bi bi-info-circle"></i> The selected shader will take precedence over the background image/video.';
-                    
+
                     // Remove existing note if any
                     const existingNote = document.getElementById('shader-note');
                     if (existingNote) existingNote.remove();
-                    
+
                     // Add the note after the background media input
                     backgroundMediaInput.parentNode.appendChild(note);
                 }
@@ -39,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle form submission
     uploadForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        
+
         // Disable submit button to prevent multiple submissions
         const submitBtn = document.getElementById('submit-btn');
         if (submitBtn) {

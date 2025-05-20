@@ -8,7 +8,7 @@ let processingUI;
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log("Circular Spectrum Form JS loaded");
-    
+
     // Initialize tooltips
     if (typeof initTooltips === 'function') {
         initTooltips();
@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add event listener for background shader selection
     const backgroundShaderSelect = document.getElementById('background_shader');
     const backgroundMediaInput = document.getElementById('background_media');
-    
+
     if (backgroundShaderSelect && backgroundMediaInput) {
         backgroundShaderSelect.addEventListener('change', function() {
             if (this.value) {
@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle form submission
     uploadForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        
+
         // Disable submit button to prevent multiple submissions
         const submitBtn = document.getElementById('submit-btn');
         if (submitBtn) {
@@ -95,23 +95,33 @@ document.addEventListener('DOMContentLoaded', function() {
         processingUI.submitForm(formData);
     });
 
+    // Handle debug mode toggle
+    const debugModeCheckbox = document.getElementById('debug_mode');
+    const debugLevelContainer = document.getElementById('debug_level_container');
+
+    if (debugModeCheckbox && debugLevelContainer) {
+        debugModeCheckbox.addEventListener('change', function() {
+            debugLevelContainer.style.display = this.checked ? 'block' : 'none';
+        });
+    }
+
     // Update range input displays
     const rangeInputs = [
-        'inner_radius', 'outer_radius', 'border_size', 
+        'inner_radius', 'outer_radius', 'border_size', 'bar_width',
         'overall_master_gain', 'bar_height_power',
         'freq_gain_min_mult', 'freq_gain_max_mult',
         'lit_brightness_multiplier', 'freq_gain_curve_power',
-        'amplitude_compression_power'
+        'amplitude_compression_power', 'debug_level'
     ];
-    
+
     rangeInputs.forEach(function(id) {
         const input = document.getElementById(id);
         const valueDisplay = document.getElementById(id + '_value');
-        
+
         if (input && valueDisplay) {
             // Update on page load
             valueDisplay.textContent = input.value;
-            
+
             // Update on input change
             input.addEventListener('input', function() {
                 valueDisplay.textContent = input.value;

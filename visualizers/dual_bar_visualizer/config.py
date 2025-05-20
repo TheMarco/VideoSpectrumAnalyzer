@@ -117,7 +117,7 @@ def process_config(config=None):
     conf["title_color_rgb"] = hex_to_rgb(conf.get("title_color", "#FFFFFF"))
 
     # Glow effect configuration
-    conf["glow_blur_radius"] = 3
+    conf["glow_blur_radius"] = int(config.get("glow_blur_radius", 3))
     conf["glow_color_rgb"] = None
     if conf["glow_effect"] == "white":
         conf["glow_color_rgb"] = (255, 255, 255)

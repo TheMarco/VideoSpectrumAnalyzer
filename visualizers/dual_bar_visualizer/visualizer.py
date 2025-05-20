@@ -15,16 +15,16 @@ class DualBarVisualizer(BaseVisualizer):
     """
     Dual Bar Visualizer with bars growing both up and down from the center.
     """
-    
+
     def __init__(self):
         """Initialize the dual bar visualizer."""
         super().__init__()
         print("Initializing DualBarVisualizer")
         # Keep both name formats for compatibility
-        self.name = "DualBarVisualizer"  # This should match the class name for registry
+        self.name = "Dual Bar Visualizer"  # Changed to match display name for consistency
         self.display_name = "Dual Bar Visualizer"  # This is what will be shown to users
         self.description = "Visualizer with bars growing both up and down from the center."
-        
+
         # Set thumbnail path - this should be a static image showing what the visualizer looks like
         thumbnail_path = os.path.join("static", "images", "thumbnails", "dual_bar_visualizer.jpg")
         if os.path.exists(thumbnail_path):
@@ -32,55 +32,55 @@ class DualBarVisualizer(BaseVisualizer):
         else:
             self.thumbnail = None
         print(f"DualBarVisualizer initialized with name={self.name}, display_name={self.display_name}")
-    
+
     def process_config(self, config=None):
         """
         Process and validate the configuration.
-        
+
         Args:
             config (dict, optional): User-provided configuration
-            
+
         Returns:
             dict: Processed configuration with all required parameters
         """
         return process_config(config)
-    
+
     def create_renderer(self, width, height, config):
         """
         Create a renderer for the dual bar visualizer.
-        
+
         Args:
             width (int): Frame width
             height (int): Frame height
             config (dict): Configuration dictionary
-        
+
         Returns:
             DualBarRenderer: Renderer instance
         """
         # For backward compatibility, call the new initialize_renderer method
         return self.initialize_renderer(width, height, config)
-    
+
     def render_frame(self, renderer, frame_data, background_image, metadata):
         """
         Render a single frame.
-        
+
         Args:
             renderer (DualBarRenderer): Renderer instance
             frame_data (dict): Frame data (spectrum, peaks, etc.)
             background_image (PIL.Image): Background image
             metadata (dict): Additional metadata (artist, title, etc.)
-            
+
         Returns:
             PIL.Image: Rendered frame
         """
         # Extract data from frame_data
         smoothed_spectrum = frame_data["smoothed_spectrum"]
         peak_values = frame_data["peak_values"]
-        
+
         # Extract metadata
         artist_name = metadata.get("artist_name", "")
         track_title = metadata.get("track_title", "")
-        
+
         # Render frame
         return renderer.render_frame(
             smoothed_spectrum,
@@ -89,7 +89,7 @@ class DualBarVisualizer(BaseVisualizer):
             artist_name,
             track_title
         )
-    
+
     def update_frame_data(self, frame_data, frame_idx, conf):
         """
         Update frame data for the current frame.
@@ -158,12 +158,12 @@ class DualBarVisualizer(BaseVisualizer):
     def initialize_renderer(self, width, height, config):
         """
         Initialize the renderer for this visualizer.
-        
+
         Args:
             width (int): Frame width
             height (int): Frame height
             config (dict): Configuration dictionary
-        
+
         Returns:
             DualBarRenderer: Renderer instance
         """
@@ -172,18 +172,18 @@ class DualBarVisualizer(BaseVisualizer):
             # Make sure it's a float between 0 and 1
             config["analyzer_alpha"] = float(config.get("analyzer_alpha", 0.6))
             config["analyzer_alpha"] = max(0.0, min(1.0, config["analyzer_alpha"]))
-            
+
             # Recalculate pil_alpha based on analyzer_alpha
             config["pil_alpha"] = int(config["analyzer_alpha"] * 255)
         else:
             # Set default values if analyzer_alpha is not in config
             config["analyzer_alpha"] = 0.6
             config["pil_alpha"] = 153  # 0.6 * 255
-        
+
         # Load fonts
         text_size = config.get("text_size", "large")
         # Use the imported load_fonts function
         artist_font, title_font = load_fonts(text_size)
-        
+
         # Create renderer
         return DualBarRenderer(width, height, config, artist_font, title_font)

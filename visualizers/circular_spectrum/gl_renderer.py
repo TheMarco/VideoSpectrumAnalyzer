@@ -28,19 +28,34 @@ class SimpleGLCircularRenderer:
         self.config = config
         self.start_time = time.time()
 
-        # Get parameters from config
-        self.num_bars = config.get("num_bars", 36)
-        self.segments_per_bar = config.get("segments_per_bar", 15)
-        self.inner_radius = config.get("inner_radius", 0.20)
-        self.outer_radius = config.get("outer_radius", 0.40)
+        # Get parameters from config - ensure numeric values are the correct type
+        self.num_bars = int(config.get("num_bars", 36))
+        self.segments_per_bar = int(config.get("segments_per_bar", 15))
+        self.inner_radius = float(config.get("inner_radius", 0.20))
+        self.outer_radius = float(config.get("outer_radius", 0.40))
 
-        # Get sensitivity and gain settings
-        self.overall_master_gain = config.get("overall_master_gain", 1.0)
-        self.freq_gain_min_mult = config.get("freq_gain_min_mult", 0.4)
-        self.freq_gain_max_mult = config.get("freq_gain_max_mult", 1.8)
-        self.freq_gain_curve_power = config.get("freq_gain_curve_power", 0.6)
-        self.bar_height_power = config.get("bar_height_power", 1.1)
-        self.amplitude_compression_power = config.get("amplitude_compression_power", 1.0)
+        # Store debug mode setting
+        self.debug_mode = bool(config.get("debug_mode", False))
+
+        # Set debug level (0=off, 1=basic debug, 2=full debug)
+        # Convert to float first to handle decimal values like 0.7
+        debug_level_value = config.get("debug_level", 0)
+        try:
+            self.debug_level = float(debug_level_value)
+        except (ValueError, TypeError):
+            print(f"Warning: Invalid debug_level value: {debug_level_value}, using default 0")
+            self.debug_level = 0.0
+
+        # Set bar shape (rectangular vs radial)
+        self.rectangular_bars = bool(config.get("rectangular_bars", True))
+
+        # Get sensitivity and gain settings - ensure they're floats
+        self.overall_master_gain = float(config.get("overall_master_gain", 1.0))
+        self.freq_gain_min_mult = float(config.get("freq_gain_min_mult", 0.4))
+        self.freq_gain_max_mult = float(config.get("freq_gain_max_mult", 1.8))
+        self.freq_gain_curve_power = float(config.get("freq_gain_curve_power", 0.6))
+        self.bar_height_power = float(config.get("bar_height_power", 1.1))
+        self.amplitude_compression_power = float(config.get("amplitude_compression_power", 1.0))
 
         # Print initialization info for debugging
         print(f"Initializing Simple GL Circular Renderer with width={width}, height={height}")
@@ -140,19 +155,12 @@ class SimpleGLCircularRenderer:
         sample_values = [f"{i}: {audio_data[i]:.6f}" for i in sample_indices]
         print(f"Sample values: {', '.join(sample_values)}")
 
-        # Normalize audio data to 0-1 range
+        # The audio data should already be normalized from render_frame
+        # Just ensure it's in the 0-1 range
         normalized_data = np.clip(audio_data, 0.0, 1.0)
 
-        # Don't apply a noise floor - let zero values be zero
-        # This ensures bars with no audio signal remain off
-
-        # Amplify the values to make them more visible, but only for non-zero values
-        # Find non-zero values
-        non_zero_mask = normalized_data > 0.001
-
-        # Apply power curve only to non-zero values
-        normalized_data[non_zero_mask] = np.power(normalized_data[non_zero_mask], 0.5) * 1.5
-        normalized_data = np.clip(normalized_data, 0.0, 1.0)
+        # Don't apply additional amplification here - we already did that in render_frame
+        # This prevents double-amplification which could cause maxed-out bars
 
         # Create a 2D texture with audio data
         texture_width = 512  # Width of the texture (fixed like oscilloscope)
@@ -164,41 +172,44 @@ class SimpleGLCircularRenderer:
 
         # Map the audio data to the texture
         # We need to map the audio data (which has num_bars values) to the texture (which has texture_width pixels)
-        # For each bar, we'll fill a range of pixels in the texture
-
         num_bars = len(normalized_data)
 
         # Print some debug info about the audio data
         print(f"Audio data stats - min: {np.min(normalized_data):.6f}, max: {np.max(normalized_data):.6f}, zeros: {np.sum(normalized_data == 0)}/{len(normalized_data)}")
+        print(f"Number of bars: {num_bars}, Texture width: {texture_width}")
 
-        # Sample a few values for debugging
-        sample_indices = [0, int(texture_width/9), int(texture_width/4.5), int(texture_width/3),
-                         int(texture_width/2.25), int(texture_width/1.8), int(texture_width/1.5),
-                         int(texture_width/1.29), int(texture_width/1.125), texture_width-1]
+        # IMPROVED MAPPING: Instead of mapping each bar to a single texel, we'll distribute the bars
+        # evenly across the texture width, ensuring each bar gets represented in the texture
 
-        sample_values = []
-        for idx in sample_indices:
-            if idx < texture_width:
-                sample_values.append(f"{idx}: {normalized_data[min(idx, len(normalized_data)-1)]:.6f}")
-
-        print(f"Sample values: {', '.join(sample_values)}")
+        # Calculate how many texels each bar should occupy
+        try:
+            texels_per_bar = float(texture_width) / float(num_bars)
+        except Exception as e:
+            print(f"Error calculating texels_per_bar: {e}")
+            print(f"texture_width: {texture_width}, type: {type(texture_width)}")
+            print(f"num_bars: {num_bars}, type: {type(num_bars)}")
+            # Default to a safe value
+            texels_per_bar = 10.0
 
         # For each bar in the audio data
         for bar_idx in range(num_bars):
-            # Get the amplitude for this bar
-            amplitude = normalized_data[bar_idx]
+            try:
+                # Get the amplitude for this bar
+                amplitude = float(normalized_data[bar_idx])
 
-            # Skip if amplitude is zero or very small
-            if amplitude < 0.001:
+                # Calculate the start and end texel indices for this bar
+                start_texel = int(float(bar_idx) * texels_per_bar)
+                end_texel = int(float(bar_idx + 1) * texels_per_bar)
+
+                # Ensure we don't go out of bounds
+                end_texel = min(end_texel, texture_width)
+            except Exception as e:
+                print(f"Error processing bar {bar_idx}: {e}")
+                # Skip this bar
                 continue
 
-            # Map this bar to a specific position in the texture
-            # We want to ensure each bar gets exactly one texel in the texture
-            # This makes sampling in the shader more precise
-            texel_idx = int((bar_idx / num_bars) * texture_width)
-
-            # Ensure we don't go out of bounds
-            if texel_idx < texture_width:
+            # Fill all texels for this bar with the amplitude value
+            for texel_idx in range(start_texel, end_texel):
                 # Set the amplitude for this texel
                 texture_data[texel_idx, 0, 0] = amplitude  # R channel
                 texture_data[texel_idx, 0, 1] = amplitude  # G channel
@@ -208,6 +219,18 @@ class SimpleGLCircularRenderer:
                 texture_data[texel_idx, 1, 0] = amplitude  # R channel
                 texture_data[texel_idx, 1, 1] = amplitude  # G channel
                 texture_data[texel_idx, 1, 2] = amplitude  # B channel
+
+        # Debug: Sample a few values from the texture to verify
+        sample_indices = [0, int(texture_width/9), int(texture_width/4.5), int(texture_width/3),
+                         int(texture_width/2.25), int(texture_width/1.8), int(texture_width/1.5),
+                         int(texture_width/1.29), int(texture_width/1.125), texture_width-1]
+
+        sample_values = []
+        for idx in sample_indices:
+            if idx < texture_width:
+                sample_values.append(f"{idx}: {texture_data[idx, 0, 0]:.6f}")
+
+        print(f"Texture sample values: {', '.join(sample_values)}")
 
         # Update the texture
         self.audio_texture.write(texture_data)
@@ -316,6 +339,7 @@ class SimpleGLCircularRenderer:
         try:
             # Calculate time if not provided
             if current_time is None:
+                import time
                 current_time = time.time() - self.start_time
 
             # Debug logging for background image
@@ -324,22 +348,52 @@ class SimpleGLCircularRenderer:
             else:
                 print("GL renderer received no background image")
 
-            # Make sure audio_data is not empty
-            if audio_data is None or len(audio_data) == 0:
+            # Make sure audio_data is not empty and is a numpy array
+            if audio_data is None:
+                print("Warning: None audio data provided to GL renderer")
+                # Create a dummy audio data array with zeros
+                audio_data = np.zeros(self.num_bars, dtype=np.float32)
+            elif not isinstance(audio_data, np.ndarray):
+                print(f"Warning: Converting audio_data from {type(audio_data)} to numpy array")
+                try:
+                    # Try to convert to numpy array
+                    audio_data = np.array(audio_data, dtype=np.float32)
+                except Exception as e:
+                    print(f"Error converting audio_data to numpy array: {e}")
+                    # Create a dummy audio data array with zeros
+                    audio_data = np.zeros(self.num_bars, dtype=np.float32)
+
+            # Check if the array is empty
+            if len(audio_data) == 0:
                 print("Warning: Empty audio data provided to GL renderer")
                 # Create a dummy audio data array with zeros
-                audio_data = np.zeros(512)
+                audio_data = np.zeros(self.num_bars, dtype=np.float32)
 
-            # Ensure audio_data is the right shape
-            if len(audio_data) < 512:
-                # Pad with zeros if too short
-                audio_data = np.pad(audio_data, (0, 512 - len(audio_data)), 'constant')
-            elif len(audio_data) > 512:
-                # Truncate if too long
-                audio_data = audio_data[:512]
+            # Ensure audio_data matches the number of bars
+            # This is important for proper mapping to the texture
+            try:
+                if len(audio_data) < self.num_bars:
+                    # Pad with zeros if too short
+                    audio_data = np.pad(audio_data, (0, self.num_bars - len(audio_data)), 'constant')
+                elif len(audio_data) > self.num_bars:
+                    # Truncate if too long
+                    audio_data = audio_data[:self.num_bars]
+            except Exception as e:
+                print(f"Error resizing audio_data: {e}")
+                # Create a new array with the correct size
+                audio_data = np.zeros(self.num_bars, dtype=np.float32)
 
             # Debug: Print the first few values of audio_data
             print(f"First 10 audio values: {audio_data[:10]}")
+            print(f"Last 10 audio values: {audio_data[-10:]}")
+            print(f"Audio data shape: {audio_data.shape}, num_bars: {self.num_bars}")
+
+            # Print specific bar values to help identify problematic bars
+            if self.debug_level > 0.5:
+                print("Bar values for debugging:")
+                for i in range(len(audio_data)):
+                    if i < 3 or i >= len(audio_data) - 3:  # First 3 and last 3 bars
+                        print(f"  Bar {i}: {audio_data[i]:.6f}")
 
             # Process audio data to match ShaderToy behavior
             # Only amplify values that are actually present in the audio
@@ -348,25 +402,61 @@ class SimpleGLCircularRenderer:
             # Find the maximum value for normalization reference
             max_val = np.max(audio_data)
             if max_val > 0:
-                # Normalize and apply a curve to make lower values more visible
+                # Normalize but with a more conservative approach to prevent maxing out
                 audio_data = audio_data / max_val
-                audio_data = np.power(audio_data, 0.5) * 1.2
+
+                # Apply a noise gate to filter out very low values
+                noise_gate = 0.05
+                audio_data[audio_data < noise_gate] = 0.0
+
+                # Apply a curve with reduced gain to prevent maxing out
+                # Use a lower power value to make the curve more gradual
+                # and a lower multiplier to reduce overall amplitude
+                audio_data = np.power(audio_data, 0.7) * 0.8
+
+                # Ensure we don't exceed 1.0
+                audio_data = np.clip(audio_data, 0.0, 1.0)
+
+                # Simple handling for first and last bars
+                if len(audio_data) > 2:
+                    # First bar - mix with second bar
+                    audio_data[0] = 0.7 * audio_data[0] + 0.3 * audio_data[1]
+                    # Last bar - mix with second-to-last bar
+                    audio_data[-1] = 0.7 * audio_data[-1] + 0.3 * audio_data[-2]
+
+                # Print stats about the processed audio data
+                print(f"Processed audio data - min: {np.min(audio_data):.6f}, max: {np.max(audio_data):.6f}")
+                non_zero = np.sum(audio_data > 0.0)
+                print(f"Non-zero values: {non_zero}/{len(audio_data)} ({non_zero/len(audio_data)*100:.1f}%)")
 
             # Don't set a minimum floor - let zero values be zero
             # This ensures bars with no audio signal remain off
 
-            # Debug: Force specific values for testing
-            # This helps identify if the issue is with the shader or the audio data
-            debug_mode = False  # Set to True to test with fixed pattern
-            if debug_mode:
-                # Create a pattern where every 3rd bar is lit, others are partially lit or off
+            # Debug mode can be enabled for testing
+            self.debug_mode = False  # Disable debug mode to use real audio data
+            self.debug_level = 0.0  # Set debug level to 0.0
+
+            # Only use test pattern if debug mode is enabled
+            if self.debug_mode:
+                print(f"DEBUG MODE ENABLED: Using test pattern for audio data (level: {self.debug_level})")
+
+                # Create a pattern where bars have varying amplitudes based on time
+                # This ensures the bars are always moving
+                import math
+                import time
+
+                # Get current time for animation
+                animation_time = time.time()
+
+                # Create a pattern where bars have varying amplitudes
                 for i in range(len(audio_data)):
-                    if i % 3 == 0:
-                        audio_data[i] = 1.0  # Full amplitude
-                    elif i % 3 == 1:
-                        audio_data[i] = 0.6  # Medium amplitude
-                    else:
-                        audio_data[i] = 0.0  # No amplitude (should be off)
+                    # Create a moving pattern based on time
+                    phase = (i / len(audio_data)) * 2 * math.pi  # Spread phases across bars
+                    # Use sine wave with time-based offset for animation
+                    audio_data[i] = 0.5 + 0.5 * math.sin(animation_time * 2 + phase)
+
+                # Print the first few values to verify they're changing
+                print(f"First 3 audio values: {audio_data[:3]}")
 
             # Ensure audio_data is C-contiguous
             if not audio_data.flags['C_CONTIGUOUS']:
@@ -378,9 +468,25 @@ class SimpleGLCircularRenderer:
             # Update background texture (iChannel1)
             self.update_background_texture(background_image)
 
-            # Set time uniform
+            # Set time uniform - VERY IMPORTANT for animation
             if 'iTime' in self.prog:
                 self.prog['iTime'].value = current_time
+                print(f"Setting iTime to {current_time}")
+
+            # Also set uTime if it exists
+            if 'uTime' in self.prog:
+                self.prog['uTime'].value = current_time
+                print(f"Setting uTime to {current_time}")
+
+            # Set debug mode uniform if it exists in the shader
+            # Note: We use uDebugMode, not iDebugMode in our shader
+
+            # Also set uDebugMode if it exists
+            if 'uDebugMode' in self.prog:
+                self.prog['uDebugMode'].value = 0.0  # Disable debug mode to show actual visualization
+
+            # Set all the configuration uniforms
+            self._set_shader_uniforms()
 
             # Bind the framebuffer
             self.fbo.use()
@@ -425,6 +531,88 @@ class SimpleGLCircularRenderer:
                 # Return a blank image as fallback
                 print("Returning blank image as fallback due to error")
                 return Image.new('RGBA', (self.width, self.height), (0, 0, 0, 255))
+
+    def _set_shader_uniforms(self):
+        """
+        Set all the configuration uniforms in the shader.
+        """
+        # Set number of bars and segments
+        if 'uNumBars' in self.prog:
+            self.prog['uNumBars'].value = self.num_bars
+
+        if 'uSegmentsPerBar' in self.prog:
+            self.prog['uSegmentsPerBar'].value = self.segments_per_bar
+
+        # Set radius values
+        if 'uInnerRadius' in self.prog:
+            self.prog['uInnerRadius'].value = self.inner_radius
+
+        if 'uOuterRadius' in self.prog:
+            self.prog['uOuterRadius'].value = self.outer_radius
+
+        # Set border size
+        if 'uBorderSize' in self.prog:
+            self.prog['uBorderSize'].value = self.config.get("border_size", 0.08)
+
+        # Set bar width
+        if 'uBarWidth' in self.prog:
+            self.prog['uBarWidth'].value = self.config.get("bar_width", 0.8)
+
+        # Set time uniform for animation
+        if 'uTime' in self.prog:
+            import time
+            current_time = time.time() - self.start_time
+            self.prog['uTime'].value = current_time
+            print(f"Setting uTime to {current_time}")
+
+        # Set debug mode
+        if 'uDebugMode' in self.prog:
+            self.prog['uDebugMode'].value = 0.0  # Disable debug mode to show actual visualization
+
+        # Set bar shape (rectangular vs radial)
+        if 'uRectangularBars' in self.prog:
+            self.prog['uRectangularBars'].value = 1.0 if self.rectangular_bars else 0.0
+
+        # Set sensitivity and gain settings
+        if 'uOverallMasterGain' in self.prog:
+            self.prog['uOverallMasterGain'].value = self.overall_master_gain
+
+        if 'uFreqGainMinMult' in self.prog:
+            self.prog['uFreqGainMinMult'].value = self.freq_gain_min_mult
+
+        if 'uFreqGainMaxMult' in self.prog:
+            self.prog['uFreqGainMaxMult'].value = self.freq_gain_max_mult
+
+        if 'uFreqGainCurvePower' in self.prog:
+            self.prog['uFreqGainCurvePower'].value = self.freq_gain_curve_power
+
+        if 'uBarHeightPower' in self.prog:
+            self.prog['uBarHeightPower'].value = self.bar_height_power
+
+        if 'uAmplitudeCompressionPower' in self.prog:
+            self.prog['uAmplitudeCompressionPower'].value = self.amplitude_compression_power
+
+        # Print the values being set for debugging
+        print(f"Setting shader uniforms:")
+        print(f"  uNumBars: {self.num_bars}")
+        print(f"  uSegmentsPerBar: {self.segments_per_bar}")
+        print(f"  uInnerRadius: {self.inner_radius}")
+        print(f"  uOuterRadius: {self.outer_radius}")
+        print(f"  uBorderSize: {self.config.get('border_size', 0.08)}")
+        print(f"  uBarWidth: {self.config.get('bar_width', 0.8)}")
+        print(f"  uDebugMode: 0.0 (debug mode disabled)")
+        print(f"  uRectangularBars: {1.0 if self.rectangular_bars else 0.0}")
+
+        # Show time uniform value
+        import time
+        current_time = time.time() - self.start_time
+        print(f"  uTime: {current_time} (for animation)")
+        print(f"  uOverallMasterGain: {self.overall_master_gain}")
+        print(f"  uFreqGainMinMult: {self.freq_gain_min_mult}")
+        print(f"  uFreqGainMaxMult: {self.freq_gain_max_mult}")
+        print(f"  uFreqGainCurvePower: {self.freq_gain_curve_power}")
+        print(f"  uBarHeightPower: {self.bar_height_power}")
+        print(f"  uAmplitudeCompressionPower: {self.amplitude_compression_power}")
 
     def cleanup(self):
         """Clean up resources."""
