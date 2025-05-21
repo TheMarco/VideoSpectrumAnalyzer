@@ -177,8 +177,8 @@ def create_spectrum_analyzer(
 
         # Update progress callback
         if progress_callback and frame_idx % 5 == 0:
-            progress = int(20 + (frame_idx / max(1, actual_frames)) * 70)
-            progress_callback(progress)
+            progress = int((frame_idx / max(1, actual_frames)) * 100)
+            progress_callback(progress, f"Rendering frame {frame_idx+1}/{actual_frames}")
 
     # Finalize video
     end_time = time.time()

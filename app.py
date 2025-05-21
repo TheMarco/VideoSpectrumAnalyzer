@@ -637,5 +637,12 @@ def shader_preview(shader_name):
 
 
 if __name__ == "__main__":
+    # Parse command line arguments
+    import argparse
+    parser = argparse.ArgumentParser(description="Run the Audio Visualizer web application")
+    parser.add_argument("--port", type=int, default=8080, help="Port to run the server on")
+    args = parser.parse_args()
+
     # Use host='0.0.0.0' for accessibility on network, debug=False for production
-    app.run(debug=True, host="0.0.0.0", port=8080)
+    print(f"Starting server on port {args.port}")
+    app.run(debug=True, host="0.0.0.0", port=args.port)

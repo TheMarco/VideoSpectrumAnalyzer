@@ -10,6 +10,7 @@ import subprocess
 from pathlib import Path
 import numpy as np
 import logging
+from .progress_tracker import ProgressTracker
 
 logger = logging.getLogger('audio_visualizer.shader_prerender')
 
@@ -30,19 +31,23 @@ def prerender_shader_background(shader_path, output_path, duration, fps, width, 
         str: Path to the rendered video file, or None if rendering failed
     """
     try:
+        # Initialize progress tracker with custom stages for shader pre-rendering
+        shader_stages = {
+            "setup": 10,
+            "rendering": 80,
+            "finalization": 10
+        }
+        progress = ProgressTracker(stages=shader_stages, callback=progress_callback)
+
+        # Start setup stage
+        progress.start_stage("setup", f"Setting up shader pre-rendering for {os.path.basename(shader_path)}...")
+
         logger.info(f"Pre-rendering shader background: {shader_path}")
         logger.info(f"Duration: {duration}s, FPS: {fps}, Resolution: {width}x{height}")
 
         # Calculate the number of frames
         total_frames = int(duration * fps)
         logger.info(f"Total frames to render: {total_frames}")
-
-        # If progress_callback is provided, send an initial progress update
-        if progress_callback:
-            try:
-                progress_callback(1, f"Starting shader pre-rendering ({total_frames} frames)...")
-            except Exception as e:
-                logger.error(f"Error in progress callback: {e}")
 
         # Build the FFmpeg command
         ffmpeg_cmd = [
@@ -63,6 +68,7 @@ def prerender_shader_background(shader_path, output_path, duration, fps, width, 
 
         # Start the FFmpeg process
         logger.info("Starting FFmpeg process...")
+        progress.update_stage_progress(30, "Starting FFmpeg process...")
         ffmpeg_process = subprocess.Popen(
             ffmpeg_cmd,
             stdin=subprocess.PIPE,
@@ -72,12 +78,20 @@ def prerender_shader_background(shader_path, output_path, duration, fps, width, 
 
         # Import the shader module dynamically
         logger.info("Importing shader module...")
+        progress.update_stage_progress(50, "Loading shader module...")
         sys.path.append(os.path.dirname(os.path.abspath(shader_path)))
         from glsl.shader import ShaderRenderer
 
         # Create the renderer
         logger.info(f"Creating shader renderer for {shader_path}...")
+        progress.update_stage_progress(70, "Initializing shader renderer...")
         renderer = ShaderRenderer(shader_path, width, height)
+
+        # Complete setup stage
+        progress.complete_stage("Shader setup complete")
+
+        # Start rendering stage
+        progress.start_stage("rendering", f"Rendering {total_frames} frames...")
 
         # Render each frame and pipe it to FFmpeg
         logger.info("Rendering frames...")
@@ -104,11 +118,10 @@ def prerender_shader_background(shader_path, output_path, duration, fps, width, 
 
             # Update progress if callback is provided - limit updates to avoid overwhelming the UI
             current_time = time.time()
-            if current_time - last_update_time >= update_interval:
-                progress = int((frame_idx / total_frames) * 100)
-                message = f"Rendering frame {frame_idx}/{total_frames}"
-                if progress_callback:
-                    progress_callback(progress, message)
+            if current_time - last_update_time >= update_interval or frame_idx == total_frames - 1:
+                progress_percent = (frame_idx + 1) / total_frames * 100
+                message = f"Rendering shader frame {frame_idx+1}/{total_frames}"
+                progress.update_stage_progress(progress_percent, message)
                 last_update_time = current_time
 
             # Render the frame
@@ -120,14 +133,22 @@ def prerender_shader_background(shader_path, output_path, duration, fps, width, 
             # Write the frame data to FFmpeg's stdin
             ffmpeg_process.stdin.write(frame_data)
 
+        # Complete rendering stage
+        progress.complete_stage("Shader rendering complete")
+
+        # Start finalization stage
+        progress.start_stage("finalization", "Finalizing shader video...")
+
         # Close FFmpeg's stdin to signal the end of input
         try:
+            progress.update_stage_progress(30, "Finalizing FFmpeg encoding...")
             ffmpeg_process.stdin.close()
         except:
             logger.warning("Warning: FFmpeg stdin already closed")
 
         # Wait for FFmpeg to finish
         try:
+            progress.update_stage_progress(60, "Waiting for video encoding to complete...")
             stdout, stderr = ffmpeg_process.communicate()
         except ValueError:
             # This can happen if stdin is already closed
@@ -139,6 +160,7 @@ def prerender_shader_background(shader_path, output_path, duration, fps, width, 
         if ffmpeg_process.returncode != 0:
             error_msg = stderr.decode() if 'stderr' in locals() else 'Unknown error'
             logger.error(f"FFmpeg error: {error_msg}")
+            progress.update_stage_progress(100, "Error: FFmpeg encoding failed")
             return None
 
         # Calculate the rendering time
@@ -150,14 +172,11 @@ def prerender_shader_background(shader_path, output_path, duration, fps, width, 
         logger.info(f"Average rendering speed: {fps_rate:.2f} fps")
 
         # Clean up
+        progress.update_stage_progress(90, "Cleaning up resources...")
         renderer.cleanup()
 
-        # Final progress update
-        if progress_callback:
-            try:
-                progress_callback(20, "Shader pre-rendering complete")
-            except Exception as e:
-                logger.error(f"Error in final progress callback: {e}")
+        # Complete finalization stage
+        progress.complete_stage("Shader pre-rendering complete")
 
         return output_path
 
@@ -165,6 +184,14 @@ def prerender_shader_background(shader_path, output_path, duration, fps, width, 
         logger.error(f"Error pre-rendering shader background: {e}")
         import traceback
         traceback.print_exc()
+
+        # If we have a progress tracker, update it with the error
+        if 'progress' in locals():
+            try:
+                progress.update_stage_progress(100, f"Error: {str(e)}")
+            except:
+                pass
+
         return None
 
 

@@ -158,9 +158,9 @@
 
                             <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <label for="border_size" class="form-label">Border Size <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Size of borders between segments (0-0.2)"></i></label>
-                                    <input type="range" id="border_size" name="border_size" min="0" max="0.2" step="0.01" value="0.08" class="form-range">
-                                    <small class="form-text text-muted">Value: <span id="border_size_value">0.08</span></small>
+                                    <label for="segment_spacing" class="form-label">Segment Spacing <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Spacing between segments in pixels (0-10)"></i></label>
+                                    <input type="range" id="segment_spacing" name="segment_spacing" min="0" max="10" step="1" value="2" class="form-range">
+                                    <small class="form-text text-muted">Value: <span id="segment_spacing_value">2</span> pixels</small>
                                 </div>
                                 <div class="col-md-6">
                                     <label for="bar_width" class="form-label">Bar Width <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Width of bars (0.1-1.0, where 1.0 means bars touch, lower values create gaps)"></i></label>
@@ -172,7 +172,7 @@
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="rectangular_bars" name="rectangular_bars">
+                                        <input class="form-check-input" type="checkbox" id="rectangular_bars" name="rectangular_bars" checked>
                                         <label class="form-check-label" for="rectangular_bars">Use Rectangular Bars <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="When enabled, bars have consistent width. When disabled, bars fan out radially (trapezoid shape)."></i></label>
                                     </div>
                                 </div>
@@ -189,57 +189,29 @@
                                 </div>
                             </div>
 
-                            <h6 class="mt-4">Sensitivity Settings</h6>
+                            <h6 class="mt-4">Sensitivity & Color</h6>
 
                             <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <label for="overall_master_gain" class="form-label">Master Gain <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Overall gain multiplier (0.1-3)"></i></label>
-                                    <input type="range" id="overall_master_gain" name="overall_master_gain" min="0.1" max="3" step="0.1" value="1.0" class="form-range">
-                                    <small class="form-text text-muted">Value: <span id="overall_master_gain_value">1.0</span></small>
+                                    <label for="sensitivity" class="form-label">Sensitivity <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Controls how responsive the visualizer is to audio (0.5-3)"></i></label>
+                                    <input type="range" id="sensitivity" name="sensitivity" min="0.5" max="3" step="0.1" value="1.0" class="form-range">
+                                    <small class="form-text text-muted">Value: <span id="sensitivity_value">1.0</span></small>
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="bar_height_power" class="form-label">Bar Height Power <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Non-linear height mapping (0.5-2)"></i></label>
-                                    <input type="range" id="bar_height_power" name="bar_height_power" min="0.5" max="2" step="0.1" value="1.1" class="form-range">
-                                    <small class="form-text text-muted">Value: <span id="bar_height_power_value">1.1</span></small>
+                                    <label for="border_size" class="form-label">Segment Gap Size <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Size of gaps between segments (0-0.2). Higher values create more space between segments."></i></label>
+                                    <input type="range" id="border_size" name="border_size" min="0" max="0.2" step="0.01" value="0.08" class="form-range">
+                                    <small class="form-text text-muted">Value: <span id="border_size_value">0.08</span></small>
                                 </div>
                             </div>
 
                             <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <label for="freq_gain_min_mult" class="form-label">Low Frequency Gain <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Gain multiplier for lowest frequencies (0.1-2)"></i></label>
-                                    <input type="range" id="freq_gain_min_mult" name="freq_gain_min_mult" min="0.1" max="2" step="0.1" value="0.4" class="form-range">
-                                    <small class="form-text text-muted">Value: <span id="freq_gain_min_mult_value">0.4</span></small>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="freq_gain_max_mult" class="form-label">High Frequency Gain <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Gain multiplier for highest frequencies (0.1-3)"></i></label>
-                                    <input type="range" id="freq_gain_max_mult" name="freq_gain_max_mult" min="0.1" max="3" step="0.1" value="1.8" class="form-range">
-                                    <small class="form-text text-muted">Value: <span id="freq_gain_max_mult_value">1.8</span></small>
+                                    <label for="segment_color" class="form-label">Segment Color <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Color for all lit segments"></i></label>
+                                    <input type="color" id="segment_color" name="segment_color" value="#FFFFFF" class="form-control form-control-color w-100">
                                 </div>
                             </div>
-
-                            <h6 class="mt-4">Color Settings</h6>
-
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="color_lit_dark" class="form-label">Inner Segment Color <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Color for inner lit segments"></i></label>
-                                    <input type="color" id="color_lit_dark" name="color_lit_dark" value="#666666" class="form-control form-control-color w-100">
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="color_lit_bright" class="form-label">Outer Segment Color <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Color for outer lit segments"></i></label>
-                                    <input type="color" id="color_lit_bright" name="color_lit_bright" value="#FFFFFF" class="form-control form-control-color w-100">
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="color_unlit" class="form-label">Unlit Segment Color <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Color for unlit segments"></i></label>
-                                    <input type="color" id="color_unlit" name="color_unlit" value="#141414" class="form-control form-control-color w-100">
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="lit_brightness_multiplier" class="form-label">Brightness Multiplier <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Brightness multiplier for lit segments (0.5-3)"></i></label>
-                                    <input type="range" id="lit_brightness_multiplier" name="lit_brightness_multiplier" min="0.5" max="3" step="0.1" value="1.3" class="form-range">
-                                    <small class="form-text text-muted">Value: <span id="lit_brightness_multiplier_value">1.3</span></small>
-                                </div>
+                            <div class="small text-muted mb-3">
+                                <i class="bi bi-info-circle me-1"></i> Unlit segments and gaps are transparent, showing the background.
                             </div>
                         </div> <!-- End Card Body -->
                     </div> <!-- End Card -->
@@ -253,7 +225,7 @@
                         <div class="card-body">
                             <h5 class="card-title mb-3">Advanced & Output</h5>
 
-                            <h6>Frequency & Amplitude Settings</h6>
+                            <h6>Frequency Range</h6>
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <label for="min_freq" class="form-label">Min Frequency (Hz) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Lowest audio frequency the visualizer responds to."></i></label>
@@ -262,19 +234,6 @@
                                 <div class="col-md-6">
                                     <label for="max_freq" class="form-label">Max Frequency (Hz) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Highest audio frequency the visualizer responds to."></i></label>
                                     <input type="number" class="form-control" id="max_freq" name="max_freq" value="16000" min="5000" max="22050">
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="freq_gain_curve_power" class="form-label">Frequency Gain Curve <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Shapes the transition curve between low and high frequency gain (lower = more gain towards high frequencies)"></i></label>
-                                    <input type="range" id="freq_gain_curve_power" name="freq_gain_curve_power" min="0.1" max="2.0" step="0.1" value="0.6" class="form-range">
-                                    <small class="form-text text-muted">Value: <span id="freq_gain_curve_power_value">0.6</span></small>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="amplitude_compression_power" class="form-label">Amplitude Compression <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Amplitude compression power (1.0 disables compression)"></i></label>
-                                    <input type="range" id="amplitude_compression_power" name="amplitude_compression_power" min="0.5" max="2.0" step="0.1" value="1.0" class="form-range">
-                                    <small class="form-text text-muted">Value: <span id="amplitude_compression_power_value">1.0</span></small>
                                 </div>
                             </div>
 

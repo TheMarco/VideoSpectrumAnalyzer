@@ -19,9 +19,9 @@ def process_config(config=None):
         "segments_per_bar": 15,          # Number of segments per bar
         "inner_radius": 0.20,            # Inner radius of the circle (0-1)
         "outer_radius": 0.40,            # Outer radius of the circle (0-1)
-        "border_size": 0.08,             # Border size for segments (0-1)
         "bar_width": 0.8,                # Width of bars (0-1, where 1 means bars touch, lower values create gaps)
-        "rectangular_bars": False,       # Use rectangular bars (True) or radial/trapezoid bars (False)
+        "segment_spacing": 2,            # Spacing between segments in pixels (0 = no spacing)
+        "rectangular_bars": True,       # Use rectangular bars (True) or radial/trapezoid bars (False)
 
         # Sensitivity and gain settings
         "overall_master_gain": 1.0,      # Overall gain multiplier
@@ -35,8 +35,9 @@ def process_config(config=None):
         "color_lit_dark": (0.4, 0.4, 0.4),    # Base color for lit segments (inner)
         "color_lit_bright": (1.0, 1.0, 1.0),  # Color for lit segments (outer)
         "color_unlit": (0.08, 0.08, 0.08),    # Color for unlit segments
-        "color_border": (0.0, 0.0, 0.0),      # Border color
+        "color_border": (0.0, 0.0, 0.0),      # Color for borders
         "lit_brightness_multiplier": 1.3,     # Brightness multiplier for lit segments
+        "border_size": 0.08,                  # Border size (0-0.2, where 0.1 means 10% of segment is border)
 
         # Text settings
         "artist_color": "#FFFFFF",       # Artist name color
@@ -70,8 +71,9 @@ def process_config(config=None):
         default_config['segments_per_bar'] = int(default_config.get('segments_per_bar', 15))
         default_config['inner_radius'] = float(default_config.get('inner_radius', 0.20))
         default_config['outer_radius'] = float(default_config.get('outer_radius', 0.40))
-        default_config['border_size'] = float(default_config.get('border_size', 0.08))
         default_config['bar_width'] = float(default_config.get('bar_width', 0.8))
+        default_config['segment_spacing'] = int(default_config.get('segment_spacing', 2))
+        default_config['border_size'] = float(default_config.get('border_size', 0.08))
         # Convert debug_level to float to handle decimal values like 0.7
         debug_level_value = default_config.get('debug_level', 0)
         try:

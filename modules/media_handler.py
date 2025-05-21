@@ -167,13 +167,16 @@ def load_background_media(background_image_path, background_video_path, backgrou
 
     # Try to load shader first if specified
     if background_shader_path and os.path.exists(background_shader_path):
+        if progress_callback:
+            progress_callback(10, f"Loading background shader: {os.path.basename(background_shader_path)}")
+
         print(f"Loading background shader: {background_shader_path}")
 
         # Try to pre-render the shader as a video
         try:
             print(f"Pre-rendering shader as video: {background_shader_path}")
             if progress_callback:
-                progress_callback(1, "Pre-rendering shader as video...")
+                progress_callback(20, f"Starting shader pre-rendering: {os.path.basename(background_shader_path)}...")
 
             # Create a temporary file for the pre-rendered video
             import tempfile
@@ -196,7 +199,7 @@ def load_background_media(background_image_path, background_video_path, backgrou
                 if os.path.getsize(prerendered_video_path) > 0:
                     print(f"Pre-rendering successful, using video: {prerendered_video_path}")
                     if progress_callback:
-                        progress_callback(20, "Shader pre-rendering complete, loading video...")
+                        progress_callback(60, "Shader pre-rendering complete, loading video...")
 
                     # Set the background_video_path to the pre-rendered video
                     background_video_path = prerendered_video_path
@@ -205,17 +208,25 @@ def load_background_media(background_image_path, background_video_path, backgrou
                     background_shader_path = None
                 else:
                     print("Pre-rendered video file is empty, falling back to real-time rendering")
+                    if progress_callback:
+                        progress_callback(60, "Pre-rendered video is empty, trying real-time rendering...")
             else:
                 print("Pre-rendering failed, falling back to real-time rendering")
+                if progress_callback:
+                    progress_callback(60, "Pre-rendering failed, trying real-time rendering...")
         except Exception as e:
             print(f"Error pre-rendering shader: {e}")
             print("Falling back to real-time rendering")
+            if progress_callback:
+                progress_callback(60, f"Error pre-rendering shader: {str(e)[:50]}...")
             # Don't propagate pre-rendering errors, just fall back to real-time rendering
 
         # If pre-rendering failed or was skipped, try real-time rendering
         if background_shader_path:
             # No try-except here - let errors propagate to the caller
             print("Attempting to use separate process GPU-based OpenGL renderer...")
+            if progress_callback:
+                progress_callback(70, "Initializing real-time shader renderer...")
 
             # Import the ProcessShaderRenderer
             from modules.process_shader_renderer import ProcessShaderRenderer
@@ -224,6 +235,9 @@ def load_background_media(background_image_path, background_video_path, backgrou
             print(f"Creating ProcessShaderRenderer for {background_shader_path}...")
             shader_renderer = ProcessShaderRenderer(background_shader_path, width, height)
             print("ProcessShaderRenderer instance created successfully")
+
+            if progress_callback:
+                progress_callback(80, "Testing shader renderer...")
 
             print(f"Background shader loaded: {background_shader_path}")
 
@@ -235,48 +249,63 @@ def load_background_media(background_image_path, background_video_path, backgrou
             test_frame.save("shader_test_frame.png")
             print("Test frame saved to shader_test_frame.png")
 
+            if progress_callback:
+                progress_callback(100, "Shader renderer initialized successfully")
+
             return background_pil, video_capture, bg_frame_count, bg_fps, shader_renderer
 
     # Try to load video if shader failed or not specified
     if not shader_renderer and background_video_path and os.path.exists(background_video_path):
         try:
-            print(f"SUPER DEBUG: Loading background video: {background_video_path}")
-            print(f"SUPER DEBUG: File exists: {os.path.exists(background_video_path)}")
-            print(f"SUPER DEBUG: File size: {os.path.getsize(background_video_path)} bytes")
+            if progress_callback:
+                progress_callback(60, f"Loading background video: {os.path.basename(background_video_path)}...")
+
+            print(f"Loading background video: {background_video_path}")
+            print(f"File exists: {os.path.exists(background_video_path)}")
+            print(f"File size: {os.path.getsize(background_video_path)} bytes")
 
             # Try to open the video file
             video_capture = cv2.VideoCapture(background_video_path)
-            print(f"SUPER DEBUG: video_capture created: {video_capture}")
-            print(f"SUPER DEBUG: video_capture isOpened: {video_capture.isOpened()}")
+            print(f"Video capture created: {video_capture}")
+            print(f"Video capture isOpened: {video_capture.isOpened()}")
 
             if not video_capture.isOpened():
                 raise IOError(f"Cannot open video file: {background_video_path}")
+
+            if progress_callback:
+                progress_callback(70, "Reading video properties...")
 
             # Get video properties
             bg_fps = video_capture.get(cv2.CAP_PROP_FPS)
             bg_frame_count = int(video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
             bg_width = int(video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
             bg_height = int(video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            print(f"SUPER DEBUG: Video properties: FPS={bg_fps}, FRAME_COUNT={bg_frame_count}, WIDTH={bg_width}, HEIGHT={bg_height}")
+            print(f"Video properties: FPS={bg_fps}, FRAME_COUNT={bg_frame_count}, WIDTH={bg_width}, HEIGHT={bg_height}")
+
+            if progress_callback:
+                progress_callback(80, "Testing video playback...")
 
             # Test reading a frame
             ret, test_frame = video_capture.read()
-            print(f"SUPER DEBUG: Test frame read: ret={ret}, frame_shape={test_frame.shape if ret else 'None'}")
+            print(f"Test frame read: ret={ret}, frame_shape={test_frame.shape if ret else 'None'}")
 
             # Reset the video to the beginning
             video_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
-            print(f"SUPER DEBUG: Reset video position to 0")
+            print(f"Reset video position to 0")
 
             if bg_frame_count <= 0 or bg_fps <= 0:
-                print(f"SUPER DEBUG: Warning: Could not read properties from video {background_video_path}.")
+                print(f"Warning: Could not read properties from video {background_video_path}.")
                 ret, _ = video_capture.read()
                 if not ret:
                     raise IOError(f"Cannot read first frame from video: {background_video_path}")
                 # Reset the video to the beginning again
                 video_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
 
-            print(f"SUPER DEBUG: Background video loaded successfully: {bg_width}x{bg_height} @ {bg_fps:.2f} FPS, {bg_frame_count} frames")
+            print(f"Background video loaded successfully: {bg_width}x{bg_height} @ {bg_fps:.2f} FPS, {bg_frame_count} frames")
             background_pil = None  # Ensure PIL image isn't used
+
+            if progress_callback:
+                progress_callback(100, f"Background video loaded: {bg_width}x{bg_height} @ {bg_fps:.2f} FPS")
 
         except Exception as e:
             print(f"Warning: Could not load background video: {e}. Checking image fallback.")
@@ -285,15 +314,24 @@ def load_background_media(background_image_path, background_video_path, backgrou
             video_capture = None
             background_video_path = None  # Clear video path if loading failed
 
+            if progress_callback:
+                progress_callback(60, f"Video loading failed: {str(e)[:50]}... Trying image fallback.")
+
     # If video loading failed or no video specified, try to load image
     if not shader_renderer and not video_capture and background_image_path and os.path.exists(background_image_path):
         try:
+            if progress_callback:
+                progress_callback(70, f"Loading background image: {os.path.basename(background_image_path)}...")
+
             print(f"Loading background image: {background_image_path}")
             with Image.open(background_image_path) as _img:
                 background_pil = _img.convert("RGBA")
 
             # Resize image to match output dimensions
             if background_pil.width != width or background_pil.height != height:
+                if progress_callback:
+                    progress_callback(80, f"Resizing image to {width}x{height}...")
+
                 print(f"Resizing background image from {background_pil.width}x{background_pil.height} to {width}x{height}")
                 # Use Resampling.LANCZOS if available (PIL >= 9.1.0), otherwise use LANCZOS
                 try:
@@ -304,9 +342,15 @@ def load_background_media(background_image_path, background_video_path, backgrou
 
             print(f"Background image loaded: {background_pil.width}x{background_pil.height}")
 
+            if progress_callback:
+                progress_callback(100, f"Background image loaded: {background_pil.width}x{background_pil.height}")
+
         except Exception as e:
             print(f"Warning: Could not load background image: {e}")
             background_pil = None
+
+            if progress_callback:
+                progress_callback(100, f"Failed to load background image: {str(e)[:50]}...")
 
     return background_pil, video_capture, bg_frame_count, bg_fps, shader_renderer
 

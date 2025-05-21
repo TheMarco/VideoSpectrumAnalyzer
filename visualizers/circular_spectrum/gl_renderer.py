@@ -49,13 +49,8 @@ class SimpleGLCircularRenderer:
         # Set bar shape (rectangular vs radial)
         self.rectangular_bars = bool(config.get("rectangular_bars", True))
 
-        # Get sensitivity and gain settings - ensure they're floats
-        self.overall_master_gain = float(config.get("overall_master_gain", 1.0))
-        self.freq_gain_min_mult = float(config.get("freq_gain_min_mult", 0.4))
-        self.freq_gain_max_mult = float(config.get("freq_gain_max_mult", 1.8))
-        self.freq_gain_curve_power = float(config.get("freq_gain_curve_power", 0.6))
-        self.bar_height_power = float(config.get("bar_height_power", 1.1))
-        self.amplitude_compression_power = float(config.get("amplitude_compression_power", 1.0))
+        # Get sensitivity setting - ensure it's a float
+        self.sensitivity = float(config.get("sensitivity", 1.0))
 
         # Print initialization info for debugging
         print(f"Initializing Simple GL Circular Renderer with width={width}, height={height}")
@@ -69,7 +64,7 @@ class SimpleGLCircularRenderer:
             self.shader_path = os.path.join(
                 os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
                 "glsl",
-                "circular_shadertoy.glsl"
+                "ar_circular_spectrum.glsl"
             )
             print(f"Loading shader from: {self.shader_path}")
 
@@ -434,7 +429,7 @@ class SimpleGLCircularRenderer:
 
             # Debug mode can be enabled for testing
             self.debug_mode = False  # Disable debug mode to use real audio data
-            self.debug_level = 0.0  # Set debug level to 0.0
+            self.debug_level = 0.0  # Set debug level to 0.0 to disable debug visualizations
 
             # Only use test pattern if debug mode is enabled
             if self.debug_mode:
@@ -481,9 +476,9 @@ class SimpleGLCircularRenderer:
             # Set debug mode uniform if it exists in the shader
             # Note: We use uDebugMode, not iDebugMode in our shader
 
-            # Also set uDebugMode if it exists
+            # Set debug mode uniform if it exists
             if 'uDebugMode' in self.prog:
-                self.prog['uDebugMode'].value = 0.0  # Disable debug mode to show actual visualization
+                self.prog['uDebugMode'].value = self.debug_level  # Use the debug level value
 
             # Set all the configuration uniforms
             self._set_shader_uniforms()
@@ -491,8 +486,12 @@ class SimpleGLCircularRenderer:
             # Bind the framebuffer
             self.fbo.use()
 
-            # Clear the framebuffer
+            # Clear the framebuffer with fully transparent black
             self.ctx.clear(0.0, 0.0, 0.0, 0.0)
+
+            # Enable alpha blending for transparency
+            self.ctx.enable(moderngl.BLEND)
+            self.ctx.blend_func = moderngl.SRC_ALPHA, moderngl.ONE_MINUS_SRC_ALPHA
 
             # Bind the audio texture to texture unit 0
             self.audio_texture.use(0)
@@ -550,13 +549,15 @@ class SimpleGLCircularRenderer:
         if 'uOuterRadius' in self.prog:
             self.prog['uOuterRadius'].value = self.outer_radius
 
-        # Set border size
-        if 'uBorderSize' in self.prog:
-            self.prog['uBorderSize'].value = self.config.get("border_size", 0.08)
+        # Border size is no longer used - we use segment spacing instead
 
         # Set bar width
         if 'uBarWidth' in self.prog:
             self.prog['uBarWidth'].value = self.config.get("bar_width", 0.8)
+
+        # Set segment spacing
+        if 'uSegmentSpacing' in self.prog:
+            self.prog['uSegmentSpacing'].value = self.config.get("segment_spacing", 2)
 
         # Set time uniform for animation
         if 'uTime' in self.prog:
@@ -567,30 +568,26 @@ class SimpleGLCircularRenderer:
 
         # Set debug mode
         if 'uDebugMode' in self.prog:
-            self.prog['uDebugMode'].value = 0.0  # Disable debug mode to show actual visualization
+            self.prog['uDebugMode'].value = self.debug_level  # Use the debug level value
 
         # Set bar shape (rectangular vs radial)
         if 'uRectangularBars' in self.prog:
             self.prog['uRectangularBars'].value = 1.0 if self.rectangular_bars else 0.0
 
-        # Set sensitivity and gain settings
-        if 'uOverallMasterGain' in self.prog:
-            self.prog['uOverallMasterGain'].value = self.overall_master_gain
+        # Set sensitivity setting
+        if 'uSensitivity' in self.prog:
+            self.prog['uSensitivity'].value = self.sensitivity
 
-        if 'uFreqGainMinMult' in self.prog:
-            self.prog['uFreqGainMinMult'].value = self.freq_gain_min_mult
+        # Set segment color uniform
+        if 'uSegmentColor' in self.prog:
+            segment_color = self._parse_color(self.config.get("segment_color", "#FFFFFF"))
+            self.prog['uSegmentColor'].value = segment_color
+            print(f"  uSegmentColor: {segment_color}")
 
-        if 'uFreqGainMaxMult' in self.prog:
-            self.prog['uFreqGainMaxMult'].value = self.freq_gain_max_mult
-
-        if 'uFreqGainCurvePower' in self.prog:
-            self.prog['uFreqGainCurvePower'].value = self.freq_gain_curve_power
-
-        if 'uBarHeightPower' in self.prog:
-            self.prog['uBarHeightPower'].value = self.bar_height_power
-
-        if 'uAmplitudeCompressionPower' in self.prog:
-            self.prog['uAmplitudeCompressionPower'].value = self.amplitude_compression_power
+        if 'uBorderSize' in self.prog:
+            border_size = float(self.config.get("border_size", 0.08))
+            self.prog['uBorderSize'].value = border_size
+            print(f"  uBorderSize: {border_size}")
 
         # Print the values being set for debugging
         print(f"Setting shader uniforms:")
@@ -598,21 +595,51 @@ class SimpleGLCircularRenderer:
         print(f"  uSegmentsPerBar: {self.segments_per_bar}")
         print(f"  uInnerRadius: {self.inner_radius}")
         print(f"  uOuterRadius: {self.outer_radius}")
-        print(f"  uBorderSize: {self.config.get('border_size', 0.08)}")
         print(f"  uBarWidth: {self.config.get('bar_width', 0.8)}")
-        print(f"  uDebugMode: 0.0 (debug mode disabled)")
-        print(f"  uRectangularBars: {1.0 if self.rectangular_bars else 0.0}")
+        print(f"  uBorderSize: {self.config.get('border_size', 0.08)}")
+        print(f"  uDebugMode: {self.debug_level} (debug mode {'enabled' if self.debug_level > 0 else 'disabled'})")
 
         # Show time uniform value
         import time
         current_time = time.time() - self.start_time
         print(f"  uTime: {current_time} (for animation)")
-        print(f"  uOverallMasterGain: {self.overall_master_gain}")
-        print(f"  uFreqGainMinMult: {self.freq_gain_min_mult}")
-        print(f"  uFreqGainMaxMult: {self.freq_gain_max_mult}")
-        print(f"  uFreqGainCurvePower: {self.freq_gain_curve_power}")
-        print(f"  uBarHeightPower: {self.bar_height_power}")
-        print(f"  uAmplitudeCompressionPower: {self.amplitude_compression_power}")
+        print(f"  uSensitivity: {self.sensitivity}")
+
+    def _parse_color(self, color):
+        """
+        Parse a color value from various formats to a vec3 (r, g, b) tuple.
+
+        Args:
+            color: Can be a hex string ('#RRGGBB'), a tuple/list of RGB values (0-255),
+                  or a tuple/list of normalized RGB values (0.0-1.0)
+
+        Returns:
+            tuple: (r, g, b) with values normalized to 0.0-1.0 range
+        """
+        if isinstance(color, str) and color.startswith('#'):
+            # Convert hex color string to RGB
+            color = color.lstrip('#')
+            if len(color) == 6:
+                r = int(color[0:2], 16) / 255.0
+                g = int(color[2:4], 16) / 255.0
+                b = int(color[4:6], 16) / 255.0
+                return (r, g, b)
+            else:
+                print(f"Warning: Invalid hex color format: {color}, using default")
+                return (0.4, 0.4, 0.4)  # Default gray
+        elif isinstance(color, (list, tuple)):
+            # Check if it's already normalized (values between 0-1)
+            if all(isinstance(c, float) and 0.0 <= c <= 1.0 for c in color):
+                return tuple(color[:3])  # Return first 3 values (r,g,b)
+            # Check if it's RGB values (0-255)
+            elif all(isinstance(c, int) and 0 <= c <= 255 for c in color):
+                return tuple(c / 255.0 for c in color[:3])
+            else:
+                print(f"Warning: Invalid color tuple format: {color}, using default")
+                return (0.4, 0.4, 0.4)  # Default gray
+        else:
+            print(f"Warning: Unsupported color format: {color}, using default")
+            return (0.4, 0.4, 0.4)  # Default gray
 
     def cleanup(self):
         """Clean up resources."""

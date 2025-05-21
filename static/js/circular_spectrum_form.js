@@ -107,11 +107,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Update range input displays
     const rangeInputs = [
-        'inner_radius', 'outer_radius', 'border_size', 'bar_width',
-        'overall_master_gain', 'bar_height_power',
-        'freq_gain_min_mult', 'freq_gain_max_mult',
-        'lit_brightness_multiplier', 'freq_gain_curve_power',
-        'amplitude_compression_power', 'debug_level'
+        'inner_radius', 'outer_radius', 'segment_spacing', 'bar_width',
+        'sensitivity', 'border_size', 'debug_level'
     ];
 
     rangeInputs.forEach(function(id) {
@@ -120,11 +117,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (input && valueDisplay) {
             // Update on page load
-            valueDisplay.textContent = input.value;
+            if (id === 'segment_spacing') {
+                // For segment_spacing, show as pixels
+                valueDisplay.textContent = input.value + ` pixels`;
+            } else {
+                valueDisplay.textContent = input.value;
+            }
 
             // Update on input change
             input.addEventListener('input', function() {
-                valueDisplay.textContent = input.value;
+                if (id === 'segment_spacing') {
+                    // For segment_spacing, show as pixels
+                    valueDisplay.textContent = input.value + ` pixels`;
+                } else {
+                    valueDisplay.textContent = input.value;
+                }
             });
         }
     });

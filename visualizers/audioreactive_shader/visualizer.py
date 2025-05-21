@@ -187,12 +187,12 @@ class AudioreactiveShaderVisualizer(BaseVisualizer):
             while process.poll() is None:
                 # Calculate progress based on elapsed time
                 elapsed = time.time() - start_time
-                # More conservative progress calculation for longer tracks
-                progress = min(90, 20 + (elapsed / expected_duration) * 70)
+                # Calculate progress from 0-90% (reserving 10% for finalization)
+                progress = min(90, (elapsed / expected_duration) * 90)
 
                 # Only update progress at certain intervals to avoid UI jitter
                 if progress_callback and (int(progress) % 5 == 0 or elapsed < 10):
-                    progress_callback(int(progress), f"Rendering shader visualization...")
+                    progress_callback(int(progress), f"Rendering shader visualization... ({int(progress)}%)")
 
                 # Check if we've exceeded the maximum render time
                 if elapsed > max_render_time:

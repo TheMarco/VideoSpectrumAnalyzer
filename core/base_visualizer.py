@@ -18,6 +18,7 @@ from modules.ffmpeg_handler import (
     add_audio_to_video,
     cleanup_temp_files
 )
+from modules.progress_tracker import ProgressTracker
 
 class BaseVisualizer(ABC):
     """
@@ -85,7 +86,7 @@ class BaseVisualizer(ABC):
         output_file="output.mp4",
         background_image_path=None,
         background_video_path=None,
-        background_shader_path=None,  # New parameter
+        background_shader_path=None,
         artist_name="Artist Name",
         track_title="Track Title",
         duration=None,
@@ -116,35 +117,43 @@ class BaseVisualizer(ABC):
         Returns:
             str: Path to the output video file
         """
+        # Initialize progress tracker
+        progress = ProgressTracker(callback=progress_callback)
+
         # Process configuration
         conf = self.process_config(config)
 
+        # Start audio loading stage
+        progress.start_stage("audio_loading", "Loading audio file...")
+
         # Load audio
-        y, sr, duration = load_audio(audio_file, duration, progress_callback)
+        y, sr, duration = load_audio(audio_file, duration,
+                                     lambda p, m=None: progress.update_stage_progress(p, m))
 
-        # Debug the progress callback
-        print(f"DEBUG: base_visualizer progress_callback is {'provided' if progress_callback else 'NOT provided'}")
-        if progress_callback:
-            print(f"DEBUG: base_visualizer progress_callback type: {type(progress_callback)}")
-            # Test the callback with a more user-friendly message
-            progress_callback(1, "Initializing visualization...")
+        # Complete audio loading stage
+        progress.complete_stage("Audio loaded successfully")
 
-        # Define a wrapper callback for debugging
-        def debug_progress_callback(progress, message):
-            print(f"DEBUG: base_visualizer wrapper callback called with progress={progress}, message={message}")
-            if progress_callback:
-                progress_callback(progress, message)
-
-        # Load background media
-        background_pil, video_capture, bg_frame_count, bg_fps, shader_renderer = load_background_media(
-            background_image_path, background_video_path, background_shader_path, width, height,
-            duration=duration, fps=fps, progress_callback=debug_progress_callback if progress_callback else None
-        )
+        # Start audio analysis stage
+        progress.start_stage("audio_analysis", "Analyzing audio...")
 
         # Analyze audio
         audio_analysis = analyze_audio(
             y, sr, conf.get("n_bars", 40), conf.get("min_freq", 30),
-            conf.get("max_freq", 16000), fps, progress_callback
+            conf.get("max_freq", 16000), fps,
+            lambda p, m=None: progress.update_stage_progress(p, m)
+        )
+
+        # Complete audio analysis stage
+        progress.complete_stage("Audio analysis complete")
+
+        # Start background preparation stage
+        progress.start_stage("background_preparation", "Preparing background media...")
+
+        # Load background media
+        background_pil, video_capture, bg_frame_count, bg_fps, shader_renderer = load_background_media(
+            background_image_path, background_video_path, background_shader_path, width, height,
+            duration=duration, fps=fps,
+            progress_callback=lambda p, m=None: progress.update_stage_progress(p, m)
         )
 
         # Initialize renderer
@@ -152,6 +161,12 @@ class BaseVisualizer(ABC):
 
         # Setup FFmpeg process
         process, temp_video_path = setup_ffmpeg_process(width, height, fps)
+
+        # Complete background preparation stage
+        progress.complete_stage("Background preparation complete")
+
+        # Start frame generation stage
+        progress.start_stage("frame_generation", f"Generating frames for {self.name} visualization...")
 
         # Generate frames
         print(f"Generating frames for {self.name} visualization...")
@@ -206,9 +221,16 @@ class BaseVisualizer(ABC):
                 raise
 
             # Update progress
-            if progress_callback:
-                progress_percent = 20 + int(70 * (frame_idx + 1) / actual_frames)
-                progress_callback(progress_percent)
+            if frame_idx % 5 == 0 or frame_idx == actual_frames - 1:  # Update every 5 frames to reduce overhead
+                progress_percent = (frame_idx + 1) / actual_frames * 100
+                frame_message = f"Rendering frame {frame_idx+1}/{actual_frames}"
+                progress.update_stage_progress(progress_percent, frame_message)
+
+        # Complete frame generation stage
+        progress.complete_stage(f"Frame generation complete (took {time.time() - start_time:.2f}s)")
+
+        # Start video finalization stage
+        progress.start_stage("video_finalization", "Finalizing video...")
 
         # Finalize video
         print(f"Finalizing video... (took {time.time() - start_time:.2f}s to generate frames)")
@@ -216,14 +238,19 @@ class BaseVisualizer(ABC):
 
         # Add audio to video
         print("Adding audio to video...")
+        progress.update_stage_progress(50, "Adding audio to video...")
         add_audio_to_video(temp_video_path, audio_file, output_file)
 
         # Cleanup
+        progress.update_stage_progress(90, "Cleaning up temporary files...")
         cleanup_temp_files(temp_video_path, video_capture)
 
         # Cleanup shader renderer if used
         if shader_renderer:
             shader_renderer.cleanup()
+
+        # Complete video finalization stage
+        progress.complete_stage("Video saved successfully")
 
         print(f"Video saved to: {output_file}")
         return output_file
