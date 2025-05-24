@@ -83,15 +83,9 @@ def index():
     """Render the home page with all available visualizers."""
     visualizers = registry.get_all_visualizers()
 
-    # Hide development visualizers unless dev=true is in the URL
-    dev_mode = request.args.get('dev', '').lower() == 'true'
-    if not dev_mode:
-        # Filter out development visualizers
-        visualizers = [v for v in visualizers if v['name'] != 'AudioreactiveShaderVisualizer'
-                      and v['name'] != 'CircularSpectrumVisualizer']
-
+    # No development visualizers to filter anymore
     shaders = get_available_shaders()
-    return render_template("index.html", visualizers=visualizers, shaders=shaders, dev_mode=dev_mode)
+    return render_template("index.html", visualizers=visualizers, shaders=shaders)
 
 @app.route("/visualizer/<name>")
 def visualizer_form(name):
@@ -100,11 +94,8 @@ def visualizer_form(name):
     if not visualizer:
         return render_template("error.html", message=f"Visualizer '{name}' not found")
 
-    # Get available shaders - for audioreactive shader, use its own method
-    if hasattr(visualizer, 'get_available_shaders'):
-        shaders = visualizer.get_available_shaders()
-    else:
-        shaders = get_available_shaders()
+    # Get available shaders
+    shaders = get_available_shaders()
 
     template = visualizer.get_config_template()
     return render_template(template, visualizer=visualizer, shaders=shaders)
