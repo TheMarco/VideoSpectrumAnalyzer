@@ -1,5 +1,5 @@
 """
-Fallback PIL-based renderer for circular audio visualizer when WebGL fails.
+Fallback PIL-based renderer for circular audio visualizer when GL fails.
 """
 
 import numpy as np

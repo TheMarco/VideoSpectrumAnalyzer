@@ -9,21 +9,23 @@ from core.base_visualizer import BaseVisualizer
 from modules.audio_processor import load_audio
 from modules.media_handler import load_background_media, process_video_frame, load_fonts
 from .config import process_config
-from .webgl_renderer import SmoothCurvesWebGLRenderer
+from .webgl_renderer import SmoothCurvesGLRenderer
 
 class SmoothCurvesVisualizer(BaseVisualizer):
     """
     Smooth Curves visualizer.
     This visualizer renders smooth audio-reactive curves using a GLSL shader.
     """
-    name = "SmoothCurvesVisualizer"  # Internal name for registration
-    display_name = "Smooth Curves (WebGL)"  # Display name shown to users
-    description = "Displays smooth audio-reactive curves with glow effects using WebGL rendering for better performance."
+    name = "Smooth Curves Visualizer"  # Internal name for registration
+    display_name = "Smooth Curves (GL)"  # Display name shown to users
+    description = "Displays smooth audio-reactive curves with glow effects using GL rendering for better performance."
     thumbnail = "static/images/thumbnails/smooth_curves.jpg"  # Will need to be created
 
     def __init__(self):
         """Initialize the visualizer."""
         super().__init__()
+        # Override the name set by base class to use our class attribute
+        self.name = self.__class__.name
         self.gl_renderer = None
         self.audio_samples = None
         self.sample_rate = None
@@ -78,7 +80,7 @@ class SmoothCurvesVisualizer(BaseVisualizer):
                     print(f"Using default frame width 1280 instead of config width {config['width']}")
                     width = 1280
 
-            self.gl_renderer = SmoothCurvesWebGLRenderer(width, height, config)
+            self.gl_renderer = SmoothCurvesGLRenderer(width, height, config)
             print("GL renderer initialized successfully")
             return self.gl_renderer
         except Exception as e:
@@ -92,7 +94,7 @@ class SmoothCurvesVisualizer(BaseVisualizer):
         Render a single frame.
 
         Args:
-            renderer (SmoothCurvesWebGLRenderer): Renderer instance
+            renderer (SmoothCurvesGLRenderer): Renderer instance
             frame_data (dict): Frame data (audio samples, time, etc.)
             background_image (PIL.Image, optional): Background image
             metadata (dict, optional): Additional metadata (artist, title, etc.)

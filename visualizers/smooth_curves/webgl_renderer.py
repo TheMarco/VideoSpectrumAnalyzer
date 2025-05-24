@@ -1,6 +1,6 @@
 """
-WebGL-based renderer for the Smooth Curves visualizer.
-This implementation uses direct WebGL rendering for better performance.
+GL-based renderer for the Smooth Curves visualizer.
+This implementation uses direct GL rendering for better performance.
 """
 
 import os
@@ -10,15 +10,15 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import moderngl
 from modules.media_handler import load_fonts
 
-class SmoothCurvesWebGLRenderer:
+class SmoothCurvesGLRenderer:
     """
-    WebGL renderer for the Smooth Curves visualizer.
-    This implementation uses direct WebGL rendering for better performance.
+    GL renderer for the Smooth Curves visualizer.
+    This implementation uses direct GL rendering for better performance.
     """
 
     def __init__(self, width, height, config):
         """
-        Initialize the WebGL renderer.
+        Initialize the GL renderer.
 
         Args:
             width (int): Frame width.
@@ -26,7 +26,7 @@ class SmoothCurvesWebGLRenderer:
             config (dict): Configuration dictionary.
         """
         # Print debug info
-        print(f"SmoothCurvesWebGLRenderer.__init__(width={width}, height={height}, config={config})")
+        print(f"SmoothCurvesGLRenderer.__init__(width={width}, height={height}, config={config})")
 
         # Ensure width and height are integers for the frame dimensions
         try:
@@ -91,7 +91,7 @@ class SmoothCurvesWebGLRenderer:
         self.artist_font, self.title_font = load_fonts(text_size=text_size)
 
         # Print initialization info for debugging
-        print(f"Initializing Smooth Curves WebGL Renderer with width={self.width}, height={self.height}, width_param={self.width_param}")
+        print(f"Initializing Smooth Curves GL Renderer with width={self.width}, height={self.height}, width_param={self.width_param}")
 
         try:
             # Create standalone ModernGL context with performance optimizations
@@ -152,7 +152,7 @@ class SmoothCurvesWebGLRenderer:
             self.background_texture.write(empty_frame_data.tobytes())
 
         except Exception as e:
-            print(f"Error initializing WebGL renderer: {e}")
+            print(f"Error initializing GL renderer: {e}")
             import traceback
             traceback.print_exc()
             raise
@@ -178,7 +178,7 @@ class SmoothCurvesWebGLRenderer:
             }
         """
 
-        # Fragment shader - based on the WebGL implementation
+        # Fragment shader - based on the GL implementation
         fragment_shader = """
             #version 330
 
@@ -531,7 +531,7 @@ class SmoothCurvesWebGLRenderer:
 
             # Ensure audio_data is the right shape
             if len(audio_data) != 128:
-                # Resize to exactly 128 elements for WebGL version
+                # Resize to exactly 128 elements for GL version
                 if len(audio_data) < 128:
                     # Pad with zeros if too short
                     audio_data = np.pad(audio_data, (0, 128 - len(audio_data)), 'constant')

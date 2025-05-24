@@ -6,7 +6,7 @@ https://www.shadertoy.com/view/wfd3zr
 */
 // StarBirth: Fully AI vibe coded simulation of Hubble telescope images
 // by Marco van Hylckama Vlieg (@AIandDesign on X / YouTube)
-// Fixed version for VideoSpectrumAnalyzer
+// Fixed version for Video Spectrum Analyzer
 
 #define PI 3.14159265359
 #define ITERATIONS_FBM   8
@@ -136,7 +136,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
 
     // Nebula Cloud Layers
     // Layer 1 (Warm Orange)
-    vec2 uv1 = uv; 
+    vec2 uv1 = uv;
     uv1 *= rotate(time*0.1);
     vec2 q1 = vec2(
         fbm(uv1 + time*0.05, time*0.02),
@@ -147,7 +147,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
                   * f1 * 0.6 * (1.0 - bCore*0.8);
 
     // Layer 2 (Cool Blue)
-    vec2 uv2 = uv*2.5; 
+    vec2 uv2 = uv*2.5;
     uv2 *= rotate(-time*0.25);
     vec2 q2 = vec2(
         fbm(uv2*1.2 + time*0.2, time*0.1),
@@ -158,7 +158,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
                   * f2 * 0.4 * (1.0 - smoothstep(0.0,0.5,distToCenter));
 
     // Layer 3 (Deep Red)
-    vec2 uv3 = uv*1.8; 
+    vec2 uv3 = uv*1.8;
     uv3 *= rotate(time*0.05);
     vec2 q3 = vec2(
         fbm(uv3 + time*0.15, time*0.1),
@@ -169,7 +169,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
                   * f3 * 0.35 * (1.0 - smoothstep(0.0,1.0,distToCenter));
 
     // Layer 4 (Soft Blue)
-    vec2 uv4 = uv*3.2; 
+    vec2 uv4 = uv*3.2;
     uv4 *= rotate(-time*0.15);
     vec2 q4 = vec2(
         fbm(uv4 + time*0.25, time*0.15),
@@ -180,7 +180,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
                   * f4 * 0.25 * (1.0 - smoothstep(0.0,0.7,distToCenter));
 
     // Layer 5 (Black Smoke)
-    vec2 uv5 = uv*3.5; 
+    vec2 uv5 = uv*3.5;
     uv5 *= rotate(-time*0.2 + 0.7);
     vec2 q5 = vec2(
         fbm(uv5 + time*0.3, time*0.15),

@@ -24,6 +24,8 @@ class OscilloscopeWaveformVisualizer(BaseVisualizer):
 
     def __init__(self):
         super().__init__()
+        # Override the name set by base class to use our class attribute
+        self.name = self.__class__.name
         self.renderer = None # Initialize in initialize_renderer
         self.audio_samples = None
         self.sample_rate = None

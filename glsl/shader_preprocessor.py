@@ -344,7 +344,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
         # Create a simplified fixed version
         fixed_text = """// StarBirth: Fully AI vibe coded simulation of Hubble telescope images
 // by Marco van Hylckama Vlieg (@AIandDesign on X / YouTube)
-// Fixed version for VideoSpectrumAnalyzer
+// Fixed version for Video Spectrum Analyzer
 
 #define PI 3.14159265359
 #define ITERATIONS_FBM   8

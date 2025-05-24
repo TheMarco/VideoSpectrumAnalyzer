@@ -7,7 +7,7 @@ import logging
 from PIL import Image, ImageDraw, ImageFilter
 from core.base_visualizer import BaseVisualizer
 from .config import CIRCULAR_AUDIO_CONFIG
-from .webgl_renderer import CircularAudioWebGLRenderer
+from .webgl_renderer import CircularAudioGLRenderer
 from modules.media_handler import load_fonts
 
 logger = logging.getLogger(__name__)
@@ -15,7 +15,8 @@ logger = logging.getLogger(__name__)
 class CircularAudioVisualizer(BaseVisualizer):
     def __init__(self):
         # Set attributes before calling super().__init__()
-        self.display_name = "Circular Audio (WebGL)"
+        self.name = "Circular Audio"
+        self.display_name = "Circular Audio (GL)"
         self.description = "A circular audio visualizer with configurable segments and bloom effects"
         self.thumbnail = "static/images/thumbnails/circular_audio.jpg"
 
@@ -105,10 +106,10 @@ class CircularAudioVisualizer(BaseVisualizer):
         from visualizers.oscilloscope_waveform.renderer import OscilloscopeWaveformRenderer
         self.text_renderer = OscilloscopeWaveformRenderer(width, height, config, self.artist_font, self.title_font)
 
-        # Initialize WebGL renderer for the circular visualization
-        self.renderer = CircularAudioWebGLRenderer(width, height)
+        # Initialize GL renderer for the circular visualization
+        self.renderer = CircularAudioGLRenderer(width, height)
         if not self.renderer.initialize_gl():
-            logger.error("Failed to initialize WebGL renderer, falling back to PIL-based renderer")
+            logger.error("Failed to initialize GL renderer, falling back to PIL-based renderer")
             # Create a fallback PIL-based renderer
             from .fallback_renderer import CircularAudioFallbackRenderer
             self.renderer = CircularAudioFallbackRenderer(width, height)
@@ -130,7 +131,7 @@ class CircularAudioVisualizer(BaseVisualizer):
 
 
 
-        # Render the WebGL visualization
+        # Render the GL visualization
         webgl_image = renderer.render_frame(frequency_data, config, time_seconds, background_image)
 
         # Add text overlay if enabled and metadata is provided
@@ -198,7 +199,7 @@ class CircularAudioVisualizer(BaseVisualizer):
                 # Composite the main text layer on top of the glow
                 text_overlay = Image.alpha_composite(text_overlay, main_text_layer)
 
-                # Composite the complete text overlay onto the WebGL image
+                # Composite the complete text overlay onto the GL image
                 webgl_image = Image.alpha_composite(webgl_image, text_overlay)
 
         return webgl_image

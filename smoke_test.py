@@ -6,7 +6,7 @@ Usage:
     python3 smoke_test.py
 
 This script renders each GLSL shader for 5 seconds at 30fps and saves outputs to tests/shaders/.
-It also renders a dummy audio visualization for 5 seconds at 30fps using DualBarVisualizer
+It also renders a dummy audio visualization for 5 seconds at 30fps using Dual Bar Visualizer
 and saves the output to tests/dual_bar_visualizer/.
 """
 import os

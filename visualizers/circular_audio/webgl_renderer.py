@@ -1,5 +1,5 @@
 """
-WebGL renderer for the Circular Audio Visualizer.
+GL renderer for the Circular Audio Visualizer.
 """
 
 import numpy as np
@@ -12,7 +12,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class CircularAudioWebGLRenderer:
+class CircularAudioGLRenderer:
     def __init__(self, width=1280, height=720):
         self.width = int(width)
         self.height = int(height)
@@ -227,11 +227,11 @@ class CircularAudioWebGLRenderer:
             # Create background texture
             self.create_background_texture()
 
-            logger.info("WebGL context initialized successfully")
+            logger.info("GL context initialized successfully")
             return True
 
         except Exception as e:
-            logger.error(f"Failed to initialize WebGL context: {e}")
+            logger.error(f"Failed to initialize GL context: {e}")
             return False
 
     def hex_to_rgb(self, hex_color):
@@ -298,8 +298,8 @@ class CircularAudioWebGLRenderer:
 
         try:
             # Log the raw input data for debugging
-            logger.debug(f"WebGL Renderer: Raw input type: {type(frequency_data)}")
-            logger.debug(f"WebGL Renderer: Raw input shape: {getattr(frequency_data, 'shape', 'no shape')}")
+            logger.debug(f"GL Renderer: Raw input type: {type(frequency_data)}")
+            logger.debug(f"GL Renderer: Raw input shape: {getattr(frequency_data, 'shape', 'no shape')}")
 
             # Convert to numpy array if it isn't already
             if not isinstance(frequency_data, np.ndarray):
@@ -312,11 +312,11 @@ class CircularAudioWebGLRenderer:
             # The shader expects exactly 64 frequency bands
             target_bands = 64
 
-            logger.debug(f"WebGL Renderer: After processing - shape: {frequency_data.shape}, dtype: {frequency_data.dtype}")
+            logger.debug(f"GL Renderer: After processing - shape: {frequency_data.shape}, dtype: {frequency_data.dtype}")
 
             # Force the data to be exactly 64 bands
             if len(frequency_data) != target_bands:
-                logger.warning(f"WebGL Renderer: Resizing data from {len(frequency_data)} to {target_bands} bands")
+                logger.warning(f"GL Renderer: Resizing data from {len(frequency_data)} to {target_bands} bands")
                 if len(frequency_data) > target_bands:
                     # Downsample by taking first 64 elements
                     frequency_data = frequency_data[:target_bands]
@@ -329,8 +329,8 @@ class CircularAudioWebGLRenderer:
             # Ensure correct data type and range
             frequency_data = np.clip(frequency_data.astype(np.float32), 0.0, 1.0)
 
-            logger.debug(f"WebGL Renderer: Final data shape: {frequency_data.shape}")
-            logger.debug(f"WebGL Renderer: Data range - min: {frequency_data.min():.3f}, max: {frequency_data.max():.3f}")
+            logger.debug(f"GL Renderer: Final data shape: {frequency_data.shape}")
+            logger.debug(f"GL Renderer: Data range - min: {frequency_data.min():.3f}, max: {frequency_data.max():.3f}")
 
             # Always recreate the texture to avoid any caching issues
             if self.texture is not None:
@@ -358,9 +358,9 @@ class CircularAudioWebGLRenderer:
             data_bytes = texture_data.tobytes()
             expected_bytes = texture_width * texture_height * 4  # 4 bytes per RGBA pixel
 
-            logger.debug(f"WebGL Renderer: Creating RGBA texture {texture_width}x{texture_height}")
-            logger.debug(f"WebGL Renderer: Data bytes length: {len(data_bytes)}")
-            logger.debug(f"WebGL Renderer: Expected bytes: {expected_bytes}")
+            logger.debug(f"GL Renderer: Creating RGBA texture {texture_width}x{texture_height}")
+            logger.debug(f"GL Renderer: Data bytes length: {len(data_bytes)}")
+            logger.debug(f"GL Renderer: Expected bytes: {expected_bytes}")
 
             # Create the texture with RGBA format like other visualizers
             self.texture = self.ctx.texture(
@@ -370,7 +370,7 @@ class CircularAudioWebGLRenderer:
             )
             self.texture.filter = (moderngl.LINEAR, moderngl.LINEAR)
 
-            logger.debug(f"WebGL Renderer: Successfully created texture: {self.texture.size}")
+            logger.debug(f"GL Renderer: Successfully created texture: {self.texture.size}")
             return self.texture
 
         except Exception as e:
@@ -383,7 +383,7 @@ class CircularAudioWebGLRenderer:
     def render_frame(self, frequency_data, config, time_seconds=0.0, background_frame=None):
         """Render a single frame"""
         if self.ctx is None or self.program is None:
-            logger.error("WebGL context not initialized")
+            logger.error("GL context not initialized")
             # Return a black image instead of None
             return Image.new('RGBA', (self.width, self.height), (0, 0, 0, 255))
 
