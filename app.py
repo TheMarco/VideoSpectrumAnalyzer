@@ -255,6 +255,10 @@ def upload_file():
     # Add default background color
     config["background_color"] = (0, 0, 0)  # Fallback solid color
 
+    # Map background_shader to background_shader_path for compatibility
+    if "background_shader" in config:
+        config["background_shader_path"] = config["background_shader"]
+
     # Debug print
     print(f"Processed configuration: {config}")
 
@@ -455,6 +459,23 @@ def process_video(
         # Log that we're setting the error
         print(f"Setting error in job data: {jobs[job_id]['error']}")
 
+
+@app.route("/job/<job_id>", methods=["GET"])
+def job_page(job_id):
+    """Render the job status page."""
+    if job_id not in jobs:
+        return render_template("error.html", message=f"Job not found: {job_id}")
+
+    # Get job data
+    job_data = jobs[job_id].copy()
+
+    # Render the processing page
+    return render_template(
+        "job.html",
+        job_id=job_id,
+        job_data=job_data,
+        visualizer_name=job_data.get("visualizer", "Unknown")
+    )
 
 @app.route("/job_status/<job_id>", methods=["GET"])
 def job_status(job_id):

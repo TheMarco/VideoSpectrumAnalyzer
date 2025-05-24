@@ -105,10 +105,25 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Handle glow effect toggle
+    const glowEffectCheckbox = document.getElementById('glow_effect');
+    const glowSettingsContainer = document.getElementById('glow_settings_container');
+
+    if (glowEffectCheckbox && glowSettingsContainer) {
+        // Set initial state
+        glowSettingsContainer.style.display = glowEffectCheckbox.checked ? 'block' : 'none';
+
+        // Add change event listener
+        glowEffectCheckbox.addEventListener('change', function() {
+            glowSettingsContainer.style.display = this.checked ? 'block' : 'none';
+        });
+    }
+
     // Update range input displays
     const rangeInputs = [
         'inner_radius', 'outer_radius', 'segment_spacing', 'bar_width',
-        'sensitivity', 'border_size', 'debug_level'
+        'sensitivity', 'border_size', 'debug_level', 'glow_radius',
+        'glow_intensity', 'glow_blur_radius'
     ];
 
     rangeInputs.forEach(function(id) {

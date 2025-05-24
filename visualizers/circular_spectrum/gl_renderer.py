@@ -34,19 +34,22 @@ class SimpleGLCircularRenderer:
         self.inner_radius = float(config.get("inner_radius", 0.20))
         self.outer_radius = float(config.get("outer_radius", 0.40))
 
-        # Store debug mode setting
-        self.debug_mode = bool(config.get("debug_mode", False))
+        # Store debug mode setting - FORCE ENABLE for troubleshooting
+        self.debug_mode = True
 
-        # Set debug level (0=off, 1=basic debug, 2=full debug)
-        # Convert to float first to handle decimal values like 0.7
-        debug_level_value = config.get("debug_level", 0)
-        try:
-            self.debug_level = float(debug_level_value)
-        except (ValueError, TypeError):
-            print(f"Warning: Invalid debug_level value: {debug_level_value}, using default 0")
-            self.debug_level = 0.0
+        # Set debug level to 0.4 to show test pattern
+        self.debug_level = 0.4
+        print("DEBUG MODE FORCED ON for troubleshooting - using test pattern")
 
-        # Set bar shape (rectangular vs radial)
+        # Set segment shape (rectangular vs round)
+        self.use_round_segments = bool(config.get("use_round_segments", False))
+
+        # Set glow effect settings
+        self.glow_effect = bool(config.get("glow_effect", True))
+        self.glow_radius = float(config.get("glow_radius", 0.2))
+        self.glow_intensity = float(config.get("glow_intensity", 0.5))
+
+        # Set bar shape (rectangular vs radial) - for backward compatibility
         self.rectangular_bars = bool(config.get("rectangular_bars", True))
 
         # Get sensitivity setting - ensure it's a float
@@ -61,11 +64,14 @@ class SimpleGLCircularRenderer:
             print("ModernGL standalone context created successfully")
 
             # Load Shadertoy-style circular spectrum shader
+            # Always use the fixed version
             self.shader_path = os.path.join(
                 os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
                 "glsl",
-                "ar_circular_spectrum.glsl"
+                "ar_circular_spectrum_fixed.glsl"
             )
+
+            print(f"Using fixed shader: {self.shader_path}")
             print(f"Loading shader from: {self.shader_path}")
 
             if not os.path.exists(self.shader_path):
@@ -427,9 +433,9 @@ class SimpleGLCircularRenderer:
             # Don't set a minimum floor - let zero values be zero
             # This ensures bars with no audio signal remain off
 
-            # Debug mode can be enabled for testing
-            self.debug_mode = False  # Disable debug mode to use real audio data
-            self.debug_level = 0.0  # Set debug level to 0.0 to disable debug visualizations
+            # Debug mode is forced on for testing
+            self.debug_mode = True  # Force debug mode on
+            self.debug_level = 0.4  # Set debug level to 0.4 to show test pattern
 
             # Only use test pattern if debug mode is enabled
             if self.debug_mode:
@@ -570,7 +576,27 @@ class SimpleGLCircularRenderer:
         if 'uDebugMode' in self.prog:
             self.prog['uDebugMode'].value = self.debug_level  # Use the debug level value
 
-        # Set bar shape (rectangular vs radial)
+        # Set segment shape (rectangular vs round)
+        if 'uUseRoundSegments' in self.prog:
+            self.prog['uUseRoundSegments'].value = 1.0 if self.use_round_segments else 0.0
+
+        # Set glow effect settings
+        if 'uGlowEffect' in self.prog:
+            self.prog['uGlowEffect'].value = 1.0 if self.glow_effect else 0.0
+
+        if 'uGlowRadius' in self.prog:
+            self.prog['uGlowRadius'].value = self.glow_radius
+
+        if 'uGlowIntensity' in self.prog:
+            self.prog['uGlowIntensity'].value = self.glow_intensity
+
+        # Set glow color
+        if 'uGlowColor' in self.prog:
+            glow_color = self._parse_color(self.config.get("glow_color", self.config.get("segment_color", "#FFFFFF")))
+            self.prog['uGlowColor'].value = glow_color
+            print(f"  uGlowColor: {glow_color}")
+
+        # Set bar shape (rectangular vs radial) - for backward compatibility
         if 'uRectangularBars' in self.prog:
             self.prog['uRectangularBars'].value = 1.0 if self.rectangular_bars else 0.0
 
@@ -597,6 +623,10 @@ class SimpleGLCircularRenderer:
         print(f"  uOuterRadius: {self.outer_radius}")
         print(f"  uBarWidth: {self.config.get('bar_width', 0.8)}")
         print(f"  uBorderSize: {self.config.get('border_size', 0.08)}")
+        print(f"  uUseRoundSegments: {1.0 if self.use_round_segments else 0.0}")
+        print(f"  uGlowEffect: {1.0 if self.glow_effect else 0.0}")
+        print(f"  uGlowRadius: {self.glow_radius}")
+        print(f"  uGlowIntensity: {self.glow_intensity}")
         print(f"  uDebugMode: {self.debug_level} (debug mode {'enabled' if self.debug_level > 0 else 'disabled'})")
 
         # Show time uniform value

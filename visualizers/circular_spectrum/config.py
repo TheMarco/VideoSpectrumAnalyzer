@@ -21,7 +21,15 @@ def process_config(config=None):
         "outer_radius": 0.40,            # Outer radius of the circle (0-1)
         "bar_width": 0.8,                # Width of bars (0-1, where 1 means bars touch, lower values create gaps)
         "segment_spacing": 2,            # Spacing between segments in pixels (0 = no spacing)
-        "rectangular_bars": True,       # Use rectangular bars (True) or radial/trapezoid bars (False)
+        "rectangular_bars": True,        # Use rectangular bars (True) or radial/trapezoid bars (False)
+        "use_round_segments": True,      # Use round segments (filled circles) instead of rectangular segments
+
+        # Glow effect parameters
+        "glow_effect": True,             # Enable glow effect for segments and text
+        "glow_radius": 0.2,              # Glow radius (0-1)
+        "glow_intensity": 0.5,           # Glow intensity (0-1)
+        "glow_color": "#FFFFFF",         # Glow color (defaults to segment color if not specified)
+        "glow_blur_radius": 3,           # Blur radius for text glow effect
 
         # Sensitivity and gain settings
         "overall_master_gain": 1.0,      # Overall gain multiplier
@@ -87,6 +95,23 @@ def process_config(config=None):
         if isinstance(rectangular_bars, str):
             rectangular_bars = rectangular_bars.lower() in ('true', 'yes', '1', 'on')
         default_config['rectangular_bars'] = bool(rectangular_bars)
+
+        # Convert use_round_segments to boolean
+        use_round_segments = default_config.get('use_round_segments', True)
+        if isinstance(use_round_segments, str):
+            use_round_segments = use_round_segments.lower() in ('true', 'yes', '1', 'on')
+        default_config['use_round_segments'] = bool(use_round_segments)
+
+        # Convert glow_effect to boolean
+        glow_effect = default_config.get('glow_effect', True)
+        if isinstance(glow_effect, str):
+            glow_effect = glow_effect.lower() in ('true', 'yes', '1', 'on')
+        default_config['glow_effect'] = bool(glow_effect)
+
+        # Process glow parameters
+        default_config['glow_radius'] = float(default_config.get('glow_radius', 0.2))
+        default_config['glow_intensity'] = float(default_config.get('glow_intensity', 0.5))
+        default_config['glow_blur_radius'] = int(default_config.get('glow_blur_radius', 3))
         default_config['overall_master_gain'] = float(default_config.get('overall_master_gain', 1.0))
         default_config['freq_gain_min_mult'] = float(default_config.get('freq_gain_min_mult', 0.4))
         default_config['freq_gain_max_mult'] = float(default_config.get('freq_gain_max_mult', 1.8))

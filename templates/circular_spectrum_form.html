@@ -178,6 +178,21 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="use_round_segments" name="use_round_segments" checked>
+                                        <label class="form-check-label" for="use_round_segments">Use Round Segments <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="When enabled, segments are rendered as filled circles instead of rectangles."></i></label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="glow_effect" name="glow_effect" checked>
+                                        <label class="form-check-label" for="glow_effect">Glow Effect <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Enable glow effect for segments and text."></i></label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
                                         <input class="form-check-input" type="checkbox" id="debug_mode" name="debug_mode">
                                         <label class="form-check-label" for="debug_mode">Debug Mode <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Enable debug mode to help troubleshoot issues with the visualizer."></i></label>
                                     </div>
@@ -185,6 +200,32 @@
                                         <label for="debug_level" class="form-label mt-2">Debug Level <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Higher values show more debug information (0.3=test pattern, 0.7=bar identification, 2=full debug)"></i></label>
                                         <input type="range" id="debug_level" name="debug_level" min="0" max="2" step="0.1" value="0.7" class="form-range">
                                         <small class="form-text text-muted">Value: <span id="debug_level_value">0.7</span></small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="glow_settings_container">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="glow_radius" class="form-label">Glow Radius <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Radius of the glow effect (0.1-0.5)"></i></label>
+                                        <input type="range" id="glow_radius" name="glow_radius" min="0.1" max="0.5" step="0.05" value="0.2" class="form-range">
+                                        <small class="form-text text-muted">Value: <span id="glow_radius_value">0.2</span></small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="glow_intensity" class="form-label">Glow Intensity <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Intensity of the glow effect (0.1-1.0)"></i></label>
+                                        <input type="range" id="glow_intensity" name="glow_intensity" min="0.1" max="1.0" step="0.1" value="0.5" class="form-range">
+                                        <small class="form-text text-muted">Value: <span id="glow_intensity_value">0.5</span></small>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="glow_color" class="form-label">Glow Color <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Color of the glow effect. If not specified, uses the segment color."></i></label>
+                                        <input type="color" id="glow_color" name="glow_color" value="#FFFFFF" class="form-control form-control-color">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="glow_blur_radius" class="form-label">Text Glow Blur <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Blur radius for text glow effect (1-10)"></i></label>
+                                        <input type="range" id="glow_blur_radius" name="glow_blur_radius" min="1" max="10" step="1" value="3" class="form-range">
+                                        <small class="form-text text-muted">Value: <span id="glow_blur_radius_value">3</span></small>
                                     </div>
                                 </div>
                             </div>

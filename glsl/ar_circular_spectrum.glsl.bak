@@ -421,9 +421,10 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
         // Calculate distance from current pixel to segment center
         float dist_to_center = length(centered_uv_scaled - segment_center);
 
-        // Calculate circle radius - make it MUCH larger for visibility
-        // Use a fixed size that's large enough to be clearly visible
-        float circle_radius = segment_height * 0.8 * BAR_WIDTH;
+        // Calculate circle radius - make it proportional to segment height but smaller
+        // to ensure there's space between circles
+        // Use a fixed size that creates clear separation between circles
+        float circle_radius = min(segment_height * 0.35, (segment_height - normalized_segment_spacing) * 0.5) * BAR_WIDTH;
 
         if (is_segment_lit) {
             if (dist_to_center <= circle_radius) {
