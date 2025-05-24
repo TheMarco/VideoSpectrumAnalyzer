@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ visualizer.display_name }} - Audio Visualizer Suite</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container mt-5 mb-5 fade-in">
+        <h1 class="text-center mb-3">{{ visualizer.display_name }}</h1>
+        <p class="text-center mb-5" style="max-width: 700px; margin-left: auto; margin-right: auto; color: var(--text-secondary);">{{ visualizer.description }}</p>
+
+        <div class="mb-4">
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i> Back to Visualizer Selection
+            </a>
+        </div>
+
+        <form id="upload-form" enctype="multipart/form-data" novalidate>
+            <!-- Hidden fields -->
+            <input type="hidden" name="visualizer_name" value="{{ visualizer.name }}">
+
+            <!-- Nav Tabs -->
+            <ul class="nav nav-tabs nav-fill mb-4" id="configTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="input-tab" data-bs-toggle="tab" data-bs-target="#input-tab-pane" type="button" role="tab" aria-controls="input-tab-pane" aria-selected="true">
+                        <i class="bi bi-file-music me-2"></i> 1. Input Files & Info
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="appearance-tab" data-bs-toggle="tab" data-bs-target="#appearance-tab-pane" type="button" role="tab" aria-controls="appearance-tab-pane" aria-selected="false">
+                        <i class="bi bi-palette me-2"></i> 2. Appearance
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="reactivity-tab" data-bs-toggle="tab" data-bs-target="#reactivity-tab-pane" type="button" role="tab" aria-controls="reactivity-tab-pane" aria-selected="false">
+                        <i class="bi bi-soundwave me-2"></i> 3. Reactivity
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="advanced-tab" data-bs-toggle="tab" data-bs-target="#advanced-tab-pane" type="button" role="tab" aria-controls="advanced-tab-pane" aria-selected="false">
+                        <i class="bi bi-gear me-2"></i> 4. Advanced & Output
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="configTabsContent">
+
+                <!-- ======================= -->
+                <!--      INPUT TAB PANE     -->
+                <!-- ======================= -->
+                <div class="tab-pane fade show active" id="input-tab-pane" role="tabpanel" aria-labelledby="input-tab" tabindex="0">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Input Files & Info</h5>
+                             <!-- Audio File -->
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <label for="file" class="form-label">Audio File* <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="right" title="Select the primary audio track (MP3, WAV, FLAC, etc.). Max 1.6GB."></i></label>
+                                    <input type="file" class="form-control" id="file" name="file" accept="audio/*">
+                                </div>
+                            </div>
+
+                            <!-- Background Media -->
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <label for="background_media" class="form-label">Background Image/Video <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="right" title="Optional background image (JPG, PNG) or video (MP4). If not provided, a black background will be used."></i></label>
+                                    <input type="file" class="form-control" id="background_media" name="background_media" accept="image/*,video/*">
+                                </div>
+                            </div>
+
+                            <!-- Background Shader -->
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <label for="background_shader" class="form-label">Background Shader <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="right" title="Optional GLSL shader for dynamic background effects. Takes precedence over image/video if both are provided."></i></label>
+                                        <a href="/shader-explorer" class="text-decoration-none">
+                                            <i class="bi bi-eye me-1"></i> Preview Shaders
+                                        </a>
+                                    </div>
+                                    <select class="form-select" id="background_shader" name="background_shader">
+                                        <option value="">None (use image/video or black background)</option>
+                                        {% for shader in shaders %}
+                                        <option value="{{ shader.path }}">{{ shader.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Artist and Track Info -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="artist_name" class="form-label">Artist Name <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Artist name to display in the visualization."></i></label>
+                                    <input type="text" class="form-control" id="artist_name" name="artist_name" value="">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="track_title" class="form-label">Track Title <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Track title to display in the visualization."></i></label>
+                                    <input type="text" class="form-control" id="track_title" name="track_title" value="">
+                                </div>
+                            </div>
+
+                            <!-- Text Settings -->
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="text_size" class="form-label">Text Size <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Size of the artist and title text."></i></label>
+                                    <select class="form-select" id="text_size" name="text_size">
+                                        <option value="small" {% if visualizer.config.defaults.text_size == 'small' %}selected{% endif %}>Small</option>
+                                        <option value="medium" {% if visualizer.config.defaults.text_size == 'medium' %}selected{% endif %}>Medium</option>
+                                        <option value="large" {% if visualizer.config.defaults.text_size == 'large' %}selected{% endif %}>Large</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="text_color" class="form-label">Text Color <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Color for the artist and title text."></i></label>
+                                    <input type="color" class="form-control form-control-color w-100" id="text_color" name="text_color" value="{{ visualizer.config.defaults.text_color }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check mt-4">
+                                        <input class="form-check-input" type="checkbox" id="show_text" name="show_text" {% if visualizer.config.defaults.show_text %}checked{% endif %}>
+                                        <label class="form-check-label" for="show_text">
+                                            Show Text <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Display artist name and track title on the visualization."></i>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Text Glow Settings -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="glow_effect" class="form-label">Text Glow Effect <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Glow effect around text for better visibility."></i></label>
+                                    <select class="form-select" id="glow_effect" name="glow_effect">
+                                        <option value="none" {% if visualizer.config.defaults.glow_effect == 'none' %}selected{% endif %}>None</option>
+                                        <option value="black" {% if visualizer.config.defaults.glow_effect == 'black' %}selected{% endif %}>Black Glow</option>
+                                        <option value="white" {% if visualizer.config.defaults.glow_effect == 'white' %}selected{% endif %}>White Glow</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="glow_blur_radius" class="form-label">Glow Blur Radius <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Blur radius for the text glow effect."></i></label>
+                                    <input type="range" class="form-range" id="glow_blur_radius" name="glow_blur_radius" min="1" max="10" step="1" value="{{ visualizer.config.defaults.glow_blur_radius }}">
+                                    <small class="form-text text-muted">Value: <span id="glow_blur_radius_value">{{ visualizer.config.defaults.glow_blur_radius }}</span></small>
+                                </div>
+                            </div>
+                        </div> <!-- End Card Body -->
+                    </div> <!-- End Card -->
+                </div> <!-- End Input Tab Pane -->
+
+                <!-- ======================= -->
+                <!--    APPEARANCE TAB PANE  -->
+                <!-- ======================= -->
+                <div class="tab-pane fade" id="appearance-tab-pane" role="tabpanel" aria-labelledby="appearance-tab" tabindex="0">
+                     <div class="card">
+                        <div class="card-body">
+                             <h5 class="card-title mb-3">Circular Visualizer Appearance</h5>
+
+                             <!-- Visual Settings -->
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="segment_size" class="form-label">Segment Size <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Size multiplier for individual segments (0.5 to 2.0)."></i></label>
+                                    <input type="range" class="form-range" id="segment_size" name="segment_size" min="0.5" max="2.0" step="0.1" value="1.0">
+                                    <small class="form-text text-muted">Value: <span id="segment_size_value">1.0</span></small>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="brightness" class="form-label">Brightness <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Overall brightness of the visualization (1.0 to 8.0)."></i></label>
+                                    <input type="range" class="form-range" id="brightness" name="brightness" min="1.0" max="8.0" step="0.1" value="3.5">
+                                    <small class="form-text text-muted">Value: <span id="brightness_value">3.5</span></small>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="segment_gap" class="form-label">Segment Gap <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Gap between segments (0.0 = smallest gap, 3.0 = largest gap)."></i></label>
+                                    <input type="range" class="form-range" id="segment_gap" name="segment_gap" min="0.0" max="3.0" step="0.1" value="0.4">
+                                    <small class="form-text text-muted">Value: <span id="segment_gap_value">0.4</span></small>
+                                </div>
+                            </div>
+
+                            <!-- Bloom Settings -->
+                            <h6 class="mt-4">Bloom & Glow Effects</h6>
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="bloom_size" class="form-label">Bloom Size <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Size of the glow/bloom effect around segments (1.0 to 15.0)."></i></label>
+                                    <input type="range" class="form-range" id="bloom_size" name="bloom_size" min="1.0" max="15.0" step="0.1" value="4.5">
+                                    <small class="form-text text-muted">Value: <span id="bloom_size_value">4.5</span></small>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="bloom_intensity" class="form-label">Bloom Intensity <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Intensity of the glow/bloom effect (0.1 to 2.0)."></i></label>
+                                    <input type="range" class="form-range" id="bloom_intensity" name="bloom_intensity" min="0.1" max="2.0" step="0.1" value="0.7">
+                                    <small class="form-text text-muted">Value: <span id="bloom_intensity_value">0.7</span></small>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="bloom_falloff" class="form-label">Bloom Falloff <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="How quickly the bloom effect fades (1.0 to 4.0)."></i></label>
+                                    <input type="range" class="form-range" id="bloom_falloff" name="bloom_falloff" min="1.0" max="4.0" step="0.1" value="2.0">
+                                    <small class="form-text text-muted">Value: <span id="bloom_falloff_value">2.0</span></small>
+                                </div>
+                            </div>
+
+                            <!-- Color Settings -->
+                            <h6 class="mt-4">Colors</h6>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="base_color" class="form-label">Base Color <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Base color for segments."></i></label>
+                                    <input type="color" class="form-control form-control-color w-100" id="base_color" name="base_color" value="{{ visualizer.config.defaults.base_color }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="hot_color" class="form-label">High Amplitude Color <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Color for high amplitude segments."></i></label>
+                                    <input type="color" class="form-control form-control-color w-100" id="hot_color" name="hot_color" value="{{ visualizer.config.defaults.hot_color }}">
+                                </div>
+                            </div>
+                        </div> <!-- End Card Body -->
+                    </div> <!-- End Card -->
+                </div> <!-- End Appearance Tab Pane -->
+
+                <!-- ======================= -->
+                <!--    REACTIVITY TAB PANE  -->
+                <!-- ======================= -->
+                <div class="tab-pane fade" id="reactivity-tab-pane" role="tabpanel" aria-labelledby="reactivity-tab" tabindex="0">
+                     <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Audio Reactivity & Dynamics</h5>
+
+                            <!-- Audio Settings -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="sensitivity" class="form-label">Audio Sensitivity <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="How responsive the visualizer is to audio changes (0.5 to 5.0)."></i></label>
+                                    <input type="range" class="form-range" id="sensitivity" name="sensitivity" min="0.5" max="5.0" step="0.1" value="1.4">
+                                    <small class="form-text text-muted">Value: <span id="sensitivity_value">1.4</span></small>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check mt-4">
+                                        <input class="form-check-input" type="checkbox" id="use_log_scale" name="use_log_scale">
+                                        <label class="form-check-label" for="use_log_scale">
+                                            Use Logarithmic Scale <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Use logarithmic scaling for frequency response."></i>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Additional Audio Processing -->
+                            <h6 class="mt-4">Audio Processing</h6>
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="amplitude_scale" class="form-label">Amplitude Scale <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Internal scaling factor applied before sensitivity."></i></label>
+                                    <input type="number" class="form-control" id="amplitude_scale" name="amplitude_scale" value="1.0" min="0.1" max="2" step="0.1">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="decay_speed" class="form-label">Decay Speed <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="How quickly segments fade when audio level drops."></i></label>
+                                    <input type="number" class="form-control" id="decay_speed" name="decay_speed" value="0.2" min="0.05" max="0.5" step="0.05">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="noise_gate" class="form-label">Noise Gate <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Amplitude level below which segments are forced to zero."></i></label>
+                                    <input type="number" class="form-control" id="noise_gate" name="noise_gate" value="0.03" min="0.0" max="0.2" step="0.01">
+                                </div>
+                            </div>
+                        </div> <!-- End Card Body -->
+                    </div> <!-- End Card -->
+                </div> <!-- End Reactivity Tab Pane -->
+
+                 <!-- ======================= -->
+                <!--    ADVANCED TAB PANE    -->
+                <!-- ======================= -->
+                <div class="tab-pane fade" id="advanced-tab-pane" role="tabpanel" aria-labelledby="advanced-tab" tabindex="0">
+                     <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Advanced & Output Settings</h5>
+
+                            <!-- Frequency Settings -->
+                            <h6>Frequency Analysis</h6>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="n_bars" class="form-label">Number of Frequency Bands <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Number of frequency bands to analyze (affects circular segments)."></i></label>
+                                    <input type="number" class="form-control" id="n_bars" name="n_bars" value="64" min="32" max="128">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="attack_speed" class="form-label">Attack Speed <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="How quickly segments rise to match audio level."></i></label>
+                                    <input type="number" class="form-control" id="attack_speed" name="attack_speed" value="1.0" min="0.5" max="2.0" step="0.1">
+                                </div>
+                            </div>
+
+                            <!-- Video Output Settings -->
+                            <h6 class="mt-4">Video Output Settings</h6>
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="duration" class="form-label">Duration (sec) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Maximum output video duration in seconds. Set to 0 to process the full audio track."></i></label>
+                                    <input type="number" class="form-control" id="duration" name="duration" value="0" min="0" step="1">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="fps" class="form-label">Frame Rate (FPS) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Video frame rate. Higher values create smoother motion but larger files."></i></label>
+                                    <select class="form-select" id="fps" name="fps">
+                                        <option value="24">24 FPS</option>
+                                        <option value="30" selected>30 FPS</option>
+                                        <option value="60">60 FPS</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4"></div> <!-- Placeholder -->
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="width" class="form-label">Video Width (px) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Width of the output video."></i></label>
+                                    <input type="number" class="form-control" id="width" name="width" value="1280" min="640" max="3840" step="10">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="height" class="form-label">Video Height (px) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Height of the output video."></i></label>
+                                    <input type="number" class="form-control" id="height" name="height" value="720" min="360" max="2160" step="10">
+                                </div>
+                            </div>
+                        </div> <!-- End Card Body -->
+                    </div> <!-- End Card -->
+                </div> <!-- End Advanced Tab Pane -->
+
+            </div> <!-- End Tab Content -->
+
+            <!-- Submit Button -->
+            <div class="d-grid mt-5">
+                <button type="submit" class="btn btn-primary btn-lg py-3" id="submit-btn">
+                    <i class="bi bi-magic me-2"></i> Generate Visualization
+                </button>
+                <p class="text-center mt-2" style="color: var(--text-secondary); font-size: 0.9rem;">
+                    <i class="bi bi-info-circle me-1"></i> Processing may take a few minutes depending on file size and settings
+                </p>
+            </div>
+
+        </form> <!-- End Form -->
+
+        <!-- Processing Card -->
+        <div id="processing-card" class="card my-5" style="display: none;">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-cpu me-2"></i> Processing</h5>
+            </div>
+            <div class="card-body text-center py-4">
+                <!-- Processing Animation (shown during processing) -->
+                <div id="processing-animation" class="mb-4">
+                    <i class="bi bi-waveform pulse" style="font-size: 3rem; color: var(--primary-color);"></i>
+                </div>
+                <div class="progress mb-4" style="height: 30px;">
+                    <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated fs-6" role="progressbar" style="width: 0%"></div>
+                </div>
+                <p id="status-message" class="mb-4">Processing your audio file...</p>
+
+                <!-- Video Player (hidden until processing completes) -->
+                <div id="video-player-container" style="display: none;" class="mb-4">
+                    <video id="result-video" class="w-100 rounded shadow" controls>
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+
+                <!-- Download and Create Another Buttons -->
+                <div id="download-section" style="display: none;">
+                    <div class="d-flex justify-content-center gap-3 mt-4">
+                        <a id="download-link" href="#" class="btn btn-success btn-lg px-4">
+                            <i class="bi bi-download me-2"></i> Download Visualization
+                        </a>
+                        <button type="button" class="btn btn-outline-secondary btn-lg px-4" id="create-another-btn">
+                            <i class="bi bi-plus-circle me-2"></i> Create Another
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div> <!-- End Processing Card -->
+
+        <!-- Error Card (Fallback for when modal can't be used) -->
+        <div id="error-card" class="card my-5" style="display: none;">
+            <div class="card-header" style="background: linear-gradient(90deg, rgba(255, 82, 82, 0.1), rgba(255, 82, 82, 0.2));">
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i> Error</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <i class="bi bi-x-circle" style="font-size: 2.5rem; color: var(--error-color);"></i>
+                </div>
+                <p class="text-center mb-3"><strong>An error occurred during processing:</strong></p>
+                <pre id="error-message" class="error-pre mb-4"></pre>
+                <div class="d-grid">
+                    <button type="button" class="btn btn-outline-secondary" id="back-btn">
+                        <i class="bi bi-arrow-left me-2"></i> Back to Form
+                    </button>
+                </div>
+            </div>
+        </div> <!-- End Error Card -->
+
+    </div> <!-- End Container -->
+
+    <!-- Footer -->
+    <footer class="container text-center mt-5 py-4">
+        <div class="mb-3">
+            <i class="bi bi-soundwave" style="font-size: 1.5rem; color: var(--primary-color);"></i>
+        </div>
+        <p class="mb-2">Created by Marco van Hylckama Vlieg</p>
+        <p class="mb-0">
+            <a href="https://x.com/AIandDesign" target="_blank" rel="noopener noreferrer" class="me-3">
+                <i class="bi bi-twitter-x me-1"></i> @AIandDesign
+            </a>
+        </p>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Shared Modules -->
+    <script src="{{ url_for('static', filename='js/ui-effects.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/modal-manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/form-utilities.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/tab-navigation.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/tooltip-manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/form-validation.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/processing-ui.js') }}"></script>
+
+    <!-- Circular Audio Form JS -->
+    <script src="{{ url_for('static', filename='js/circular_audio_form.js') }}"></script>
+
+    <!-- Shader Selector JS -->
+    <script src="{{ url_for('static', filename='js/shader-selector.js') }}"></script>
+
+    <!-- Background Media Handler JS -->
+    <script src="{{ url_for('static', filename='js/background-media-handler.js') }}"></script>
+
+    <!-- Include the shared error modal -->
+    {% include 'partials/error_modal.html' %}
+</body>
+</html>

@@ -213,27 +213,29 @@ def upload_file():
 
     # Process specific types
     for key in config:
-        # Convert numeric values
-        if key in ["n_bars", "bar_width", "bar_gap", "segment_height", "segment_gap",
+        # Convert numeric values (integers only)
+        if key in ["n_bars", "bar_width", "bar_gap", "segment_height",
                   "corner_radius", "peak_hold_frames", "min_freq", "max_freq",
                   "fps", "width", "height", "max_segments", "max_amplitude"]:
             try:
-                config[key] = int(config[key])
+                config[key] = int(float(config[key]))  # Convert to float first, then int
             except (ValueError, TypeError):
                 pass
 
-        # Convert float values
+        # Convert float values (excluding fps, width, height which should stay as integers)
         elif key in ["amplitude_scale", "sensitivity", "analyzer_alpha", "threshold_factor",
                     "attack_speed", "decay_speed", "peak_decay_speed", "bass_threshold_adjust",
                     "mid_threshold_adjust", "high_threshold_adjust", "silence_threshold",
-                    "silence_decay_factor", "noise_gate", "duration"]:
+                    "silence_decay_factor", "noise_gate", "duration", "segment_size", "brightness",
+                    "bloom_size", "bloom_intensity", "bloom_falloff", "segment_gap", "inner_radius",
+                    "scale", "glow_blur_radius"]:
             try:
                 config[key] = float(config[key])
             except (ValueError, TypeError):
                 pass
 
         # Convert boolean values
-        elif key in ["always_on_bottom", "use_gradient"]:
+        elif key in ["always_on_bottom", "use_gradient", "show_text", "use_log_scale"]:
             if isinstance(config[key], str):
                 config[key] = config[key].lower() in ("true", "on", "yes", "1")
             else:
@@ -253,7 +255,15 @@ def upload_file():
     # Debug print
     print(f"Processed configuration: {config}")
 
-    # Add important default values if not present
+    # Let the visualizer process its own config to ensure proper defaults and validation
+    try:
+        config = visualizer.process_config(config)
+        print(f"Visualizer processed configuration: {config}")
+    except Exception as e:
+        print(f"Warning: Visualizer config processing failed: {e}")
+        # Continue with basic config if visualizer processing fails
+
+    # Add important default values if not present (fallback)
     if "n_bars" not in config:
         config["n_bars"] = 40
     if "amplitude_scale" not in config:
@@ -341,9 +351,9 @@ def process_video(
                 artist_name=config.get("artist_name", ""),
                 track_title=config.get("track_title", ""),
                 duration=config.get("duration"),
-                fps=config.get("fps", 30),
-                height=config.get("height", 720),
-                width=config.get("width", 1280),
+                fps=int(config.get("fps", 30)),
+                height=int(config.get("height", 720)),
+                width=int(config.get("width", 1280)),
                 config=config,
                 progress_callback=update_progress,
             )
