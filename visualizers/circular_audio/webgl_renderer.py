@@ -287,8 +287,10 @@ class CircularAudioGLRenderer:
         if background_image.size != (self.width, self.height):
             background_image = background_image.resize((self.width, self.height), Image.LANCZOS)
 
-        # Convert to numpy array and update texture
-        texture_data = np.array(background_image)
+        # Convert to numpy array and flip vertically to account for OpenGL coordinate system
+        # OpenGL has origin at bottom-left, PIL has origin at top-left
+        background_image_flipped = background_image.transpose(Image.FLIP_TOP_BOTTOM)
+        texture_data = np.array(background_image_flipped)
         self.background_texture.write(texture_data.tobytes())
 
     def create_audio_texture(self, frequency_data):

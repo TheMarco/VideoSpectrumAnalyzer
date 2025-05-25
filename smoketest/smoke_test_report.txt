@@ -1,0 +1,31 @@
+Audio Visualizer Suite - Smoke Test Report
+==================================================
+
+Test Date: 2025-05-24 16:54:23
+Total Tests: 16
+Passed: 10
+Failed: 6
+Success Rate: 62.5%
+
+Detailed Results:
+------------------------------
+
+Spectrum Analyzer:
+  plain: PASS
+  with_image: PASS
+  with_video: PASS
+  with_artist_track: PASS
+  with_image_and_text: PASS
+  with_shader_gears: FAIL
+  with_shader_starbirth: FAIL
+  with_shader_basewarp: FAIL
+
+Dual Bar Visualizer:
+  plain: PASS
+  with_image: PASS
+  with_video: PASS
+  with_artist_track: PASS
+  with_image_and_text: PASS
+  with_shader_gears: FAIL
+  with_shader_starbirth: FAIL
+  with_shader_basewarp: FAIL

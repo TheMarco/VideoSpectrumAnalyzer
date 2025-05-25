@@ -1,6 +1,6 @@
 """
-GL-based renderer for the Smooth Curves visualizer.
-This implementation uses direct GL rendering for better performance.
+WebGL-based renderer for the Smooth Curves visualizer.
+This implementation uses direct WebGL rendering for better performance.
 """
 
 import os
@@ -10,15 +10,15 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import moderngl
 from modules.media_handler import load_fonts
 
-class SmoothCurvesGLRenderer:
+class SmoothCurvesWebGLRenderer:
     """
-    GL renderer for the Smooth Curves visualizer.
-    This implementation uses direct GL rendering for better performance.
+    WebGL renderer for the Smooth Curves visualizer.
+    This implementation uses direct WebGL rendering for better performance.
     """
 
     def __init__(self, width, height, config):
         """
-        Initialize the GL renderer.
+        Initialize the WebGL renderer.
 
         Args:
             width (int): Frame width.
@@ -26,7 +26,7 @@ class SmoothCurvesGLRenderer:
             config (dict): Configuration dictionary.
         """
         # Print debug info
-        print(f"SmoothCurvesGLRenderer.__init__(width={width}, height={height}, config={config})")
+        print(f"SmoothCurvesWebGLRenderer.__init__(width={width}, height={height}, config={config})")
 
         # Ensure width and height are integers for the frame dimensions
         try:
@@ -91,7 +91,7 @@ class SmoothCurvesGLRenderer:
         self.artist_font, self.title_font = load_fonts(text_size=text_size)
 
         # Print initialization info for debugging
-        print(f"Initializing Smooth Curves GL Renderer with width={self.width}, height={self.height}, width_param={self.width_param}")
+        print(f"Initializing Smooth Curves WebGL Renderer with width={self.width}, height={self.height}, width_param={self.width_param}")
 
         try:
             # Create standalone ModernGL context with performance optimizations
@@ -152,7 +152,7 @@ class SmoothCurvesGLRenderer:
             self.background_texture.write(empty_frame_data.tobytes())
 
         except Exception as e:
-            print(f"Error initializing GL renderer: {e}")
+            print(f"Error initializing WebGL renderer: {e}")
             import traceback
             traceback.print_exc()
             raise
@@ -178,7 +178,7 @@ class SmoothCurvesGLRenderer:
             }
         """
 
-        # Fragment shader - based on the GL implementation
+        # Fragment shader - based on the WebGL implementation
         fragment_shader = """
             #version 330
 
@@ -508,8 +508,10 @@ class SmoothCurvesGLRenderer:
         if background_image.mode != 'RGBA':
             background_image = background_image.convert('RGBA')
 
-        # Convert to numpy array
-        texture_data = np.array(background_image)
+        # Convert to numpy array and flip vertically to account for OpenGL coordinate system
+        # OpenGL has origin at bottom-left, PIL has origin at top-left
+        background_image_flipped = background_image.transpose(Image.FLIP_TOP_BOTTOM)
+        texture_data = np.array(background_image_flipped)
 
         # Update the texture
         self.background_texture.write(texture_data.tobytes())
@@ -531,7 +533,7 @@ class SmoothCurvesGLRenderer:
 
             # Ensure audio_data is the right shape
             if len(audio_data) != 128:
-                # Resize to exactly 128 elements for GL version
+                # Resize to exactly 128 elements for WebGL version
                 if len(audio_data) < 128:
                     # Pad with zeros if too short
                     audio_data = np.pad(audio_data, (0, 128 - len(audio_data)), 'constant')
@@ -590,8 +592,8 @@ class SmoothCurvesGLRenderer:
 
             # Read the rendered image
             data = self.fbo.read(components=4)
-            # No need to flip the image since we're using correct texture coordinates
-            image = Image.frombytes('RGBA', (self.width, self.height), data)
+            # Flip the image to account for OpenGL coordinate system (bottom-left origin vs PIL top-left origin)
+            image = Image.frombytes('RGBA', (self.width, self.height), data).transpose(Image.FLIP_TOP_BOTTOM)
 
             # Add text overlay if metadata is provided
             if metadata and self.config.get("show_text", True):

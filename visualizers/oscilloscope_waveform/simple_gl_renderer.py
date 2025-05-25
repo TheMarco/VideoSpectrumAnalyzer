@@ -162,8 +162,10 @@ class SimpleGLOscilloscopeRenderer:
         if background_image.size != (self.width, self.height):
             background_image = background_image.resize((self.width, self.height), Image.LANCZOS)
 
-        # Convert PIL image to numpy array
-        img_data = np.array(background_image)
+        # Convert PIL image to numpy array and flip vertically to account for OpenGL coordinate system
+        # OpenGL has origin at bottom-left, PIL has origin at top-left
+        background_image_flipped = background_image.transpose(Image.FLIP_TOP_BOTTOM)
+        img_data = np.array(background_image_flipped)
 
         # Write the image data to the texture
         self.background_texture.write(img_data)
