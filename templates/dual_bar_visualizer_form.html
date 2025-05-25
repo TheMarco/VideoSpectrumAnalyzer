@@ -304,12 +304,16 @@
                             </div>
                             <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <label for="width" class="form-label">Video Width (px) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Width of the output video (e.g., 1280, 1920, 3840)."></i></label>
-                                    <input type="number" class="form-control" id="width" name="width" value="1280" min="640" max="3840" step="10">
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="height" class="form-label">Video Height (px) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Height of the output video (e.g., 720, 1080, 2160)."></i></label>
-                                    <input type="number" class="form-control" id="height" name="height" value="720" min="360" max="2160" step="10">
+                                    <label for="height" class="form-label">Video Resolution <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Resolution of the output video."></i></label>
+                                    <select class="form-select" id="height" name="height">
+                                        <option value="480">480p (SD)</option>
+                                        <option value="720" selected>720p (HD)</option>
+                                        <option value="1080">1080p (Full HD)</option>
+                                        <option value="1440">1440p (2K)</option>
+                                        <option value="2160">2160p (4K)</option>
+                                    </select>
+                                    <!-- Hidden width field automatically set by JavaScript -->
+                                    <input type="hidden" id="width" name="width" value="1280">
                                 </div>
                             </div>
                         </div> <!-- End Card Body -->

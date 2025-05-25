@@ -47,6 +47,7 @@ def process_config(config=None):
         "center_line_extension": 25,
         "edge_rolloff": False,   # Keep edge rolloff disabled
         "signal_power": 2.0,
+        "glow_blur_radius": 3,   # Default glow blur radius
     }
 
     # Merge user config with defaults
@@ -84,7 +85,7 @@ def process_config(config=None):
         # Process integer values
         int_keys = [
             "n_bars", "bar_width", "bar_gap", "corner_radius",
-            "min_freq", "max_freq", "peak_hold_frames", "max_amplitude"
+            "min_freq", "max_freq", "peak_hold_frames", "max_amplitude", "glow_blur_radius"
         ]
         for key in int_keys:
             if key in config:
@@ -117,7 +118,7 @@ def process_config(config=None):
     conf["title_color_rgb"] = hex_to_rgb(conf.get("title_color", "#FFFFFF"))
 
     # Glow effect configuration
-    conf["glow_blur_radius"] = int(config.get("glow_blur_radius", 3))
+    conf["glow_blur_radius"] = int(conf.get("glow_blur_radius", 3))
     conf["glow_color_rgb"] = None
     if conf["glow_effect"] == "white":
         conf["glow_color_rgb"] = (255, 255, 255)

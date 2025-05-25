@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ visualizer.display_name }} - Audio Visualizer Suite</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container mt-5 mb-5 fade-in">
+        <h1 class="text-center mb-3">{{ visualizer.display_name }}</h1>
+        <p class="text-center mb-5" style="max-width: 700px; margin-left: auto; margin-right: auto; color: var(--text-secondary);">{{ visualizer.description }}</p>
+
+        <div class="mb-4">
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i> Back to Visualizer Selection
+            </a>
+        </div>
+
+        <form id="upload-form" enctype="multipart/form-data" novalidate>
+            <!-- Hidden fields -->
+            <input type="hidden" name="visualizer_name" value="{{ visualizer.name }}">
+
+            <!-- Nav Tabs -->
+            <ul class="nav nav-tabs nav-fill mb-4" id="configTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="input-tab" data-bs-toggle="tab" data-bs-target="#input-tab-pane" type="button" role="tab" aria-controls="input-tab-pane" aria-selected="true">
+                        <i class="bi bi-file-music me-2"></i> 1. Input Files & Info
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="appearance-tab" data-bs-toggle="tab" data-bs-target="#appearance-tab-pane" type="button" role="tab" aria-controls="appearance-tab-pane" aria-selected="false">
+                        <i class="bi bi-palette me-2"></i> 2. Appearance
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="reactivity-tab" data-bs-toggle="tab" data-bs-target="#reactivity-tab-pane" type="button" role="tab" aria-controls="reactivity-tab-pane" aria-selected="false">
+                        <i class="bi bi-soundwave me-2"></i> 3. Reactivity
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="output-tab" data-bs-toggle="tab" data-bs-target="#output-tab-pane" type="button" role="tab" aria-controls="output-tab-pane" aria-selected="false">
+                        <i class="bi bi-gear me-2"></i> 4. Output Settings
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="configTabsContent">
+                <!-- ======================= -->
+                <!--      INPUT TAB PANE     -->
+                <!-- ======================= -->
+                <div class="tab-pane fade show active" id="input-tab-pane" role="tabpanel" aria-labelledby="input-tab" tabindex="0">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Input Files & Info</h5>
+                             <!-- Audio File -->
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <label for="file" class="form-label">Audio File* <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="right" title="Select the primary audio track (MP3, WAV, FLAC, etc.). Max 1.6GB."></i></label>
+                                    <input type="file" class="form-control" id="file" name="file" accept="audio/*" required>
+                                </div>
+                            </div>
+
+                            <!-- Background Media -->
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <label for="background_media" class="form-label">Background Image/Video <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="right" title="Optional background image (JPG, PNG) or video (MP4). If not provided, a black background will be used."></i></label>
+                                    <input type="file" class="form-control" id="background_media" name="background_media" accept="image/*,video/*">
+                                </div>
+                            </div>
+
+                            <!-- Background Shader -->
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <label for="background_shader" class="form-label">Background Shader <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="right" title="Optional GLSL shader for dynamic background effects. Takes precedence over image/video if both are provided."></i></label>
+                                        <a href="/shader-explorer" class="text-decoration-none">
+                                            <i class="bi bi-eye me-1"></i> Preview Shaders
+                                        </a>
+                                    </div>
+                                    <select class="form-select" id="background_shader" name="background_shader">
+                                        <option value="">None (use image/video or black background)</option>
+                                        {% for shader in shaders %}
+                                        <option value="{{ shader.path }}">{{ shader.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Artist and Title -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="artist_name" class="form-label">Artist Name <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Name of the artist or band."></i></label>
+                                    <input type="text" class="form-control" id="artist_name" name="artist_name" placeholder="">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="track_title" class="form-label">Track Title <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Title of the song or track."></i></label>
+                                    <input type="text" class="form-control" id="track_title" name="track_title" placeholder="">
+                                </div>
+                            </div>
+
+                            <!-- Text Settings -->
+                            <h6>Text Display</h6>
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <label for="text_color" class="form-label">Text Color <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Color for the artist and title text."></i></label>
+                                    <input type="color" class="form-control form-control-color w-100" id="text_color" name="text_color" value="{{ visualizer.config.defaults.text_color }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check mt-4">
+                                        <input class="form-check-input" type="checkbox" id="show_text" name="show_text" {% if visualizer.config.defaults.show_text %}checked{% endif %}>
+                                        <label class="form-check-label" for="show_text">
+                                            Show Text Overlay <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Display artist name and track title on the visualization."></i>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="text_size" class="form-label">Text Size <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Size of the text overlay."></i></label>
+                                    <select class="form-select" id="text_size" name="text_size">
+                                        <option value="small" {% if visualizer.config.defaults.text_size == 'small' %}selected{% endif %}>Small</option>
+                                        <option value="medium" {% if visualizer.config.defaults.text_size == 'medium' %}selected{% endif %}>Medium</option>
+                                        <option value="large" {% if visualizer.config.defaults.text_size == 'large' %}selected{% endif %}>Large</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="glow_effect" class="form-label">Text Glow <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Glow effect around text for better visibility."></i></label>
+                                    <select class="form-select" id="glow_effect" name="glow_effect">
+                                        <option value="none" {% if visualizer.config.defaults.glow_effect == 'none' %}selected{% endif %}>None</option>
+                                        <option value="black" {% if visualizer.config.defaults.glow_effect == 'black' %}selected{% endif %}>Black Glow</option>
+                                        <option value="white" {% if visualizer.config.defaults.glow_effect == 'white' %}selected{% endif %}>White Glow</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="glow_blur_radius" class="form-label">Glow Blur Radius <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Blur radius for the text glow effect."></i></label>
+                                    <input type="range" class="form-range" id="glow_blur_radius" name="glow_blur_radius" min="1" max="10" step="1" value="{{ visualizer.config.defaults.glow_blur_radius }}">
+                                    <small class="form-text text-muted">Value: <span id="glow_blur_radius_value">{{ visualizer.config.defaults.glow_blur_radius }}</span></small>
+                                </div>
+                            </div>
+
+
+                        </div> <!-- End Card Body -->
+                    </div> <!-- End Card -->
+                </div> <!-- End Input Tab Pane -->
+
+                <!-- ======================= -->
+                <!--    APPEARANCE TAB PANE  -->
+                <!-- ======================= -->
+                <div class="tab-pane fade" id="appearance-tab-pane" role="tabpanel" aria-labelledby="appearance-tab" tabindex="0">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Visual Appearance</h5>
+
+                             <!-- Bar Settings -->
+                            <h6>Bar Configuration</h6>
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="bar_width" class="form-label">Bar Width (pixels) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Width of each frequency bar in pixels (based on 1280px width, scales for other resolutions)."></i></label>
+                                    <input type="range" class="form-range" id="bar_width" name="bar_width" min="3" max="25" step="1" value="{{ visualizer.config.defaults.bar_width }}">
+                                    <small class="form-text text-muted">Value: <span id="bar_width_value">{{ visualizer.config.defaults.bar_width }}</span>px</small>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="bar_spacing" class="form-label">Bar Spacing (pixels) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Spacing between frequency bars in pixels (based on 1280px width, scales for other resolutions)."></i></label>
+                                    <input type="range" class="form-range" id="bar_spacing" name="bar_spacing" min="5" max="40" step="1" value="{{ visualizer.config.defaults.bar_spacing }}">
+                                    <small class="form-text text-muted">Value: <span id="bar_spacing_value">{{ visualizer.config.defaults.bar_spacing }}</span>px</small>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="max_bar_height" class="form-label">Maximum Bar Height <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Maximum height that bars can reach (0.3 to 1.0)."></i></label>
+                                    <input type="range" class="form-range" id="max_bar_height" name="max_bar_height" min="0.3" max="1.0" step="0.05" value="{{ visualizer.config.defaults.max_bar_height }}">
+                                    <small class="form-text text-muted">Value: <span id="max_bar_height_value">{{ visualizer.config.defaults.max_bar_height }}</span></small>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="num_bars" class="form-label">Number of Bars <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Number of frequency bars to display (24 to 128)."></i></label>
+                                    <input type="range" class="form-range" id="num_bars" name="num_bars" min="24" max="128" step="4" value="{{ visualizer.config.defaults.num_bars }}">
+                                    <small class="form-text text-muted">Value: <span id="num_bars_value">{{ visualizer.config.defaults.num_bars }}</span></small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="waveform_width" class="form-label">Waveform Width <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Total width of the spectrum display (0.5 to 1.0)."></i></label>
+                                    <input type="range" class="form-range" id="waveform_width" name="waveform_width" min="0.5" max="1.0" step="0.05" value="{{ visualizer.config.defaults.waveform_width }}">
+                                    <small class="form-text text-muted">Value: <span id="waveform_width_value">{{ visualizer.config.defaults.waveform_width }}</span></small>
+                                </div>
+                            </div>
+
+                            <!-- Bloom/Glow Settings -->
+                            <h6 class="mt-4">Bloom & Glow Effects</h6>
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="bloom_size" class="form-label">Bloom Size <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Size of the glow/bloom effect around bars (5.0 to 25.0)."></i></label>
+                                    <input type="range" class="form-range" id="bloom_size" name="bloom_size" min="5.0" max="25.0" step="0.5" value="{{ visualizer.config.defaults.bloom_size }}">
+                                    <small class="form-text text-muted">Value: <span id="bloom_size_value">{{ visualizer.config.defaults.bloom_size }}</span></small>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="bloom_intensity" class="form-label">Bloom Intensity <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Intensity of the glow/bloom effect (0.1 to 1.0)."></i></label>
+                                    <input type="range" class="form-range" id="bloom_intensity" name="bloom_intensity" min="0.1" max="1.0" step="0.05" value="{{ visualizer.config.defaults.bloom_intensity }}">
+                                    <small class="form-text text-muted">Value: <span id="bloom_intensity_value">{{ visualizer.config.defaults.bloom_intensity }}</span></small>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="bloom_falloff" class="form-label">Bloom Falloff <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="How quickly the bloom effect fades (1.0 to 4.0)."></i></label>
+                                    <input type="range" class="form-range" id="bloom_falloff" name="bloom_falloff" min="1.0" max="4.0" step="0.1" value="{{ visualizer.config.defaults.bloom_falloff }}">
+                                    <small class="form-text text-muted">Value: <span id="bloom_falloff_value">{{ visualizer.config.defaults.bloom_falloff }}</span></small>
+                                </div>
+                            </div>
+
+                            <!-- Color Settings -->
+                            <h6 class="mt-4">Colors</h6>
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label for="color_scheme" class="form-label">Color Scheme <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Color scheme for the frequency bars."></i></label>
+                                    <select class="form-select" id="color_scheme" name="color_scheme">
+                                        <option value="0" {% if visualizer.config.defaults.color_scheme == 0 %}selected{% endif %}>Gradient (Red-Yellow-Blue)</option>
+                                        <option value="1" {% if visualizer.config.defaults.color_scheme == 1 %}selected{% endif %}>Single Color</option>
+                                        <option value="2" {% if visualizer.config.defaults.color_scheme == 2 %}selected{% endif %}>Rainbow</option>
+                                        <option value="3" {% if visualizer.config.defaults.color_scheme == 3 %}selected{% endif %}>Purple Gradient</option>
+                                        <option value="4" {% if visualizer.config.defaults.color_scheme == 4 %}selected{% endif %}>Green Gradient</option>
+                                        <option value="5" {% if visualizer.config.defaults.color_scheme == 5 %}selected{% endif %}>Blue Gradient</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3" id="color-controls">
+                                <div class="col-md-3" id="single-color-control">
+                                    <label for="single_color" class="form-label">Single Color <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Color to use when Single Color scheme is selected."></i></label>
+                                    <input type="color" class="form-control form-control-color w-100" id="single_color" name="single_color" value="{{ visualizer.config.defaults.single_color }}">
+                                </div>
+                                <div class="col-md-3" id="low-color-control">
+                                    <label for="color_low" class="form-label">Low Frequency Color <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Color for low frequencies in gradient mode."></i></label>
+                                    <input type="color" class="form-control form-control-color w-100" id="color_low" name="color_low" value="{{ visualizer.config.defaults.color_low }}">
+                                </div>
+                                <div class="col-md-3" id="mid-color-control">
+                                    <label for="color_mid" class="form-label">Mid Frequency Color <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Color for mid frequencies in gradient mode."></i></label>
+                                    <input type="color" class="form-control form-control-color w-100" id="color_mid" name="color_mid" value="{{ visualizer.config.defaults.color_mid }}">
+                                </div>
+                                <div class="col-md-3" id="high-color-control">
+                                    <label for="color_high" class="form-label">High Frequency Color <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Color for high frequencies in gradient mode."></i></label>
+                                    <input type="color" class="form-control form-control-color w-100" id="color_high" name="color_high" value="{{ visualizer.config.defaults.color_high }}">
+                                </div>
+                            </div>
+
+                            <!-- Center Line Settings -->
+                            <h6 class="mt-4">Center Line</h6>
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <div class="form-check mt-4">
+                                        <input class="form-check-input" type="checkbox" id="show_center_line" name="show_center_line" {% if visualizer.config.defaults.show_center_line %}checked{% endif %}>
+                                        <label class="form-check-label" for="show_center_line">
+                                            Show Center Line <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Display horizontal center line."></i>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="center_line_thickness" class="form-label">Line Thickness (pixels) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Thickness of the horizontal center line in pixels (based on 720px height, scales for other resolutions)."></i></label>
+                                    <input type="range" class="form-range" id="center_line_thickness" name="center_line_thickness" min="1" max="10" step="1" value="{{ visualizer.config.defaults.center_line_thickness }}">
+                                    <small class="form-text text-muted">Value: <span id="center_line_thickness_value">{{ visualizer.config.defaults.center_line_thickness }}</span>px</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="center_line_overhang" class="form-label">Line Overhang <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="How much the center line extends beyond the bars."></i></label>
+                                    <input type="range" class="form-range" id="center_line_overhang" name="center_line_overhang" min="0.0" max="0.1" step="0.01" value="{{ visualizer.config.defaults.center_line_overhang }}">
+                                    <small class="form-text text-muted">Value: <span id="center_line_overhang_value">{{ visualizer.config.defaults.center_line_overhang }}</span></small>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="center_line_color" class="form-label">Line Color <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Color of the horizontal center line."></i></label>
+                                    <input type="color" class="form-control form-control-color w-100" id="center_line_color" name="center_line_color" value="{{ visualizer.config.defaults.center_line_color }}">
+                                </div>
+                            </div>
+
+
+                        </div> <!-- End Card Body -->
+                    </div> <!-- End Card -->
+                </div> <!-- End Appearance Tab Pane -->
+
+                <!-- ======================= -->
+                <!--   REACTIVITY TAB PANE   -->
+                <!-- ======================= -->
+                <div class="tab-pane fade" id="reactivity-tab-pane" role="tabpanel" aria-labelledby="reactivity-tab" tabindex="0">
+                     <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Audio Reactivity & Dynamics</h5>
+
+                            <!-- Audio Sensitivity -->
+                            <h6>Audio Response</h6>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="sensitivity" class="form-label">Audio Sensitivity <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="How responsive the visualizer is to audio changes (0.5 to 3.0)."></i></label>
+                                    <input type="range" class="form-range" id="sensitivity" name="sensitivity" min="0.5" max="3.0" step="0.1" value="{{ visualizer.config.defaults.sensitivity }}">
+                                    <small class="form-text text-muted">Value: <span id="sensitivity_value">{{ visualizer.config.defaults.sensitivity }}</span></small>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check mt-4">
+                                        <input class="form-check-input" type="checkbox" id="use_logarithmic_scale" name="use_logarithmic_scale" {% if visualizer.config.defaults.use_logarithmic_scale %}checked{% endif %}>
+                                        <label class="form-check-label" for="use_logarithmic_scale">
+                                            Use Logarithmic Scale <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Use logarithmic scaling for frequency response (emphasizes low frequencies)."></i>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="log_scale_factor" class="form-label">Log Scale Factor <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Logarithmic scale factor - higher values emphasize low frequencies more (0.1 to 1.0)."></i></label>
+                                    <input type="range" class="form-range" id="log_scale_factor" name="log_scale_factor" min="0.1" max="1.0" step="0.05" value="{{ visualizer.config.defaults.log_scale_factor }}">
+                                    <small class="form-text text-muted">Value: <span id="log_scale_factor_value">{{ visualizer.config.defaults.log_scale_factor }}</span></small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="n_bars" class="form-label">Number of Frequency Bands <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Number of frequency bands to analyze (affects spectrum resolution)."></i></label>
+                                    <input type="number" class="form-control" id="n_bars" name="n_bars" value="64" min="32" max="128">
+                                </div>
+                            </div>
+
+                            <!-- Frequency Settings -->
+                            <h6 class="mt-4">Frequency Analysis</h6>
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="attack_speed" class="form-label">Attack Speed <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="How quickly bars rise to match audio level."></i></label>
+                                    <input type="range" class="form-range" id="attack_speed" name="attack_speed" min="0.1" max="2.0" step="0.1" value="1.0">
+                                    <small class="form-text text-muted">Value: <span id="attack_speed_value">1.0</span></small>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="decay_speed" class="form-label">Decay Speed <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="How quickly bars fall when audio level drops."></i></label>
+                                    <input type="range" class="form-range" id="decay_speed" name="decay_speed" min="0.05" max="1.0" step="0.05" value="0.2">
+                                    <small class="form-text text-muted">Value: <span id="decay_speed_value">0.2</span></small>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="noise_gate" class="form-label">Noise Gate <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Minimum audio level to trigger visualization (reduces noise)."></i></label>
+                                    <input type="range" class="form-range" id="noise_gate" name="noise_gate" min="0.0" max="0.1" step="0.01" value="0.03">
+                                    <small class="form-text text-muted">Value: <span id="noise_gate_value">0.03</span></small>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="amplitude_scale" class="form-label">Amplitude Scale <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Overall amplitude scaling factor."></i></label>
+                                    <input type="range" class="form-range" id="amplitude_scale" name="amplitude_scale" min="0.1" max="3.0" step="0.1" value="1.0">
+                                    <small class="form-text text-muted">Value: <span id="amplitude_scale_value">1.0</span></small>
+                                </div>
+                            </div>
+                        </div> <!-- End Card Body -->
+                    </div> <!-- End Card -->
+                </div> <!-- End Reactivity Tab Pane -->
+
+                <!-- ======================= -->
+                <!--    OUTPUT TAB PANE      -->
+                <!-- ======================= -->
+                <div class="tab-pane fade" id="output-tab-pane" role="tabpanel" aria-labelledby="output-tab" tabindex="0">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Output Settings</h5>
+
+                            <!-- Video Settings -->
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="fps" class="form-label">Frame Rate (FPS) <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Frames per second for the output video."></i></label>
+                                    <select class="form-select" id="fps" name="fps">
+                                        <option value="24">24 FPS</option>
+                                        <option value="30" selected>30 FPS</option>
+                                        <option value="60">60 FPS</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="height" class="form-label">Video Resolution <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Resolution of the output video."></i></label>
+                                    <select class="form-select" id="height" name="height">
+                                        <option value="480">480p (SD)</option>
+                                        <option value="720" selected>720p (HD)</option>
+                                        <option value="1080">1080p (Full HD)</option>
+                                        <option value="1440">1440p (2K)</option>
+                                        <option value="2160">2160p (4K)</option>
+                                    </select>
+                                    <!-- Hidden width field automatically set by JavaScript -->
+                                    <input type="hidden" id="width" name="width" value="1280">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="duration" class="form-label">Duration Override <i class="bi bi-question-circle help-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Override the audio duration (leave empty to use full audio length)."></i></label>
+                                    <input type="number" class="form-control" id="duration" name="duration" placeholder="Auto" min="1" max="3600">
+                                    <div class="form-text">Seconds (optional)</div>
+                                </div>
+                            </div>
+                        </div> <!-- End Card Body -->
+                    </div> <!-- End Card -->
+                </div> <!-- End Output Tab Pane -->
+            </div> <!-- End Tab Content -->
+
+            <!-- Submit Button -->
+            <div class="d-grid mt-5">
+                <button type="submit" class="btn btn-primary btn-lg py-3" id="submit-btn">
+                    <i class="bi bi-magic me-2"></i> Generate Visualization
+                </button>
+                <p class="text-center mt-2" style="color: var(--text-secondary); font-size: 0.9rem;">
+                    <i class="bi bi-info-circle me-1"></i> Processing may take a few minutes depending on file size and settings
+                </p>
+            </div>
+        </form>
+
+        <!-- Processing Card -->
+        <div id="processing-card" class="card my-5" style="display: none;">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-cpu me-2"></i> Processing</h5>
+            </div>
+            <div class="card-body text-center py-4">
+                <div id="processing-animation" class="mb-4">
+                    <i class="bi bi-waveform pulse" style="font-size: 3rem; color: var(--primary-color);"></i>
+                </div>
+                <div class="progress mb-4" style="height: 30px;">
+                    <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated fs-6" role="progressbar" style="width: 0%"></div>
+                </div>
+                <p id="status-message" class="mb-4">Processing your audio file...</p>
+
+                <div id="video-player-container" style="display: none;" class="mb-4">
+                    <video id="result-video" class="w-100 rounded shadow" controls>
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+
+                <div id="download-section" style="display: none;">
+                    <div class="d-flex justify-content-center gap-3 mt-4">
+                        <a id="download-link" href="#" class="btn btn-success btn-lg px-4">
+                            <i class="bi bi-download me-2"></i> Download Visualization
+                        </a>
+                        <button type="button" class="btn btn-outline-secondary btn-lg px-4" id="create-another-btn">
+                            <i class="bi bi-plus-circle me-2"></i> Create Another
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Card (Fallback for when modal can't be used) -->
+        <div id="error-card" class="card my-5" style="display: none;">
+            <div class="card-header" style="background: linear-gradient(90deg, rgba(255, 82, 82, 0.1), rgba(255, 82, 82, 0.2));">
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i> Error</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <i class="bi bi-x-circle" style="font-size: 2.5rem; color: var(--error-color);"></i>
+                </div>
+                <p class="text-center mb-3"><strong>An error occurred during processing:</strong></p>
+                <pre id="error-message" class="error-pre mb-4"></pre>
+                <div class="d-grid">
+                    <button type="button" class="btn btn-outline-secondary" id="back-btn">
+                        <i class="bi bi-arrow-left me-2"></i> Back to Form
+                    </button>
+                </div>
+            </div>
+        </div> <!-- End Error Card -->
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Shared Modules -->
+    <script src="{{ url_for('static', filename='js/ui-effects.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/modal-manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/form-utilities.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/tab-navigation.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/tooltip-manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/form-validation.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/processing-ui.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/shader-selector.js') }}"></script>
+
+    <!-- Background Media Handler JS -->
+    <script src="{{ url_for('static', filename='js/background-media-handler.js') }}"></script>
+
+    <!-- Claude's Spectrum Form JS -->
+    <script src="{{ url_for('static', filename='js/claudes_spectrum_form.js') }}"></script>
+
+    <!-- Include the shared error modal -->
+    {% include 'partials/error_modal.html' %}
+</body>
+</html>

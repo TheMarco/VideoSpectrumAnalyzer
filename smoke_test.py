@@ -53,7 +53,7 @@ def render_dual_bar(duration=5.0, fps=30, width=1280, height=720, output_dir="te
     total_frames = int(duration * fps)
 
     viz = DualBarVisualizer()
-    conf = viz.process_config(None)
+    conf = viz.process_config({})
     renderer = viz.create_renderer(width, height, conf)
 
     n_bars = conf.get("n_bars", 0)

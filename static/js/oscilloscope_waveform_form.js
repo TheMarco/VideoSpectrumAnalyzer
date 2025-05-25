@@ -245,30 +245,48 @@ document.addEventListener('DOMContentLoaded', function() {
         glowEffectSelect.dispatchEvent(new Event('change'));
     }
 
-    // Add event listener for resolution selection
-    const resolutionSelect = document.getElementById('resolution');
+    // Handle video resolution dropdown
+    const heightSelect = document.getElementById('height');
     const widthInput = document.getElementById('width');
-    const heightInput = document.getElementById('height');
 
-    if (resolutionSelect && widthInput && heightInput) {
-        resolutionSelect.addEventListener('change', function() {
-            // Set width and height based on selected resolution
+    if (heightSelect && widthInput) {
+        // Set initial width based on default height selection
+        const initialHeight = heightSelect.value;
+        switch(initialHeight) {
+            case '480':
+                widthInput.value = 854;
+                break;
+            case '720':
+                widthInput.value = 1280;
+                break;
+            case '1080':
+                widthInput.value = 1920;
+                break;
+            case '1440':
+                widthInput.value = 2560;
+                break;
+            case '2160':
+                widthInput.value = 3840;
+                break;
+        }
+
+        heightSelect.addEventListener('change', function() {
+            // Set width based on selected resolution
             switch(this.value) {
-                case '720p':
+                case '480':
+                    widthInput.value = 854;
+                    break;
+                case '720':
                     widthInput.value = 1280;
-                    heightInput.value = 720;
                     break;
-                case '1080p':
+                case '1080':
                     widthInput.value = 1920;
-                    heightInput.value = 1080;
                     break;
-                case '1440p':
+                case '1440':
                     widthInput.value = 2560;
-                    heightInput.value = 1440;
                     break;
-                case '4K':
+                case '2160':
                     widthInput.value = 3840;
-                    heightInput.value = 2160;
                     break;
             }
         });

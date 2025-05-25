@@ -219,5 +219,52 @@ document.addEventListener('DOMContentLoaded', function() {
             window.TabNavigation.clearTabErrors();
         });
     });
+
+    // Handle video resolution dropdown
+    const heightSelect = document.getElementById('height');
+    const widthInput = document.getElementById('width');
+
+    if (heightSelect && widthInput) {
+        // Set initial width based on default height selection
+        const initialHeight = heightSelect.value;
+        switch(initialHeight) {
+            case '480':
+                widthInput.value = 854;
+                break;
+            case '720':
+                widthInput.value = 1280;
+                break;
+            case '1080':
+                widthInput.value = 1920;
+                break;
+            case '1440':
+                widthInput.value = 2560;
+                break;
+            case '2160':
+                widthInput.value = 3840;
+                break;
+        }
+
+        heightSelect.addEventListener('change', function() {
+            // Set width based on selected resolution
+            switch(this.value) {
+                case '480':
+                    widthInput.value = 854;
+                    break;
+                case '720':
+                    widthInput.value = 1280;
+                    break;
+                case '1080':
+                    widthInput.value = 1920;
+                    break;
+                case '1440':
+                    widthInput.value = 2560;
+                    break;
+                case '2160':
+                    widthInput.value = 3840;
+                    break;
+            }
+        });
+    }
 });
 // --- END OF FILE spectrum_analyzer_form.js ---

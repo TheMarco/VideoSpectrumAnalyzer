@@ -1,11 +1,11 @@
 Audio Visualizer Suite - Smoke Test Report
 ==================================================
 
-Test Date: 2025-05-24 16:54:23
-Total Tests: 16
-Passed: 10
-Failed: 6
-Success Rate: 62.5%
+Test Date: 2025-05-25 11:14:17
+Total Tests: 48
+Passed: 48
+Failed: 0
+Success Rate: 100.0%
 
 Detailed Results:
 ------------------------------
@@ -16,9 +16,49 @@ Spectrum Analyzer:
   with_video: PASS
   with_artist_track: PASS
   with_image_and_text: PASS
-  with_shader_gears: FAIL
-  with_shader_starbirth: FAIL
-  with_shader_basewarp: FAIL
+  with_shader_gears: PASS
+  with_shader_starbirth: PASS
+  with_shader_basewarp: PASS
+
+CircularAudioVisualizer:
+  plain: PASS
+  with_image: PASS
+  with_video: PASS
+  with_artist_track: PASS
+  with_image_and_text: PASS
+  with_shader_gears: PASS
+  with_shader_starbirth: PASS
+  with_shader_basewarp: PASS
+
+ClaudesSpectrumVisualizer:
+  plain: PASS
+  with_image: PASS
+  with_video: PASS
+  with_artist_track: PASS
+  with_image_and_text: PASS
+  with_shader_gears: PASS
+  with_shader_starbirth: PASS
+  with_shader_basewarp: PASS
+
+SmoothCurvesVisualizer:
+  plain: PASS
+  with_image: PASS
+  with_video: PASS
+  with_artist_track: PASS
+  with_image_and_text: PASS
+  with_shader_gears: PASS
+  with_shader_starbirth: PASS
+  with_shader_basewarp: PASS
+
+OscilloscopeWaveformVisualizer:
+  plain: PASS
+  with_image: PASS
+  with_video: PASS
+  with_artist_track: PASS
+  with_image_and_text: PASS
+  with_shader_gears: PASS
+  with_shader_starbirth: PASS
+  with_shader_basewarp: PASS
 
 Dual Bar Visualizer:
   plain: PASS
@@ -26,6 +66,6 @@ Dual Bar Visualizer:
   with_video: PASS
   with_artist_track: PASS
   with_image_and_text: PASS
-  with_shader_gears: FAIL
-  with_shader_starbirth: FAIL
-  with_shader_basewarp: FAIL
+  with_shader_gears: PASS
+  with_shader_starbirth: PASS
+  with_shader_basewarp: PASS
